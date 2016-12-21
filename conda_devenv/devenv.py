@@ -20,8 +20,8 @@ def main():
     parser.add_argument("filename", nargs="?",
                         help="The environment.devenv.yml file to process.")
 
-    # parser.add_argument("--force-env", "-f", help="Force re-creation of the environment, even if it already exists.",
-    #                     action="store_true")
+    parser.add_argument("--print", help="Only prints the rendered file to stdout and exits.",
+                        action="store_true")
 
     # 0 - jinja
     # 1 - includes
@@ -31,15 +31,20 @@ def main():
 
     filename = args.filename or "environment.devenv.yml"
 
-    output_filename = filename.rstrip(".devenv.yml") + ".yml"
-    if output_filename.endswith(".yml.yml"):
-        raise ValueError("Can't guess the output file, please provide the output file with the --output-filename flag")
-
     # Render jinja
     with open(filename, "r") as f:
         contents = f.read()
 
     rendered_contents = render_jinja(contents, filename)
+
+    if args.print:
+        print(rendered_contents)
+        return
+
+    # Write to the output file
+    output_filename = filename.rstrip(".devenv.yml") + ".yml"
+    if output_filename.endswith(".yml.yml"):
+        raise ValueError("Can't guess the output file, please provide the output file with the --output-filename flag")
 
     with open(output_filename, 'w') as f:
         f.write(rendered_contents)
