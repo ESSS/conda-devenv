@@ -1,0 +1,5 @@
+name: b
+dependencies:
+  - b_dependency
+includes:
+  - {{ root }}/a_non_dag.yml

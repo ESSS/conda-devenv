@@ -3,6 +3,7 @@ dependencies:
 #  - conda >=4.1.0
   - python
   - jinja2
-  - yaml
+  - pyyaml
   # for testing
   - pytest
+  - pytest-datadir
