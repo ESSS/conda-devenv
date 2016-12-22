@@ -107,14 +107,22 @@ def render_activate_script(environment):
     if sys.platform.startswith("linux"):
         script = ["#!/bin/sh"]
     for variable, value in environment.items():
-        if isinstance(value, list):
-            value = os.pathsep.join(value)
         if sys.platform.startswith("linux"):
+            if isinstance(value, list):
+                # Lists are supposed to prepend to the existing value
+                value = os.pathsep.join(value) + os.pathsep + "${variable}".format(variable=variable)
+
             script.append("export CONDA_DEVENV_BKP_{variable}=${variable}".format(variable=variable))
             script.append("export {variable}=\"{value}\"".format(variable=variable, value=value))
+
         elif sys.platform.startswith("win"):
+            if isinstance(value, list):
+                # Lists are supposed to prepend to the existing value
+                value = os.pathsep.join(value) + os.pathsep + "%{variable}%".format(variable=variable)
+
             script.append("set CONDA_DEVENV_BKP_{variable}=%{variable}%".format(variable=variable))
             script.append("set {variable}=\"{value}\"".format(variable=variable, value=value))
+
         else:
             raise ValueError("Unknown platform")
 
@@ -129,9 +137,11 @@ def render_deactivate_script(environment):
         if sys.platform.startswith("linux"):
             script.append("export {variable}=$CONDA_DEVENV_BKP_{variable}".format(variable=variable))
             script.append("unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+
         elif sys.platform.startswith("win"):
             script.append("set {variable}=%CONDA_DEVENV_BKP_{variable}%".format(variable=variable))
             script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
+
         else:
             raise ValueError("Unknown platform")
 
