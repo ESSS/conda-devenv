@@ -156,6 +156,11 @@ def __write_conda_environment_file(args, filename, rendered_contents):
         if output_filename.endswith(".yml.yml"):
             raise ValueError("Can't guess the output file, please provide the output file with the --output-filename "
                              "flag")
+
+    if os.path.exists(output_filename) and not args.force:
+        raise ValueError("The output file '{}' already exists and the flag --force was omitted. Refusing to override "
+                         "the file.".format(output_filename))
+
     with open(output_filename, 'w') as f:
         f.write(rendered_contents)
 
@@ -214,6 +219,7 @@ def main():
     parser.add_argument("--print", help="Only prints the rendered file to stdout and exits.", action="store_true")
     parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true")
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
+    parser.add_argument("--force", action="store_true", help="Overrides the output file, even if it already exists.")
 
     args = parser.parse_args()
 
