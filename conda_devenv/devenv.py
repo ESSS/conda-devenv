@@ -95,6 +95,69 @@ def render_for_conda_env(yaml_dict):
     return yaml.dump(yaml_dict, default_flow_style=False)
 
 
+def render_activate_script(environment):
+    script = "#!/bin/sh"
+    for variable, value in environment.items():
+        if isinstance(value, list):
+            value = os.pathsep.join(value)
+        script += "export CONDA_DEVENV_BKP_{variable}=${variable}\n".format(variable={variable})
+        script += "export {variable}={value}\n".format(variable={variable}, value={value})
+    return script
+
+
+def render_deactivate_script(environment):
+    script = ""
+    for variable in environment.keys():
+        script += "export {variable}=$CONDA_DEVENV_BKP_{variable}\n".format(variable={variable})
+        script += "unset CONDA_DEVENV_BKP_{variable}\n".format(variable={variable})
+    return script
+
+
+def __call_conda_env_update(args, output_filename):
+    import subprocess
+    command = [
+        "conda",
+        "env",
+        "update",
+        "--file",
+        output_filename,
+    ]
+    if not args.no_prune:
+        command.append("--prune")
+    if args.name:
+        command.extend(["--name", args.name])
+    print("> Executing: %s" % ' '.join(command))
+    return subprocess.call(command)
+
+
+def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
+    import subprocess
+    env_name = args.name or conda_yaml_dict["name"]
+    conda_root = subprocess.check_output(["conda", "info", "--root"])
+    if sys.version_info >= (3, 0, 0):
+        conda_root = conda_root.decode("utf-8")
+
+    from os.path import join
+
+    print("env_name: %s" % env_name)
+    env_directory = join(conda_root, "envs", env_name)
+
+    activate_script = render_activate_script(environment)
+    deactivate_script = render_deactivate_script(environment)
+
+    activate_directory = join(env_directory, "etc", "activate.d")
+    deactivate_directory = join(env_directory, "etc", "deactivate.d")
+
+    os.makedirs(activate_directory)
+    os.makedirs(deactivate_directory)
+
+    extension = ".bat" if sys.platform.startswith("win") else ".sh"
+    with open(join(activate_directory, "devenv-vars" + extension), "w") as f:
+        f.write(activate_script)
+    with open(join(deactivate_directory, "devenv-vars" + extension), "w") as f:
+        f.write(deactivate_script)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Work with multiple conda-environment-like yaml files in dev mode.")
     parser.add_argument("--file", "-f", nargs="?",
@@ -136,25 +199,11 @@ def main():
         f.write(rendered_contents)
 
     # Call conda-env update
-    import subprocess
-    command = [
-        "conda",
-        "env",
-        "update",
-        "--file",
-        output_filename,
-    ]
-    if not args.no_prune:
-        command.append("--prune")
-    if args.name:
-        command.extend(["--name", args.name])
-
-    print("> Executing: %s" % ' '.join(command))
-    retcode = subprocess.call(command)
+    retcode = __call_conda_env_update(args, output_filename)
     if retcode != 0:
         sys.exit(retcode)
 
-    # TODO: Write the scripts to set/unset the environment variables
+    __write_activate_deactivate_scripts(args, conda_yaml_dict, environment)
 
 
 if __name__ == "__main__":
