@@ -1,6 +1,6 @@
 import yaml
 
-from conda_devenv.devenv import handle_includes, render_jinja
+from conda_devenv.devenv import handle_includes, render_jinja, load_yaml_dict
 
 
 def obtain_yaml_dicts(root_yaml_filename):
@@ -77,3 +77,8 @@ def test_include_non_dag(datadir):
             "b_dependency",
         ],
     }
+
+def test_load_yaml_dict(datadir):
+    conda_yaml_dict, environment = load_yaml_dict(datadir["c.yml"])
+    assert set(environment.keys()) == {"PATH"}
+    assert set(environment["PATH"]) == {"b_path", "a_path"}
