@@ -209,20 +209,11 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
 
 def main():
     parser = argparse.ArgumentParser(description="Work with multiple conda-environment-like yaml files in dev mode.")
-    parser.add_argument("--file", "-f", nargs="?",
-                        help="The environment.devenv.yml file to process.")
-
-    parser.add_argument("--name", "-n", nargs="?",
-                        help="Name of environment.")
-
-    parser.add_argument("--print", help="Only prints the rendered file to stdout and exits.",
-                        action="store_true")
-
-    parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.",
-                        action="store_true")
-
-    parser.add_argument("--output-file", help="Output filename.",
-                        default="environment.yml")
+    parser.add_argument("--file", "-f", nargs="?", help="The environment.devenv.yml file to process.")
+    parser.add_argument("--name", "-n", nargs="?", help="Name of environment.")
+    parser.add_argument("--print", help="Only prints the rendered file to stdout and exits.", action="store_true")
+    parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true")
+    parser.add_argument("--output-file", nargs="?", help="Output filename.")
 
     args = parser.parse_args()
 
