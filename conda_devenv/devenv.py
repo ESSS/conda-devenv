@@ -40,7 +40,7 @@ def handle_includes(root_yaml):
 
         visited[filename] = yaml_dict
 
-    return visited.values()
+    return visited
 
 
 def merge(dicts, keys_to_skip=('name',)):
@@ -81,7 +81,14 @@ def load_yaml_dict(filename):
     root_yaml = yaml.load(rendered_contents)
 
     all_yaml_dicts = handle_includes(root_yaml)
-    merged_dict = merge(all_yaml_dicts)
+
+    for filename, yaml_dict in all_yaml_dicts.items():
+        environment_key_value = yaml_dict.get("environment", {})
+        if not isinstance(environment_key_value, dict):
+            raise ValueError("The 'environment' key is supposed to be a dictionary, but you have the type '{type}' at "
+                             "'{filename}'.".format(type=type(environment_key_value), filename=filename))
+
+    merged_dict = merge(all_yaml_dicts.values())
 
     # Force the "name" because we want to keep the name of the root yaml
     merged_dict["name"] = root_yaml["name"]
@@ -131,6 +138,20 @@ def render_deactivate_script(environment):
     return '\n'.join(script)
 
 
+def __write_conda_environment_file(args, filename, rendered_contents):
+    if args.output_file:
+        output_filename = args.output_file
+    else:
+        output_filename = filename.rstrip(".devenv.yml") + ".yml"
+        if output_filename.endswith(".yml.yml"):
+            raise ValueError("Can't guess the output file, please provide the output file with the --output-filename "
+                             "flag")
+    with open(output_filename, 'w') as f:
+        f.write(rendered_contents)
+
+    return output_filename
+
+
 def __call_conda_env_update(args, output_filename):
     import subprocess
     command = [
@@ -158,7 +179,6 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
 
     from os.path import join
 
-    print("env_name: %s" % env_name)
     env_directory = join(conda_root, "envs", env_name)
 
     activate_script = render_activate_script(environment)
@@ -206,16 +226,7 @@ def main():
         return
 
     # Write to the output file
-    if args.output_file:
-        output_filename = args.output_file
-    else:
-        output_filename = filename.rstrip(".devenv.yml") + ".yml"
-        if output_filename.endswith(".yml.yml"):
-            raise ValueError("Can't guess the output file, please provide the output file with the --output-filename "
-                             "flag")
-
-    with open(output_filename, 'w') as f:
-        f.write(rendered_contents)
+    output_filename = __write_conda_environment_file(args, filename, rendered_contents)
 
     # Call conda-env update
     retcode = __call_conda_env_update(args, output_filename)

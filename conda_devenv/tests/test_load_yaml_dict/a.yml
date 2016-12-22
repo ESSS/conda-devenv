@@ -1,0 +1,6 @@
+name: a
+dependencies:
+  - a_dependency
+environment:
+  PATH:
+    - a_path
