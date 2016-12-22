@@ -10,11 +10,13 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    # TODO: put package requirements here
+    'pyyaml',
+    'jinja2',
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'pytest',
+    'pytest-datadir',
 ]
 
 setup(
@@ -28,6 +30,11 @@ setup(
     packages=[
         'conda_devenv',
     ],
+    entry_points={
+        'console_scripts': [
+            'conda-devenv = conda_devenv.devenv:main',
+        ]
+    },
     package_dir={'conda_devenv':
                  'conda_devenv'},
     include_package_data=True,
