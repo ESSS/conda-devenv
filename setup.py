@@ -24,7 +24,7 @@ setup(
     long_description=readme + '\n\n' + history,
     author="Edison Gustavo Muenz",
     author_email='edisongustavo@gmail.com',
-    url='https://github.com/esss/conda-devenv',
+    url='https://github.com/ESSS/conda-devenv',
     packages=[
         'conda_devenv',
     ],

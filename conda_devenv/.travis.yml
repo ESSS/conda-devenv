@@ -21,10 +21,10 @@ script: tox -e ${TOXENV}
 deploy:
   provider: pypi
   distributions: sdist bdist_wheel
-  user: esss
+  user: ESSS
   password:
     secure: PLEASE_REPLACE_ME
   on:
     tags: true
-    repo: esss/conda-devenv
+    repo: ESSS/conda-devenv
     condition: $TOXENV == py27

@@ -32,13 +32,13 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/esss/conda-devenv
+    $ git clone git://github.com/ESSS/conda-devenv
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl  -OL https://github.com/esss/conda-devenv/tarball/master
+    $ curl  -OL https://github.com/ESSS/conda-devenv/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -47,5 +47,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/esss/conda-devenv
-.. _tarball: https://github.com/esss/conda-devenv/tarball/master
+.. _Github repo: https://github.com/ESSS/conda-devenv
+.. _tarball: https://github.com/ESSS/conda-devenv/tarball/master
