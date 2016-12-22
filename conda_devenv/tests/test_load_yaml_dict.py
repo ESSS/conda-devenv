@@ -1,6 +1,7 @@
 import os
 
 import pytest
+import sys
 
 from conda_devenv.devenv import load_yaml_dict
 
@@ -24,16 +25,24 @@ def test_load_yaml_dict(datadir):
 def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir):
     with pytest.raises(ValueError) as e:
         load_yaml_dict(datadir["a_wrong_definition_at_environment.yml"])
-    assert str(e.value) == "The 'environment' key is supposed to be a dictionary, but you have the type " \
-                           "'<class 'list'>' at 'root'."
+    if sys.version_info >= (3,):
+        assert str(e.value) == "The 'environment' key is supposed to be a dictionary, but you have the type " \
+                               "'<class 'list'>' at 'root'."
+    else:
+        assert str(e.value) == "The 'environment' key is supposed to be a dictionary, but you have the type " \
+                               "'<type 'list'>' at 'root'."
 
 
 def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_file_to_exception_message(datadir):
     with pytest.raises(ValueError) as e:
         load_yaml_dict(datadir["b_includes_wrong_definition_at_environment.yml"])
 
-    exception_message_start = "The 'environment' key is supposed to be a dictionary, but you have the type " \
-                              "'<class 'list'>' at "
+    if sys.version_info >= (3,):
+        exception_message_start = "The 'environment' key is supposed to be a dictionary, but you have the type " \
+                                  "'<class 'list'>' at "
+    else:
+        exception_message_start = "The 'environment' key is supposed to be a dictionary, but you have the type " \
+                                  "'<type 'list'>' at "
 
     # use startswith() because the full path of the filename is at the exception message
     assert str(e.value).startswith(exception_message_start)
