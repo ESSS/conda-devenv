@@ -96,21 +96,39 @@ def render_for_conda_env(yaml_dict):
 
 
 def render_activate_script(environment):
-    script = "#!/bin/sh"
+    script = []
+    if sys.platform.startswith("linux"):
+        script = ["#!/bin/sh"]
     for variable, value in environment.items():
         if isinstance(value, list):
             value = os.pathsep.join(value)
-        script += "export CONDA_DEVENV_BKP_{variable}=${variable}\n".format(variable={variable})
-        script += "export {variable}={value}\n".format(variable={variable}, value={value})
-    return script
+        if sys.platform.startswith("linux"):
+            script.append("export CONDA_DEVENV_BKP_{variable}=${variable}".format(variable=variable))
+            script.append("export {variable}=\"{value}\"".format(variable=variable, value=value))
+        elif sys.platform.startswith("win"):
+            script.append("set CONDA_DEVENV_BKP_{variable}=%{variable}%".format(variable=variable))
+            script.append("set {variable}=\"{value}\"".format(variable=variable, value=value))
+        else:
+            raise ValueError("Unknown platform")
+
+    return '\n'.join(script)
 
 
 def render_deactivate_script(environment):
-    script = ""
+    script = []
+    if sys.platform.startswith("linux"):
+        script = ["#!/bin/sh"]
     for variable in environment.keys():
-        script += "export {variable}=$CONDA_DEVENV_BKP_{variable}\n".format(variable={variable})
-        script += "unset CONDA_DEVENV_BKP_{variable}\n".format(variable={variable})
-    return script
+        if sys.platform.startswith("linux"):
+            script.append("export {variable}=$CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+            script.append("unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+        elif sys.platform.startswith("win"):
+            script.append("set {variable}=%CONDA_DEVENV_BKP_{variable}%".format(variable=variable))
+            script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
+        else:
+            raise ValueError("Unknown platform")
+
+    return '\n'.join(script)
 
 
 def __call_conda_env_update(args, output_filename):
@@ -136,6 +154,7 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     conda_root = subprocess.check_output(["conda", "info", "--root"])
     if sys.version_info >= (3, 0, 0):
         conda_root = conda_root.decode("utf-8")
+    conda_root = conda_root.strip()
 
     from os.path import join
 
@@ -145,11 +164,11 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     activate_script = render_activate_script(environment)
     deactivate_script = render_deactivate_script(environment)
 
-    activate_directory = join(env_directory, "etc", "activate.d")
-    deactivate_directory = join(env_directory, "etc", "deactivate.d")
+    activate_directory = join(env_directory, "etc", "conda", "activate.d")
+    deactivate_directory = join(env_directory, "etc", "conda", "deactivate.d")
 
-    os.makedirs(activate_directory)
-    os.makedirs(deactivate_directory)
+    os.makedirs(activate_directory, exist_ok=True)
+    os.makedirs(deactivate_directory, exist_ok=True)
 
     extension = ".bat" if sys.platform.startswith("win") else ".sh"
     with open(join(activate_directory, "devenv-vars" + extension), "w") as f:
