@@ -1,12 +1,10 @@
 name: b
 dependencies:
   - b_dependency
-  - pip:
-    - b_pip_dependency
 channels:
   - b_channel
 environment:
-  - PATH:
+  PATH:
     - b_path
 includes:
   - {{ root }}/a.yml

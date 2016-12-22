@@ -27,30 +27,24 @@ def test_include(datadir):
         "name": "a",
         "dependencies": [
             "a_dependency",
-            {"pip": [
-                "a_pip_dependency"
-            ]}
         ],
-        "environment": [
-            {"PATH": [
+        "environment": {
+            "PATH": [
                 "a_path"
-            ]}
-        ]
+            ]
+        }
     }
 
     assert dicts["b"] == {
         "name": "b",
         "dependencies": [
             "b_dependency",
-            {"pip": [
-                "b_pip_dependency"
-            ]}
         ],
-        "environment": [
-            {"PATH": [
+        "environment": {
+            "PATH": [
                 "b_path"
-            ]}
-        ],
+            ]
+        },
         "channels": [
             "b_channel",
         ],

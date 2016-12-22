@@ -16,7 +16,7 @@ def render_jinja(contents, filename):
 
 
 def handle_includes(root_yaml):
-    # This is a breadth-first search
+    # This is a depth-first search
     import yaml
     queue = {"root": root_yaml}
     visited = {}
@@ -48,7 +48,9 @@ def merge(dicts, keys_to_skip=('name',)):
             if key in final_dict:
                 if key in keys_to_skip:
                     continue
-                if isinstance(value, list):
+                if isinstance(value, dict):
+                    final_dict[key] = merge([final_dict[key], value])
+                elif isinstance(value, list):
                     final_dict[key].extend(value)
                 else:
                     message = "Can't merge the key: '{key}' because it will override the previous value. " \
@@ -79,10 +81,6 @@ def main():
 
     parser.add_argument("--print", help="Only prints the rendered file to stdout and exits.",
                         action="store_true")
-
-    # 0 - jinja
-    # 1 - includes
-    # 2 - environment
 
     args = parser.parse_args()
 
