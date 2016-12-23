@@ -6,7 +6,7 @@ flake8
 tox
 coverage
 Sphinx
-cryptography
+cryptography==1.7.1
 PyYAML
 pytest
 pytest-datadir
