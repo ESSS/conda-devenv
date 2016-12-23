@@ -181,7 +181,8 @@ def __call_conda_env_update(args, output_filename):
         command.append("--prune")
     if args.name:
         command.extend(["--name", args.name])
-    print("> Executing: %s" % ' '.join(command))
+    if not args.quiet:
+        print("> Executing: %s" % ' '.join(command))
     return subprocess.call(command)
 
 
@@ -221,6 +222,7 @@ def main():
     parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true")
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
     parser.add_argument("--force", action="store_true", help="Overrides the output file, even if it already exists.")
+    parser.add_argument("--quiet", action="store_true", default=False)
 
     args = parser.parse_args()
 
