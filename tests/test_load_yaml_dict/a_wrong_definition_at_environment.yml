@@ -1,0 +1,4 @@
+name: a_wrong_definition
+environment:
+  - PATH:
+    - b_path

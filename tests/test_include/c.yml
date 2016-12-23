@@ -1,0 +1,5 @@
+name: c
+channels:
+  - c_channel
+includes:
+  - {{ root }}/b.yml
