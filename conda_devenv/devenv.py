@@ -8,11 +8,13 @@ import sys
 def render_jinja(contents, filename):
     import jinja2
     import sys
+    import platform
 
     jinja_dict = {
         "root": os.path.dirname(os.path.abspath(filename)),
         "os": os,
         "sys": sys,
+        "platform": platform,
     }
 
     return jinja2.Template(contents).render(**jinja_dict)

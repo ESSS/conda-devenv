@@ -2,6 +2,7 @@ import os
 import textwrap
 
 import jinja2
+import platform
 import pytest
 import sys
 
@@ -49,6 +50,11 @@ def test_jinja_sys(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'darwin')
     assert render_jinja(template, filename="") == "others!"
+
+
+def test_jinja_platform(monkeypatch):
+    template = "{{ platform.python_revision() }}"
+    assert render_jinja(template, filename="") == platform.python_revision()
 
 
 def test_jinja_invalid_template():
