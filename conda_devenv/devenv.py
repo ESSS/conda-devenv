@@ -118,7 +118,11 @@ def render_activate_script(environment, shell):
     script = []
     if shell == "bash":
         script = ["#!/bin/bash"]
-    for variable, value in environment.items():
+    elif shell == "cmd":
+        script = ["@echo off"]
+
+    for variable in sorted(environment):
+        value = environment[variable]
         if shell == "bash":
             pathsep = ":"
 
@@ -167,7 +171,10 @@ def render_deactivate_script(environment, shell='bash'):
     script = []
     if shell == "bash":
         script = ["#!/bin/bash"]
-    for variable in environment.keys():
+    elif shell == "cmd":
+        script = ["@echo off"]
+
+    for variable in sorted(environment):
         if shell == "bash":
             script.append("export {variable}=$CONDA_DEVENV_BKP_{variable}".format(variable=variable))
             script.append("unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
