@@ -103,45 +103,80 @@ def render_for_conda_env(yaml_dict):
     return yaml.dump(yaml_dict, default_flow_style=False)
 
 
-def render_activate_script(environment):
+def render_activate_script(environment, shell):
+    """
+    :param dict environment:
+    :param string shell:
+        Valid values are:
+            - bash
+            - fish
+            - cmd
+    :return: string
+    """
     script = []
-    if sys.platform.startswith("linux"):
-        script = ["#!/bin/sh"]
+    if shell == "bash":
+        script = ["#!/bin/bash"]
     for variable, value in environment.items():
-        if sys.platform.startswith("linux"):
+        if shell == "bash":
+            pathsep = ":"
+
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = os.pathsep.join(value) + os.pathsep + "${variable}".format(variable=variable)
+                value = pathsep.join(value) + pathsep + "${variable}".format(variable=variable)
 
             script.append("export CONDA_DEVENV_BKP_{variable}=${variable}".format(variable=variable))
             script.append("export {variable}=\"{value}\"".format(variable=variable, value=value))
 
-        elif sys.platform.startswith("win"):
+        elif shell == "cmd":
+            pathsep = ";"
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = os.pathsep.join(value) + os.pathsep + "%{variable}%".format(variable=variable)
+                value = pathsep.join(value) + pathsep + "%{variable}%".format(variable=variable)
 
             script.append("set CONDA_DEVENV_BKP_{variable}=%{variable}%".format(variable=variable))
             script.append("set {variable}=\"{value}\"".format(variable=variable, value=value))
 
+        elif shell == "fish":
+            quote = '"'
+            if isinstance(value, list):
+                # Lists are supposed to prepend to the existing value
+                if variable == "PATH":
+                    # HACK: Fish handles the PATH variable in a different way
+                    # than other variables. So it needs a specific syntax to add
+                    # values to PATH
+                    pathsep = " "
+                    quote = ""
+                else:
+                    pathsep = ":"
+                value = pathsep.join(value) + pathsep + ("$%s" % variable)
+
+            script.append("set -gx CONDA_DEVENV_BKP_{variable} ${variable}".format(variable=variable))
+            script.append("set -gx {variable} {quote}{value}{quote}".format(
+                    variable=variable, value=value, quote=quote
+                ))
+
         else:
-            raise ValueError("Unknown platform")
+            raise ValueError("Unknown shell: %s" % shell)
 
-    return '\n'.join(script)
+    return "\n".join(script)
 
 
-def render_deactivate_script(environment):
+def render_deactivate_script(environment, shell='bash'):
     script = []
-    if sys.platform.startswith("linux"):
-        script = ["#!/bin/sh"]
+    if shell == "bash":
+        script = ["#!/bin/bash"]
     for variable in environment.keys():
-        if sys.platform.startswith("linux"):
+        if shell == "bash":
             script.append("export {variable}=$CONDA_DEVENV_BKP_{variable}".format(variable=variable))
             script.append("unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
 
-        elif sys.platform.startswith("win"):
+        elif shell == "cmd":
             script.append("set {variable}=%CONDA_DEVENV_BKP_{variable}%".format(variable=variable))
             script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
+
+        elif shell == "fish":
+            script.append("set -gx {variable} $CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+            script.append("set -e CONDA_DEVENV_BKP_{variable}".format(variable=variable))
 
         else:
             raise ValueError("Unknown platform")
@@ -194,9 +229,6 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
 
     env_directory = join(conda_root, "envs", env_name)
 
-    activate_script = render_activate_script(environment)
-    deactivate_script = render_deactivate_script(environment)
-
     activate_directory = join(env_directory, "etc", "conda", "activate.d")
     deactivate_directory = join(env_directory, "etc", "conda", "deactivate.d")
 
@@ -205,11 +237,19 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     if not os.path.exists(deactivate_directory):
         os.makedirs(deactivate_directory)
 
-    extension = ".bat" if sys.platform.startswith("win") else ".sh"
-    with open(join(activate_directory, "devenv-vars" + extension), "w") as f:
-        f.write(activate_script)
-    with open(join(deactivate_directory, "devenv-vars" + extension), "w") as f:
-        f.write(deactivate_script)
+    if sys.platform.startswith("linux"):
+        files = [("devenv-vars.sh", "bash"), ("devenv-vars.fish", "fish")]
+    else:
+        files = [("devenv-vars.bat", "cmd")]
+
+    for filename, shell in files:
+        activate_script = render_activate_script(environment, shell)
+        deactivate_script = render_deactivate_script(environment, shell)
+
+        with open(join(activate_directory, filename), "w") as f:
+            f.write(activate_script)
+        with open(join(deactivate_directory, filename), "w") as f:
+            f.write(deactivate_script)
 
 
 def main():
