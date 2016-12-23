@@ -197,10 +197,15 @@ def __write_conda_environment_file(args, filename, rendered_contents):
     if args.output_file:
         output_filename = args.output_file
     else:
-        output_filename = filename.rstrip(".devenv.yml") + ".yml"
-        if output_filename.endswith(".yml.yml"):
-            raise ValueError("Can't guess the output file, please provide the output file with the --output-filename "
+        output_filename, yaml_ext = os.path.splitext(filename)
+        output_filename, devenv_ext = os.path.splitext(output_filename)
+        if yaml_ext == "" or devenv_ext == "":
+            # File has no extension or has a single extension, if we proceed we
+            # will override the input file
+            raise ValueError("Can't guess the output filename, please provide "
+                             "the output filename with the --output-filename "
                              "flag")
+        output_filename += yaml_ext
 
     with open(output_filename, 'w') as f:
         f.write(rendered_contents)
