@@ -44,11 +44,5 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_
         exception_message_start = "The 'environment' key is supposed to be a dictionary, but you have the type " \
                                   "'<type 'list'>' at "
 
-    # use startswith() because the full path of the filename is at the exception message
-    assert str(e.value).startswith(exception_message_start)
-
-    # Grab the filename from the exception message
-    begin = len(exception_message_start)
-    end = str(e.value).rindex("'")
-    full_path_filename = str(e.value)[begin:end]
-    assert os.path.split(full_path_filename)[1] == "a_wrong_definition_at_environment.yml"
+    assert exception_message_start in str(e.value)
+    assert "a_wrong_definition_at_environment.yml" in str(e.value)
