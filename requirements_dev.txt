@@ -9,4 +9,4 @@ Sphinx
 cryptography
 PyYAML
 pytest
-pytest-datadir
+pytest-datadir==0.2.0
