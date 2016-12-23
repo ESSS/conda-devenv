@@ -204,8 +204,10 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     activate_directory = join(env_directory, "etc", "conda", "activate.d")
     deactivate_directory = join(env_directory, "etc", "conda", "deactivate.d")
 
-    os.makedirs(activate_directory, exist_ok=True)
-    os.makedirs(deactivate_directory, exist_ok=True)
+    if not os.path.exists(activate_directory):
+        os.makedirs(activate_directory)
+    if not os.path.exists(deactivate_directory):
+        os.makedirs(deactivate_directory)
 
     extension = ".bat" if sys.platform.startswith("win") else ".sh"
     with open(join(activate_directory, "devenv-vars" + extension), "w") as f:
