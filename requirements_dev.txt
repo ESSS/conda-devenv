@@ -8,5 +8,5 @@ coverage
 Sphinx
 cryptography
 PyYAML
-pytest
+pytest==3.0.5
 pytest-datadir
