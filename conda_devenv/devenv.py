@@ -236,17 +236,18 @@ def __call_conda_env_update(args, output_filename):
 def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     env_name = args.name or conda_yaml_dict["name"]
 
-    import conda_api
-    def get_conda_root_prefix():
-        import subprocess
-        import json
-        info = subprocess.check_output(['conda', 'info', '--json'])
-        info = json.loads(info.decode())
-        return info['root_prefix']
-    conda_prefix = get_conda_root_prefix()
-    conda_api.set_root_prefix(prefix=conda_prefix)
-    env_directory = conda_api.get_prefix_envname(env_name)
-    if env_directory is None:
+    import subprocess
+    import json
+    info = subprocess.check_output(["conda", "info", "--json"]).decode()
+    info = json.loads(info)
+    envs = info["envs"]
+
+    env_directory = None
+    for env in envs:
+        if os.path.basename(env) == env_name:
+            env_directory = env
+            break
+    else:
         raise ValueError("Couldn't find directory of environment '%s'" % env_name)
 
     from os.path import join

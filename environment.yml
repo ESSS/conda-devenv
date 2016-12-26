@@ -4,7 +4,6 @@ dependencies:
   - python
   - jinja2
   - pyyaml
-  - conda-api
   # for testing
   - pytest
   - pytest-datadir
