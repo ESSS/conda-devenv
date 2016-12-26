@@ -54,7 +54,7 @@ def test_render_activate_and_deactivate_scripts_cmd(single_values, multiple_valu
     assert render_activate_script(single_values, "cmd") == textwrap.dedent("""\
         @echo off
         set CONDA_DEVENV_BKP_VALUE=%VALUE%
-        set VALUE="value"
+        set VALUE=value
         """).strip()
     assert render_activate_script(multiple_values, "cmd") == textwrap.dedent("""\
         @echo off
