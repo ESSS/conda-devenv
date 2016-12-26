@@ -23,14 +23,17 @@ def test_load_yaml_dict(datadir):
 
 
 def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir):
+    filename = datadir["a_wrong_definition_at_environment.yml"]
     with pytest.raises(ValueError) as e:
-        load_yaml_dict(datadir["a_wrong_definition_at_environment.yml"])
+        load_yaml_dict(filename)
+
     if sys.version_info >= (3,):
-        assert str(e.value) == "The 'environment' key is supposed to be a dictionary, but you have the type " \
-                               "'<class 'list'>' at 'root'."
+        exception_message_start = "The 'environment' key is supposed to be a dictionary, but you have the type " \
+                                  "'<class 'list'>' at "
     else:
-        assert str(e.value) == "The 'environment' key is supposed to be a dictionary, but you have the type " \
-                               "'<type 'list'>' at 'root'."
+        exception_message_start = "The 'environment' key is supposed to be a dictionary, but you have the type " \
+                                  "'<type 'list'>' at "
+    assert exception_message_start in str(e.value)
 
 
 def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_file_to_exception_message(datadir):
