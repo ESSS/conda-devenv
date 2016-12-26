@@ -33,6 +33,7 @@ def handle_includes(root_filename, root_yaml):
             continue
 
         for included_filename in yaml_dict.get("includes", []):
+            included_filename = os.path.abspath(included_filename)
             if not os.path.isfile(included_filename):
                 raise ValueError(
                     "Couldn't find the file '{included_filename}' "
@@ -294,6 +295,7 @@ def main():
     args = parser.parse_args()
 
     filename = args.file
+    filename = os.path.abspath(filename)
 
     conda_yaml_dict, environment = load_yaml_dict(filename)
     rendered_contents = render_for_conda_env(conda_yaml_dict)
