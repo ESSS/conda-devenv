@@ -141,8 +141,8 @@ def render_activate_script(environment, shell):
                 # Lists are supposed to prepend to the existing value
                 value = pathsep.join(value) + pathsep + "%{variable}%".format(variable=variable)
 
-            script.append("set CONDA_DEVENV_BKP_{variable}=%{variable}%".format(variable=variable))
-            script.append("set {variable}={value}".format(variable=variable, value=value))
+            script.append("set \"CONDA_DEVENV_BKP_{variable}=%{variable}%\"".format(variable=variable))
+            script.append("set \"{variable}={value}\"".format(variable=variable, value=value))
 
         elif shell == "fish":
             quote = '"'
@@ -182,7 +182,7 @@ def render_deactivate_script(environment, shell='bash'):
             script.append("unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
 
         elif shell == "cmd":
-            script.append("set {variable}=%CONDA_DEVENV_BKP_{variable}%".format(variable=variable))
+            script.append("set \"{variable}=%CONDA_DEVENV_BKP_{variable}%\"".format(variable=variable))
             script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
 
         elif shell == "fish":
