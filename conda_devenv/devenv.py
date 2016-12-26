@@ -142,7 +142,7 @@ def render_activate_script(environment, shell):
                 value = pathsep.join(value) + pathsep + "%{variable}%".format(variable=variable)
 
             script.append("set CONDA_DEVENV_BKP_{variable}=%{variable}%".format(variable=variable))
-            script.append("set {variable}=\"{value}\"".format(variable=variable, value=value))
+            script.append("set \"{variable}={value}\"".format(variable=variable, value=value))
 
         elif shell == "fish":
             quote = '"'
