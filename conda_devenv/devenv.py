@@ -142,7 +142,7 @@ def render_activate_script(environment, shell):
                 value = pathsep.join(value) + pathsep + "%{variable}%".format(variable=variable)
 
             script.append("set CONDA_DEVENV_BKP_{variable}=%{variable}%".format(variable=variable))
-            script.append("set \"{variable}={value}\"".format(variable=variable, value=value))
+            script.append("set {variable}={value}".format(variable=variable, value=value))
 
         elif shell == "fish":
             quote = '"'
@@ -234,17 +234,23 @@ def __call_conda_env_update(args, output_filename):
 
 
 def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
-    import subprocess
     env_name = args.name or conda_yaml_dict["name"]
-    conda_root = subprocess.check_output(["conda", "info", "--root"])
-    if sys.version_info >= (3, 0, 0):
-        conda_root = conda_root.decode("utf-8")
-    conda_root = conda_root.strip()
+
+    import subprocess
+    import json
+    info = subprocess.check_output(["conda", "info", "--json"]).decode()
+    info = json.loads(info)
+    envs = info["envs"]
+
+    env_directory = None
+    for env in envs:
+        if os.path.basename(env) == env_name:
+            env_directory = env
+            break
+    else:
+        raise ValueError("Couldn't find directory of environment '%s'" % env_name)
 
     from os.path import join
-
-    env_directory = join(conda_root, "envs", env_name)
-
     activate_directory = join(env_directory, "etc", "conda", "activate.d")
     deactivate_directory = join(env_directory, "etc", "conda", "deactivate.d")
 
