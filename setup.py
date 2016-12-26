@@ -21,7 +21,7 @@ test_requirements = [
 
 setup(
     name='conda_devenv',
-    version='0.1.0',
+    version='0.2.0',
     description="Work with multiple projects in develop-mode using conda-env",
     long_description=readme + '\n\n' + history,
     author="Edison Gustavo Muenz",
