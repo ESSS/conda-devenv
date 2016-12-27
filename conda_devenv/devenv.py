@@ -237,8 +237,12 @@ def __call_conda_env_update(args, output_filename):
         command.append("--prune")
     if args.name:
         command.extend(["--name", args.name])
+    if args.quiet:
+        command.extend(["--quiet"])
+
     if not args.quiet:
         print("> Executing: %s" % ' '.join(command))
+
     return subprocess.call(command)
 
 
