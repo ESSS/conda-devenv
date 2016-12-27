@@ -1,5 +1,4 @@
 import pytest
-import os
 
 import yaml
 
@@ -103,3 +102,14 @@ def test_include_file_with_relative_includes(datadir):
 
     assert len(dicts) == 3
     assert sorted(dicts.keys()) == ["proj1", "proj2", "set_variable"]
+
+
+def test_include_empty_file(datadir):
+    datadir["empty_file.yml"]
+    datadir["includes_empty_file.yml"]
+
+    with pytest.raises(ValueError):
+        obtain_yaml_dicts(datadir["includes_empty_file.yml"])
+
+    with pytest.raises(ValueError):
+        obtain_yaml_dicts(datadir["empty_file.yml"])

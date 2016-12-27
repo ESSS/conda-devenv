@@ -1,0 +1,3 @@
+name: includes_empty_file
+includes:
+  - {{root}}/empty_file.yml

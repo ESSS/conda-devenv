@@ -27,6 +27,10 @@ def handle_includes(root_filename, root_yaml):
     queue = collections.OrderedDict({root_filename: root_yaml})
     visited = collections.OrderedDict()
 
+    if root_yaml is None:
+        raise ValueError("The root file '{root_filename}' is empty."
+                         .format(root_filename=root_filename))
+
     while queue:
         filename, yaml_dict = queue.popitem()
         if filename in visited:
@@ -45,6 +49,13 @@ def handle_includes(root_filename, root_yaml):
             with open(included_filename, "r") as f:
                 jinja_contents = render_jinja(f.read(), included_filename)
             included_yaml_dict = yaml.load(jinja_contents)
+            if included_yaml_dict is None:
+                raise ValueError("The file '{included_filename}' which was"
+                                 " included by '{filename}' is empty."
+                                 .format(
+                                     included_filename=included_filename,
+                                     filename=filename
+                                 ))
             queue[included_filename] = included_yaml_dict
 
         if "includes" in yaml_dict:
