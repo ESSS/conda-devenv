@@ -20,11 +20,11 @@ def render_jinja(contents, filename):
     return jinja2.Template(contents).render(**jinja_dict)
 
 
-def handle_includes(root_yaml):
+def handle_includes(root_filename, root_yaml):
     # This is a depth-first search
     import yaml
     import collections
-    queue = collections.OrderedDict({"root": root_yaml})
+    queue = collections.OrderedDict({root_filename: root_yaml})
     visited = collections.OrderedDict()
 
     while queue:
@@ -33,6 +33,14 @@ def handle_includes(root_yaml):
             continue
 
         for included_filename in yaml_dict.get("includes", []):
+            if not os.path.isfile(included_filename):
+                raise ValueError(
+                    "Couldn't find the file '{included_filename}' "
+                    "while processing the file '{filename}'."
+                    .format(
+                        included_filename=included_filename,
+                        filename=filename
+                    ))
             with open(included_filename, "r") as f:
                 jinja_contents = render_jinja(f.read(), included_filename)
             included_yaml_dict = yaml.load(jinja_contents)
@@ -83,7 +91,7 @@ def load_yaml_dict(filename):
     import yaml
     root_yaml = yaml.load(rendered_contents)
 
-    all_yaml_dicts = handle_includes(root_yaml)
+    all_yaml_dicts = handle_includes(filename, root_yaml)
 
     for filename, yaml_dict in all_yaml_dicts.items():
         environment_key_value = yaml_dict.get("environment", {})
