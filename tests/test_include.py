@@ -1,4 +1,6 @@
 import pytest
+import os
+
 import yaml
 
 from conda_devenv.devenv import handle_includes, render_jinja
@@ -12,7 +14,10 @@ def obtain_yaml_dicts(root_yaml_filename):
     dicts = list(dicts)
 
     # The list order does not matter, so we can"t use indices to fetch each item
+    number_of_parsed_yamls = len(dicts)
     dicts = {d["name"]: d for d in dicts}
+    # Make sure we're not removing any parsed yamls
+    assert len(dicts) == number_of_parsed_yamls
     return dicts
 
 
@@ -85,3 +90,16 @@ def test_include_non_existent_file(datadir):
         obtain_yaml_dicts(datadir["includes_non_existent_file.yml"])
     assert "includes_non_existent_file.yml" in str(e)
     assert "non_existent_file.yml" in str(e)
+
+
+def test_include_file_with_relative_includes(datadir):
+    datadir["proj1"]
+    datadir["proj2"]
+    datadir["proj1/relative_include.yml"]
+    datadir["proj2/relative_include.yml"]
+    datadir["set_variable.yml"]
+
+    dicts = obtain_yaml_dicts(datadir["proj1/relative_include.yml"])
+
+    assert len(dicts) == 3
+    assert sorted(dicts.keys()) == ["proj1", "proj2", "set_variable"]

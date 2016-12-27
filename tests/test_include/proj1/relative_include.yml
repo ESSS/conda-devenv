@@ -1,0 +1,4 @@
+name: proj1
+includes:
+  - {{ root }}/../proj2/relative_include.yml
+  - {{ root }}/../set_variable.yml
