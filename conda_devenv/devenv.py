@@ -82,6 +82,8 @@ def merge(dicts, keys_to_skip=('name',)):
                     s.update(final_dict[key])
                     s.update(value)
                     final_dict[key] = sorted(list(s))
+                elif value is None:
+                    continue
                 else:
                     message = "Can't merge the key: '{key}' because it will override the previous value. " \
                               "Only lists and dicts can be merged. The type obtained was: {type}"\
@@ -90,7 +92,7 @@ def merge(dicts, keys_to_skip=('name',)):
                             type=type(value)
                         )
                     raise ValueError(message)
-            else:
+            elif value is not None:
                 final_dict[key] = value
     return final_dict
 
