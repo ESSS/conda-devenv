@@ -46,3 +46,45 @@ def test_merge():
             ]
         }
     }
+
+
+def test_merge_empty_dependencies():
+    """
+    This happens when an environment file is declared like this:
+
+    name: foo
+    dependencies:
+    {% if False %}
+      - dependency
+    {% endif %}
+    """
+    assert merge([
+        {"name": "a",
+         "dependencies": []}
+        ,
+        {"name": "b",
+         "dependencies": None}
+        ,
+    ]) == {
+        "dependencies": [],
+    }
+
+    assert merge([
+        {"name": "b",
+         "dependencies": None}
+        ,
+        {"name": "a",
+         "dependencies": []}
+        ,
+    ]) == {
+        "dependencies": [],
+    }
+
+    assert merge([
+        {"name": "b",
+         "dependencies": None}
+        ,
+        {"name": "a",
+         "dependencies": None}
+        ,
+    ]) == {}
