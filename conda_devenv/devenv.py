@@ -300,7 +300,9 @@ def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
             f.write(deactivate_script)
 
 
-def main(args):
+def main(args=None):
+    if args is None:
+        args = sys.argv[1:]
     parser = argparse.ArgumentParser(description="Work with multiple conda-environment-like yaml files in dev mode.")
     parser.add_argument("--file", "-f", nargs="?", help="The environment.devenv.yml file to process. The default value is '%(default)s'.", default="environment.devenv.yml")
     parser.add_argument("--name", "-n", nargs="?", help="Name of environment.")
@@ -345,4 +347,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main())
