@@ -259,7 +259,7 @@ def __call_conda_env_update(args, output_filename):
     return subprocess.call(command)
 
 
-def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
+def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     env_name = args.name or conda_yaml_dict["name"]
 
     import subprocess
@@ -300,37 +300,49 @@ def __write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
             f.write(deactivate_script)
 
 
-def main():
+def main(args):
     parser = argparse.ArgumentParser(description="Work with multiple conda-environment-like yaml files in dev mode.")
-    parser.add_argument("--file", "-f", nargs="?", help="The environment.devenv.yml file to process. The default value is 'environment.devenv.yml'.", default="environment.devenv.yml")
+    parser.add_argument("--file", "-f", nargs="?", help="The environment.devenv.yml file to process. The default value is '%(default)s'.", default="environment.devenv.yml")
     parser.add_argument("--name", "-n", nargs="?", help="Name of environment.")
     parser.add_argument("--print", help="Only prints the rendered file to stdout and exits.", action="store_true")
     parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true")
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
     parser.add_argument("--quiet", action="store_true", default=False)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     filename = args.file
     filename = os.path.abspath(filename)
 
-    conda_yaml_dict, environment = load_yaml_dict(filename)
-    rendered_contents = render_for_conda_env(conda_yaml_dict)
+    is_devenv_input_file = filename.endswith('.devenv.yml')
+    if is_devenv_input_file:
+        # render conda-devenv file
+        conda_yaml_dict, environment = load_yaml_dict(filename)
+        rendered_contents = render_for_conda_env(conda_yaml_dict)
 
-    if args.print:
-        print(rendered_contents)
-        return
+        if args.print:
+            print(rendered_contents)
+            return 0
 
-    # Write to the output file
-    output_filename = __write_conda_environment_file(args, filename, rendered_contents)
+        # Write to the output file
+        output_filename = __write_conda_environment_file(args, filename, rendered_contents)
+    else:
+        # Just call conda-env directly in plain environment.yml files
+        output_filename = filename
+        if args.print:
+            with open(filename) as f:
+                print(f.read())
+            return 0
 
     # Call conda-env update
     retcode = __call_conda_env_update(args, output_filename)
     if retcode != 0:
-        sys.exit(retcode)
+        return retcode
 
-    __write_activate_deactivate_scripts(args, conda_yaml_dict, environment)
+    if is_devenv_input_file:
+        write_activate_deactivate_scripts(args, conda_yaml_dict, environment)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv[1:]))
