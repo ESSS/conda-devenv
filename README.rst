@@ -28,7 +28,7 @@ processes ``environment.yml`` files, with this additional features:
 
 Here's a simple ``environment.devenv.yml`` file:
 
-.. code-block:: yml
+.. code-block:: yaml
 
     {% set conda_py = os.environ.get('CONDA_PY', '35') %}
     name: web-ui-py{{ conda_py }}
