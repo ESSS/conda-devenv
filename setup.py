@@ -21,10 +21,10 @@ test_requirements = [
 
 setup(
     name='conda_devenv',
-    version='0.8.1',
+    version='0.9.0',
     description="Work with multiple projects in develop-mode using conda-env",
     long_description=readme + '\n\n' + history,
-    author="Edison Gustavo Muenz",
+    author="Edison Gustavo Muenz and others",
     author_email='edisongustavo@gmail.com',
     url='https://github.com/ESSS/conda-devenv',
     packages=[
@@ -39,7 +39,7 @@ setup(
                  'conda_devenv'},
     include_package_data=True,
     install_requires=requirements,
-    license="MIT license",
+    license="MIT",
     zip_safe=False,
     keywords='conda_devenv',
     classifiers=[
