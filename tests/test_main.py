@@ -56,3 +56,26 @@ def test_print(tmpdir, input_name, capsys):
     out, err = capsys.readouterr()
     assert 'dependencies:' in out
     assert 'name: a' in out
+
+
+@pytest.mark.usefixtures('patch_conda_calls')
+def test_print_full(tmpdir, capsys):
+    """
+    Test --print option for different types of inputs.
+    """
+    filename = tmpdir.join('environment.devenv.yml')
+    filename.write(textwrap.dedent('''\
+        name: a
+        dependencies:
+          - a_dependency
+        environment:
+          PYTHONPATH: {{ root }}/source
+    '''))
+    assert devenv.main(['--file', str(filename), '--quiet', '--print-full']) == 0
+    out, err = capsys.readouterr()
+    assert err == ''
+    assert 'dependencies:' in out
+    assert 'name: a' in out
+    assert 'environment:' in out
+    assert 'PYTHONPATH:' in out
+

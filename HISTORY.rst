@@ -2,6 +2,12 @@
 History
 =======
 
+
+0.9.0 (2017-03-17)
+------------------
+
+* New option ``--print-full``, which also prints the expanded ``environment:`` section.
+
 0.8.1 (2017-03-16)
 ------------------
 
