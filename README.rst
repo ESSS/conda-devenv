@@ -2,102 +2,77 @@
 conda-devenv
 ============
 
-
-.. image:: https://img.shields.io/pypi/v/conda-devenv.svg
-        :target: https://pypi.python.org/pypi/conda-devenv
-
 .. image:: https://img.shields.io/travis/ESSS/conda-devenv.svg
-        :target: https://travis-ci.org/ESSS/conda-devenv
+    :target: https://travis-ci.org/ESSS/conda-devenv
 
 .. image:: https://readthedocs.org/projects/conda-devenv/badge/?version=latest
-        :target: https://conda-devenv.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
+    :target: https://conda-devenv.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
 
-.. image:: https://pyup.io/repos/github/esss/conda-devenv/shield.svg
-     :target: https://pyup.io/repos/github/esss/conda-devenv/
-     :alt: Updates
+.. image:: https://anaconda.org/conda-forge/conda-devenv/badges/version.svg
+    :target: https://anaconda.org/conda-forge/conda-devenv
 
+``conda-devenv`` is ``conda`` extension to work with multiple projects in development mode.
 
-A tool to work with multiple projects in develop-mode using conda-env.
+It works by processing ``environment.devenv.yml`` files, similar to how ``conda env``
+processes ``environment.yml`` files, with this additional features:
 
-.. code-block:: console
+* `Jinja 2 <http://jinja.pocoo.org/docs/2.9/>`_ support: gives more flexibility to the environment
+  definition, for example making it simple to conditionally add dependencies based on platform.
 
-    $ cat environment.devenv.yml
-    {% set CONDA_PY = os.environ.get('CONDA_PY', '27') %}
-    name: awesome-project-py{{ CONDA_PY }}
+* ``include`` other ``environment.devenv.yml`` files: this allows you to easily work in several
+  dependent projects at the same time, managing a single ``conda`` environment with your dependencies.
+
+* **Environment variables**: you can define a ``environment:`` section with environment variables
+  that should be defined when the environment is activated.
+
+Here's a simple ``environment.devenv.yml`` file:
+
+.. code-block:: yaml
+
+    {% set conda_py = os.environ.get('CONDA_PY', '35') %}
+    name: web-ui-py{{ conda_py }}
 
     includes:
-      - {{ root }}/../other-project/environment.devenv.yml
+      - {{ root }}/../core-business/environment.devenv.yml
 
     dependencies:
       {% if sys.platform.startswith('linux') %}
       - gcc
-      - ccache
-      {% else %}
-      - clcache=3*
-
-    environment:
-      PYTHONPATH:
-        - {{ root }}/source/python
-
-      {% if sys.platform.startswith('linux') %}
-      CCACHE_BASEDIR: {{ os.path.abspath(os.path.join(root, '..', '..')) }}
-      CC: ccache gcc
-      CXX: ccache g++
-      LD_LIBRARY_PATH:
-        - {{ root }}/artifacts-py{{ CONDA_PY }}/libs
-
-      {% else %}
-      PATH:
-        - {{ root }}\artifacts-py{{ CONDA_PY }}\libs
-      CLCACHE_BASEDIR: {{ os.path.abspath(os.path.join(root, '..', '..')) }}
-      CLCACHE_NODIRECT: 1
-      CLCACHE_OBJECT_CACHE_TIMEOUT_MS: 3600000
-      CC: clcache
-      CXX: clcache
-
       {% endif %}
 
-    $ cat ../other-project/environment.devenv.yml
-    name: other-project
-    dependencies:
-      - jinja2
-
     environment:
       PYTHONPATH:
-        - {{ root }}/source/python
+        - {{ root }}/src
+      STAGE: DEVELOPMENT
 
+
+To use this file, execute:
+
+.. code-block:: console
+
+    $ cd ~/projects/web-ui
     $ conda devenv
     > Executing: conda env update --file environment.yml --prune
     Fetching package metadata .........
     Solving package specifications: ..........
     Linking packages ...
-    [      COMPLETE      ]|#################################################################################################################################################################| 100%
+    [      COMPLETE      ]|############################| 100%
     #
     # To activate this environment, use:
-    # > source activate awesome-project-py27
+    # > source activate web-ui-py35
     #
     # To deactivate this environment, use:
-    # > source deactivate awesome-project-py27
+    # > source deactivate web-ui-py35
     #
 
-    $ source activate awesome-project-py27
+    $ source activate web-ui-py35
 
     $ env PYTHONPATH
-    env PYTHONPATH
-    /home/muenz/Projects/temp/other-project/source/python
-    /home/muenz/Projects/temp/awesome-project/source/python
+    /home/user/projects/web-ui/src
 
-    $ echo $CC
-    ccache gcc
-
-
-Features
---------
-
-* Jinja2 support
-* Include other *.devenv.yml files
-* Environment variables
+    $ echo $STAGE
+    DEVELOPMENT
 
 License
 -------
@@ -105,5 +80,7 @@ Free software: MIT license
 
 Documentation
 -------------
+
+(soon)
 
 https://conda-devenv.readthedocs.io.
