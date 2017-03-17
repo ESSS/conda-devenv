@@ -1,9 +1,0 @@
-name: conda-devenv
-dependencies:
-#  - conda >=4.1.0
-  - python
-  - jinja2
-  - pyyaml
-  # for testing
-  - pytest
-  - pytest-datadir
