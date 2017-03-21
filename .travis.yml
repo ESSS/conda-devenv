@@ -5,6 +5,7 @@ env:
   - TOXENV=py34
   - TOXENV=py35
   - TOXENV=linting
+  - TOXENV=docs
 
 python:
   - "3.5"
