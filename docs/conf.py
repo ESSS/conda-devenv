@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'conda-devenv'
-copyright = u"2016, Edison Gustavo Muenz"
+copyright = u"2016, ESSS"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -142,7 +142,7 @@ html_theme = 'default'
 # here, relative to this directory. They are copied after the builtin
 # static files, so a file named "default.css" will overwrite the builtin
 # "default.css".
-html_static_path = ['_static']
+#html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page
 # bottom, using the given strftime format.
@@ -273,3 +273,11 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
+
+suppress_warnings = [
+    # we include the README file into the docs, which contains nonlocal-uri to images (travis badge, etc)
+    'image.nonlocal_uri',
+    # our yaml files include jinja, which is not valid yaml; leave it like this
+    # anyway because some syntax highlight still works
+    'misc.highlighting_failure',
+]
