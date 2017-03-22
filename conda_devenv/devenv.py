@@ -157,7 +157,9 @@ def render_activate_script(environment, shell):
                 # Lists are supposed to prepend to the existing value
                 value = pathsep.join(value) + pathsep + "${variable}".format(variable=variable)
 
-            script.append("export CONDA_DEVENV_BKP_{variable}=${variable}".format(variable=variable))
+            script.append("if [ ! -z ${{{variable}+x}} ]; then".format(variable=variable))
+            script.append("    export CONDA_DEVENV_BKP_{variable}=\"${variable}\"".format(variable=variable))
+            script.append("fi")
             script.append("export {variable}=\"{value}\"".format(variable=variable, value=value))
 
         elif shell == "cmd":
@@ -203,8 +205,12 @@ def render_deactivate_script(environment, shell='bash'):
 
     for variable in sorted(environment):
         if shell == "bash":
-            script.append("export {variable}=$CONDA_DEVENV_BKP_{variable}".format(variable=variable))
-            script.append("unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+            script.append("if [ ! -z ${{CONDA_DEVENV_BKP_{variable}+x}} ]; then".format(variable=variable))
+            script.append("    export {variable}=\"$CONDA_DEVENV_BKP_{variable}\"".format(variable=variable))
+            script.append("    unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+            script.append("else")
+            script.append("    unset {variable}".format(variable=variable))
+            script.append("fi")
 
         elif shell == "cmd":
             script.append("set \"{variable}=%CONDA_DEVENV_BKP_{variable}%\"".format(variable=variable))
