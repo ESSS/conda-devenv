@@ -23,29 +23,47 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
     # activate
     assert render_activate_script(single_values, "bash") == textwrap.dedent("""\
         #!/bin/bash
-        export CONDA_DEVENV_BKP_VALUE=$VALUE
+        if [ ! -z ${VALUE+x} ]; then
+            export CONDA_DEVENV_BKP_VALUE="$VALUE"
+        fi
         export VALUE="value"
         """).strip()
     assert render_activate_script(multiple_values, "bash") == textwrap.dedent("""\
         #!/bin/bash
-        export CONDA_DEVENV_BKP_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+        if [ ! -z ${LD_LIBRARY_PATH+x} ]; then
+            export CONDA_DEVENV_BKP_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
+        fi
         export LD_LIBRARY_PATH="path_a:path_b:$LD_LIBRARY_PATH"
-        export CONDA_DEVENV_BKP_PATH=$PATH
+        if [ ! -z ${PATH+x} ]; then
+            export CONDA_DEVENV_BKP_PATH="$PATH"
+        fi
         export PATH="path_a:path_b:$PATH"
         """).strip()
 
     # deactivate
     assert render_deactivate_script(single_values, "bash") == textwrap.dedent("""\
         #!/bin/bash
-        export VALUE=$CONDA_DEVENV_BKP_VALUE
-        unset CONDA_DEVENV_BKP_VALUE
+        if [ ! -z ${CONDA_DEVENV_BKP_VALUE+x} ]; then
+            export VALUE="$CONDA_DEVENV_BKP_VALUE"
+            unset CONDA_DEVENV_BKP_VALUE
+        else
+            unset VALUE
+        fi
         """).strip()
     assert render_deactivate_script(multiple_values, "bash") == textwrap.dedent("""\
         #!/bin/bash
-        export LD_LIBRARY_PATH=$CONDA_DEVENV_BKP_LD_LIBRARY_PATH
-        unset CONDA_DEVENV_BKP_LD_LIBRARY_PATH
-        export PATH=$CONDA_DEVENV_BKP_PATH
-        unset CONDA_DEVENV_BKP_PATH
+        if [ ! -z ${CONDA_DEVENV_BKP_LD_LIBRARY_PATH+x} ]; then
+            export LD_LIBRARY_PATH="$CONDA_DEVENV_BKP_LD_LIBRARY_PATH"
+            unset CONDA_DEVENV_BKP_LD_LIBRARY_PATH
+        else
+            unset LD_LIBRARY_PATH
+        fi
+        if [ ! -z ${CONDA_DEVENV_BKP_PATH+x} ]; then
+            export PATH="$CONDA_DEVENV_BKP_PATH"
+            unset CONDA_DEVENV_BKP_PATH
+        else
+            unset PATH
+        fi
         """).strip()
 
 

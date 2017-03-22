@@ -2,6 +2,14 @@
 History
 =======
 
+0.9.1 (2017-03-22)
+------------------
+
+* Fix activate and deactivate ``bash`` scripts: variables not in the environment before activation
+  are now properly unset after deactivation.
+
+* Fix activate and deactivate ``bash`` scripts: quote variables when exporting them.
+
 
 0.9.0 (2017-03-17)
 ------------------
