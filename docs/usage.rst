@@ -28,9 +28,9 @@ based python version, etc. For example:
 The following variables are available in the Jira 2 namespace:
 
 * ``root``: this is the full path to the directory containing the ``environment.devenv.yml`` file;
-* ``os``;
-* ``sys``;
-* ``platform``;
+* ``os``: standard module;
+* ``sys``: standard module;
+* ``platform``: standard module;
 
 
 Environment Variables
@@ -48,7 +48,7 @@ It is possible to define environment variables that should be configured in the 
       DB_LOCATION: https://localhost/dev
 
 Environment variables defined in *list form* (like ``PATH`` and ``PYTHONPATH`` above) will **append** to existing
-variables, using the appropriate separator for the platform (``:`` on Linux and ``;`` on Windows).
+variables, using the appropriate separator for the platform (``:`` on Linux/OSX and ``;`` on Windows).
 
 Environment variables defined as a single string (like ``DB_LOCATION`` above) will **overwrite** an existing
 variable with the same name.
@@ -113,7 +113,7 @@ Here's how ``conda-devenv`` works behind the scenes:
 1. Generate an ``environment.yml`` file in the same directory as the ``environment.devenv.yml`` file. The generated
    ``environment.yml`` should **not** be added to VCS.
 2. Call ``conda env update --prune --file environment.yml``.
-3. Generate ``devenv-activate.sh/.bat`` and ``devenv-deactivate.sh/.bat`` scripts in ``$PREFIX/etc/conda/activate.d``
+3. Generate ``devenv-activate{.sh,.bat}`` and ``devenv-deactivate{.sh,.bat}`` scripts in ``$PREFIX/etc/conda/activate.d``
    and ``$PREFIX/etc/conda/deactivate.d`` respectively which will set/unset the environment variables.
 
 
