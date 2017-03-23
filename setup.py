@@ -24,8 +24,7 @@ setup(
     version='0.9.0',
     description="Work with multiple projects in develop-mode using conda-env",
     long_description=readme + '\n\n' + history,
-    author="Edison Gustavo Muenz and others",
-    author_email='edisongustavo@gmail.com',
+    author="ESSS",
     url='https://github.com/ESSS/conda-devenv',
     packages=[
         'conda_devenv',
@@ -43,7 +42,7 @@ setup(
     zip_safe=False,
     keywords='conda_devenv',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
