@@ -91,3 +91,6 @@ ENV/
 
 # PyCharm
 .idea
+
+
+conda_devenv/_version.py
