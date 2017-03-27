@@ -74,13 +74,12 @@ To use this file, execute:
     $ echo $STAGE
     DEVELOPMENT
 
-License
--------
-Free software: MIT license
-
 Documentation
 -------------
 
-(soon)
-
 https://conda-devenv.readthedocs.io.
+
+
+License
+-------
+Free software: MIT license
