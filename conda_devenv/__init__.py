@@ -1,5 +1,3 @@
 # -*- coding: utf-8 -*-
-
-__author__ = """Edison Gustavo Muenz"""
-__email__ = 'edisongustavo@gmail.com'
-__version__ = '0.8.1'
+from ._version import version
+__version__ = version
