@@ -65,7 +65,7 @@ Ready to contribute? Here's how to set up `conda-devenv` for local development.
 3. Create a new conda environment for developing::
 
     $ conda create -n devenv --file requirements_dev.txt
-    $ conda develop %CD%\conda_devenv
+    $ conda develop conda_devenv
 
 4. Create a branch for local development::
 
