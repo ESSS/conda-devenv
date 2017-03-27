@@ -21,7 +21,6 @@ test_requirements = [
 
 setup(
     name='conda-devenv',
-    version='0.9.0',
     description="Work with multiple projects in develop-mode using conda-env",
     long_description=readme + '\n\n' + history,
     author="ESSS",
@@ -34,6 +33,8 @@ setup(
             'conda-devenv = conda_devenv.devenv:main',
         ]
     },
+    use_scm_version={'write_to': 'conda_devenv/_version.py'},
+    setup_requires=['setuptools_scm'],
     package_dir={'conda_devenv':
                  'conda_devenv'},
     include_package_data=True,
