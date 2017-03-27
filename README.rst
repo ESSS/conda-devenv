@@ -15,6 +15,13 @@ conda-devenv
 .. image:: https://anaconda.org/conda-forge/conda-devenv/badges/version.svg
     :target: https://anaconda.org/conda-forge/conda-devenv
 
+.. image:: https://anaconda.org/conda-forge/conda-devenv/badges/downloads.svg
+    :target: https://anaconda.org/conda-forge/conda-devenv
+
+.. image:: https://anaconda.org/conda-forge/conda-devenv/badges/installer/conda.svg
+    :target: https://anaconda.org/conda-forge/conda-devenv
+
+
 ``conda-devenv`` is ``conda`` extension to work with multiple projects in development mode.
 
 It works by processing ``environment.devenv.yml`` files, similar to how ``conda env``
