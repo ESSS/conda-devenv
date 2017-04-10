@@ -2,6 +2,15 @@
 History
 =======
 
+
+0.9.3 (2017-04-10)
+------------------
+
+* ``conda-devenv`` no longer requires ``conda`` to be on ``PATH`` to work (`#45`_).
+
+.. _`#45`: https://github.com/ESSS/conda-devenv/issues/45
+
+
 0.9.2 (2017-03-27)
 ------------------
 

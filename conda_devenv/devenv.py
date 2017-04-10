@@ -247,7 +247,7 @@ def __write_conda_environment_file(args, filename, rendered_contents):
 
 
 def __call_conda_env_update(args, output_filename):
-    import subprocess
+    import sys
     command = [
         "conda",
         "env",
@@ -265,7 +265,23 @@ def __call_conda_env_update(args, output_filename):
     if not args.quiet:
         print("> Executing: %s" % ' '.join(command))
 
-    return subprocess.call(command)
+    old_argv = sys.argv[:]
+    try:
+        del command[0]
+        sys.argv = command
+        return _call_conda()
+    finally:
+        sys.argv = old_argv
+
+
+def _call_conda():
+    """
+    Calls conda-env directly using its internal API. ``sys.argv`` must already be configured at this point.
+
+    We have this indirection here so we can mock this function during testing.
+    """
+    from conda_env.cli.main import main
+    return main()
 
 
 def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
