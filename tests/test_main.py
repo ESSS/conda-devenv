@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import sys
 import textwrap
 
 import pytest
@@ -12,8 +13,7 @@ def patch_conda_calls(mocker):
     Patches all necessary functions so that we can do integration testing without actually calling
     conda.
     """
-    import subprocess
-    mocker.patch.object(subprocess, 'call', autospec=True, return_value=0)
+    mocker.patch.object(devenv, '_call_conda', autospec=True, return_value=0)
     mocker.patch.object(devenv, 'write_activate_deactivate_scripts', autospec=True)
 
 
@@ -22,11 +22,17 @@ def patch_conda_calls(mocker):
     ('environment.yml', 'environment.yml'),
 ])
 @pytest.mark.usefixtures('patch_conda_calls')
-def test_handle_input_file(tmpdir, patch_conda_calls, input_name, expected_output_name):
+def test_handle_input_file(tmpdir, input_name, expected_output_name):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
     """
-    import subprocess
+    argv = []
+    def call_conda_mock():
+        argv[:] = sys.argv[:]
+        return 0
+
+    devenv._call_conda.side_effect = call_conda_mock
+    
     filename = tmpdir.join(input_name)
     filename.write(textwrap.dedent('''\
         name: a
@@ -34,10 +40,9 @@ def test_handle_input_file(tmpdir, patch_conda_calls, input_name, expected_outpu
           - a_dependency
     '''))
     assert devenv.main(['--file', str(filename), '--quiet']) == 0
-    assert subprocess.call.call_count == 1
-    args, kwargs = subprocess.call.call_args
-    cmdline = 'conda env update --file {} --prune --quiet'.format(tmpdir.join(expected_output_name))
-    assert args == (cmdline.split(),)
+    assert devenv._call_conda.call_count == 1
+    cmdline = 'env update --file {} --prune --quiet'.format(tmpdir.join(expected_output_name))
+    assert argv == cmdline.split()
 
 
 @pytest.mark.parametrize('input_name', ['environment.devenv.yml', 'environment.yml'])
