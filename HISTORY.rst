@@ -3,6 +3,14 @@ History
 =======
 
 
+0.9.4 (2017-04-20)
+------------------
+
+* Fixed major bug where activate/deactivate scripts were not being generated (`#49`_).
+
+.. _`#49`: https://github.com/ESSS/conda-devenv/issues/49
+
+
 0.9.3 (2017-04-10)
 ------------------
 

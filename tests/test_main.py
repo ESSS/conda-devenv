@@ -17,19 +17,20 @@ def patch_conda_calls(mocker):
     mocker.patch.object(devenv, 'write_activate_deactivate_scripts', autospec=True)
 
 
-@pytest.mark.parametrize('input_name, expected_output_name', [
-    ('environment.devenv.yml', 'environment.yml'),
-    ('environment.yml', 'environment.yml'),
+@pytest.mark.parametrize('input_name, write_scripts_call_count', [
+    ('environment.devenv.yml', 1),
+    ('environment.yml', 0),
 ])
 @pytest.mark.usefixtures('patch_conda_calls')
-def test_handle_input_file(tmpdir, input_name, expected_output_name):
+def test_handle_input_file(tmpdir, input_name, write_scripts_call_count):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
     """
     argv = []
     def call_conda_mock():
         argv[:] = sys.argv[:]
-        return 0
+        # simulate that we actually called conda's main, which calls sys.exit()
+        sys.exit(0)
 
     devenv._call_conda.side_effect = call_conda_mock
     
@@ -41,8 +42,9 @@ def test_handle_input_file(tmpdir, input_name, expected_output_name):
     '''))
     assert devenv.main(['--file', str(filename), '--quiet']) == 0
     assert devenv._call_conda.call_count == 1
-    cmdline = 'env update --file {} --prune --quiet'.format(tmpdir.join(expected_output_name))
+    cmdline = 'env update --file {} --prune --quiet'.format(tmpdir.join('environment.yml'))
     assert argv == cmdline.split()
+    assert devenv.write_activate_deactivate_scripts.call_count == write_scripts_call_count
 
 
 @pytest.mark.parametrize('input_name', ['environment.devenv.yml', 'environment.yml'])
