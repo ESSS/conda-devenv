@@ -269,7 +269,10 @@ def __call_conda_env_update(args, output_filename):
     try:
         del command[0]
         sys.argv = command
-        return _call_conda()
+        try:
+            return _call_conda()
+        except SystemExit as e:
+            return e.code
     finally:
         sys.argv = old_argv
 
