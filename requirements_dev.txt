@@ -7,7 +7,7 @@ tox
 coverage
 Sphinx
 cryptography
-PyYAML
+PyYAML==3.12
 pytest
 pytest-datadir
 pytest-mock
