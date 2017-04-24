@@ -21,16 +21,20 @@ def patch_conda_calls(mocker):
     ('environment.devenv.yml', 1),
     ('environment.yml', 0),
 ])
+@pytest.mark.parametrize('return_none', [True, False])
 @pytest.mark.usefixtures('patch_conda_calls')
-def test_handle_input_file(tmpdir, input_name, write_scripts_call_count):
+def test_handle_input_file(tmpdir, input_name, write_scripts_call_count, return_none):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
     """
     argv = []
     def call_conda_mock():
         argv[:] = sys.argv[:]
-        # simulate that we actually called conda's main, which calls sys.exit()
-        sys.exit(0)
+        # conda's env main() function sometimes returns None and other times raises SystemExit
+        if return_none:
+            return None
+        else:
+            sys.exit(0)
 
     devenv._call_conda.side_effect = call_conda_mock
     

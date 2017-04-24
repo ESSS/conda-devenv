@@ -373,7 +373,7 @@ def main(args=None):
 
     # Call conda-env update
     retcode = __call_conda_env_update(args, output_filename)
-    if retcode != 0:
+    if retcode:
         return retcode
 
     if is_devenv_input_file:
