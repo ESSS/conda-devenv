@@ -313,7 +313,7 @@ def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     if not os.path.exists(deactivate_directory):
         os.makedirs(deactivate_directory)
 
-    if sys.platform == 'win32:
+    if sys.platform == 'win32':
         files = [("devenv-vars.bat", "cmd")]
     else:
         # Linux and Mac should create a .sh
