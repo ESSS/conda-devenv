@@ -94,7 +94,40 @@ def merge(dicts, keys_to_skip=('name',)):
                     raise ValueError(message)
             elif value is not None:
                 final_dict[key] = value
+    merge_dependencies_version_specifications(final_dict)
     return final_dict
+
+
+def merge_dependencies_version_specifications(yaml_dict):
+    import collections
+    import re
+    dependencies = yaml_dict.get('dependencies', None)
+    if dependencies is None:
+        return
+
+    # regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
+    package_pattern = r'^([a-z0-9_\-.]+)\s*(.*)$'
+
+    new_dependencies = {}
+    for dep in dependencies:
+        m = re.match(package_pattern, dep)
+        if m is None:
+            raise RuntimeError('The package version specification "{}" do not follow the expected'
+                               ' format.'.format(dep))
+
+        # OrderedDict is used as an ordered set, the value is ignored.
+        version_matchers = new_dependencies.setdefault(m.group(1), collections.OrderedDict())
+        if len(m.group(2)) > 0:
+            version_matchers[m.group(2)] = True
+
+    result = set()
+    for dep_name, dep_version_matchers in new_dependencies.items():
+        if len(dep_version_matchers) > 0:
+            result.add(dep_name + ' ' + ','.join(dep_version_matchers))
+        else:
+            result.add(dep_name)
+
+    yaml_dict['dependencies'] = sorted(result)
 
 
 def load_yaml_dict(filename):

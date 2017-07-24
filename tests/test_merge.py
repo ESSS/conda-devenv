@@ -1,4 +1,4 @@
-from conda_devenv.devenv import merge
+from conda_devenv.devenv import merge, merge_dependencies_version_specifications
 
 
 def test_merge():
@@ -88,3 +88,23 @@ def test_merge_empty_dependencies():
          "dependencies": None}
         ,
     ]) == {}
+
+
+def test_merge_dependencies_version_specifications():
+    merged_dict = {
+        "dependencies": [
+            "a_dependency==1.2.3",
+            "a_dependency<=4",
+            "b_dependency",
+            "b_dependency=3",
+        ],
+    }
+
+    merge_dependencies_version_specifications(merged_dict)
+
+    assert merged_dict == {
+        "dependencies": [
+            "a_dependency ==1.2.3,<=4",
+            "b_dependency =3",
+        ],
+    }
