@@ -2,6 +2,14 @@
 History
 =======
 
+0.9.6 (2017-07-24)
+------------------
+
+* Applies an "AND" when merging dependencies (`#53`_).
+* On Mac generates the same scripts as for Linux (no longer ``.bat`` files).
+
+.. _`#53`: https://github.com/ESSS/conda-devenv/issues/53
+
 
 0.9.5 (2017-04-24)
 ------------------
