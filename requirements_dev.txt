@@ -9,5 +9,5 @@ Sphinx
 cryptography
 PyYAML
 pytest
-pytest-datadir
+pytest-datadir >= 1.0
 pytest-mock
