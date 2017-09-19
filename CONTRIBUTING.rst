@@ -55,9 +55,9 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `conda-devenv` for local development.
+Ready to contribute? Here's how to set up ``conda-devenv`` for local development.
 
-1. Fork the `conda-devenv` repo on GitHub.
+1. Fork the ``conda-devenv`` repo on GitHub.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/conda-devenv.git
@@ -65,7 +65,8 @@ Ready to contribute? Here's how to set up `conda-devenv` for local development.
 3. Create a new conda environment for developing::
 
     $ conda create -n devenv --file requirements_dev.txt
-    $ conda develop conda_devenv
+    $ source activate devenv
+    $ pip install -e .
 
 4. Create a branch for local development::
 

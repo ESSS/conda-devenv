@@ -48,7 +48,7 @@ def handle_includes(root_filename, root_yaml):
                     ))
             with open(included_filename, "r") as f:
                 jinja_contents = render_jinja(f.read(), included_filename)
-            included_yaml_dict = yaml.load(jinja_contents)
+            included_yaml_dict = yaml.safe_load(jinja_contents)
             if included_yaml_dict is None:
                 raise ValueError("The file '{included_filename}' which was"
                                  " included by '{filename}' is empty."
@@ -329,7 +329,6 @@ def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
     info = json.loads(info)
     envs = info["envs"]
 
-    env_directory = None
     for env in envs:
         if os.path.basename(env) == env_name:
             env_directory = env
@@ -376,12 +375,21 @@ def main(args=None):
                                              "includes the 'environment' section.", action="store_true")
     parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true")
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
-    parser.add_argument("--quiet", action="store_true", default=False)
+    parser.add_argument("--quiet", action="store_true", default=False, help="Do not show progress")
+    parser.add_argument("--version", action="store_true", default=False, help="Show version and exit")
 
     args = parser.parse_args(args)
 
+    if args.version:
+        from ._version import version
+        print('conda-devenv version {0}'.format(version))
+        return 0
+
     filename = args.file
     filename = os.path.abspath(filename)
+    if not os.path.isfile(filename):
+        print('File "{0}" does not exist.'.format(filename), file=sys.stderr)
+        return 1
 
     is_devenv_input_file = filename.endswith('.devenv.yml')
     if is_devenv_input_file:
