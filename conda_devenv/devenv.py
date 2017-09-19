@@ -387,6 +387,9 @@ def main(args=None):
 
     filename = args.file
     filename = os.path.abspath(filename)
+    if not os.path.isfile(filename):
+        print('File "{0}" does not exist.'.format(filename), file=sys.stderr)
+        return 1
 
     is_devenv_input_file = filename.endswith('.devenv.yml')
     if is_devenv_input_file:
