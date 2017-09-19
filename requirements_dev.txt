@@ -8,6 +8,6 @@ coverage
 Sphinx
 cryptography
 PyYAML
-pytest
+pytest >= 3
 pytest-datadir >= 1.0
 pytest-mock
