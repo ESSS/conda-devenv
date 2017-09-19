@@ -48,7 +48,7 @@ def handle_includes(root_filename, root_yaml):
                     ))
             with open(included_filename, "r") as f:
                 jinja_contents = render_jinja(f.read(), included_filename)
-            included_yaml_dict = yaml.load(jinja_contents)
+            included_yaml_dict = yaml.safe_load(jinja_contents)
             if included_yaml_dict is None:
                 raise ValueError("The file '{included_filename}' which was"
                                  " included by '{filename}' is empty."
