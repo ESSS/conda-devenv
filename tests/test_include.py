@@ -21,11 +21,7 @@ def obtain_yaml_dicts(root_yaml_filename):
 
 
 def test_include(datadir):
-    datadir["a.yml"]
-    datadir["b.yml"]
-    datadir["c.yml"]
-
-    dicts = obtain_yaml_dicts(datadir["c.yml"])
+    dicts = obtain_yaml_dicts(str(datadir / "c.yml"))
     assert len(dicts) == 3
 
     assert dicts["a"] == {
@@ -64,10 +60,7 @@ def test_include(datadir):
 
 
 def test_include_non_dag(datadir):
-    datadir["a_non_dag.yml"]
-    datadir["b_non_dag.yml"]
-
-    dicts = obtain_yaml_dicts(datadir["b_non_dag.yml"])
+    dicts = obtain_yaml_dicts(str(datadir / "b_non_dag.yml"))
 
     assert dicts["a"] == {
         "name": "a",
@@ -86,30 +79,21 @@ def test_include_non_dag(datadir):
 
 def test_include_non_existent_file(datadir):
     with pytest.raises(ValueError) as e:
-        obtain_yaml_dicts(datadir["includes_non_existent_file.yml"])
+        obtain_yaml_dicts(str(datadir / "includes_non_existent_file.yml"))
     assert "includes_non_existent_file.yml" in str(e)
     assert "non_existent_file.yml" in str(e)
 
 
 def test_include_file_with_relative_includes(datadir):
-    datadir["proj1"]
-    datadir["proj2"]
-    datadir["proj1/relative_include.yml"]
-    datadir["proj2/relative_include.yml"]
-    datadir["set_variable.yml"]
-
-    dicts = obtain_yaml_dicts(datadir["proj1/relative_include.yml"])
+    dicts = obtain_yaml_dicts(str(datadir / "proj1/relative_include.yml"))
 
     assert len(dicts) == 3
     assert sorted(dicts.keys()) == ["proj1", "proj2", "set_variable"]
 
 
 def test_include_empty_file(datadir):
-    datadir["empty_file.yml"]
-    datadir["includes_empty_file.yml"]
+    with pytest.raises(ValueError):
+        obtain_yaml_dicts(str(datadir / "includes_empty_file.yml"))
 
     with pytest.raises(ValueError):
-        obtain_yaml_dicts(datadir["includes_empty_file.yml"])
-
-    with pytest.raises(ValueError):
-        obtain_yaml_dicts(datadir["empty_file.yml"])
+        obtain_yaml_dicts(str(datadir / "empty_file.yml"))
