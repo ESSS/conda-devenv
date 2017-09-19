@@ -92,7 +92,7 @@ https://conda-devenv.readthedocs.io.
 Development
 -----------
 
-Please see [CONTRIBUTING](./CONTRIBUTING.rst).
+Please see `CONTRIBUTING <CONTRIBUTING.rst>`_.
 
 
 License
