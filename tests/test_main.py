@@ -90,3 +90,17 @@ def test_print_full(tmpdir, capsys):
     assert 'environment:' in out
     assert 'PYTHONPATH:' in out
 
+
+def test_version(capsys):
+    """
+    Test --version flag.
+    """
+    from conda_devenv._version import version
+    assert devenv.main(['--version']) == 0
+    out, err = capsys.readouterr()
+    assert err == ''
+    assert version in out
+
+    import conda_devenv
+    assert conda_devenv.__version__ == version
+
