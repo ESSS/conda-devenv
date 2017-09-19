@@ -1,13 +1,13 @@
-pip
-bumpversion
-wheel
-watchdog
-flake8
-tox
-coverage
-Sphinx
-cryptography
 PyYAML
+Sphinx
+bumpversion
+coverage
+cryptography
+flake8
+pip
 pytest >= 3
 pytest-datadir >= 1.0
 pytest-mock
+tox
+watchdog
+wheel

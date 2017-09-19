@@ -4,6 +4,8 @@ import argparse
 import os
 import sys
 
+import six
+
 
 def render_jinja(contents, filename):
     import jinja2
@@ -66,10 +68,33 @@ def handle_includes(root_filename, root_yaml):
     return visited
 
 
+def separate_strings_from_dicts(elements):
+    """
+    Receive a list of strings and dicts an returns 2 lists, one solely with string and the other
+    with dicts.
+
+    :param List[Union[str, Dict[str, str]]] elements:
+    :rtype: Tuple[List[str], List[Dict[str, str]]]
+    """
+    all_strs = []
+    all_dicts = []
+    for item in elements:
+        if isinstance(item, six.string_types):
+            all_strs.append(item)
+        elif isinstance(item, dict):
+            all_dicts.append(item)
+        else:
+            raise RuntimeError("Only strings and dicts are supported, got: {!r}".format(item))
+    return all_strs, all_dicts
+
+
 def merge(dicts, keys_to_skip=('name',)):
     final_dict = {}
 
     for d in dicts:
+        if not isinstance(d, dict):
+            raise ValueError("Found '{!r}' when a dict is expected, check if our's '*.devenv.yml'"
+                             " files are properly formatted.".format(d))
         for key, value in d.items():
             if key in keys_to_skip:
                 continue
@@ -78,47 +103,61 @@ def merge(dicts, keys_to_skip=('name',)):
                 if isinstance(value, dict):
                     final_dict[key] = merge([final_dict[key], value])
                 elif isinstance(value, list):
+                    # The can be dicts inside lists `'dependencies': [{'pip': ['foo', 'bar']}]`.
+                    target_strings, target_dicts = separate_strings_from_dicts(final_dict[key])
+                    new_strings, new_dicts = separate_strings_from_dicts(value)
                     s = set()
-                    s.update(final_dict[key])
-                    s.update(value)
-                    final_dict[key] = sorted(list(s))
+                    s.update(target_strings)
+                    s.update(new_strings)
+
+                    merged_list = sorted(list(s))
+                    merged_dict = merge(target_dicts + new_dicts)
+                    if len(merged_dict) > 0:
+                        merged_list.append(merged_dict)
+                    final_dict[key] = merged_list
                 elif value is None:
                     continue
                 else:
-                    message = "Can't merge the key: '{key}' because it will override the previous value. " \
-                              "Only lists and dicts can be merged. The type obtained was: {type}"\
-                        .format(
-                            key=key,
-                            type=type(value)
-                        )
+                    message = ' '.join([
+                        "Can't merge the key: '{key}' because it will override the previous value.",
+                        "Only lists and dicts can be merged. The type obtained was: {type}",
+                    ]).format(key=key, type=type(value))
                     raise ValueError(message)
             elif value is not None:
                 final_dict[key] = value
-    merge_dependencies_version_specifications(final_dict)
+    merge_dependencies_version_specifications(final_dict, key_to_merge='dependencies')
     return final_dict
 
 
-def merge_dependencies_version_specifications(yaml_dict):
+def merge_dependencies_version_specifications(yaml_dict, key_to_merge):
     import collections
     import re
-    dependencies = yaml_dict.get('dependencies', None)
-    if dependencies is None:
+    value_to_merge = yaml_dict.get(key_to_merge, None)
+    if value_to_merge is None:
         return
 
     # regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
     package_pattern = r'^([a-z0-9_\-.]+)\s*(.*)$'
 
     new_dependencies = {}
-    for dep in dependencies:
-        m = re.match(package_pattern, dep)
-        if m is None:
-            raise RuntimeError('The package version specification "{}" do not follow the expected'
-                               ' format.'.format(dep))
+    new_dict_dependencies = []
+    for dep in value_to_merge:
+        if isinstance(dep, dict):
+            for key in dep:
+                merge_dependencies_version_specifications(dep, key_to_merge=key)
+            new_dict_dependencies.append(dep)
+        elif isinstance(dep, six.string_types):
+            m = re.match(package_pattern, dep)
+            if m is None:
+                raise RuntimeError('The package version specification "{}" do not follow the'
+                                   ' expected format.'.format(dep))
 
-        # OrderedDict is used as an ordered set, the value is ignored.
-        version_matchers = new_dependencies.setdefault(m.group(1), collections.OrderedDict())
-        if len(m.group(2)) > 0:
-            version_matchers[m.group(2)] = True
+            # OrderedDict is used as an ordered set, the value is ignored.
+            version_matchers = new_dependencies.setdefault(m.group(1), collections.OrderedDict())
+            if len(m.group(2)) > 0:
+                version_matchers[m.group(2)] = True
+        else:
+            raise RuntimeError("Only strings and dicts are supported, got: {!r}".format(dep))
 
     result = set()
     for dep_name, dep_version_matchers in new_dependencies.items():
@@ -127,7 +166,8 @@ def merge_dependencies_version_specifications(yaml_dict):
         else:
             result.add(dep_name)
 
-    yaml_dict['dependencies'] = sorted(result)
+    new_dict_dependencies = sorted(new_dict_dependencies, key=lambda x: list(x.keys()))
+    yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
 
 
 def load_yaml_dict(filename):
