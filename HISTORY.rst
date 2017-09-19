@@ -2,6 +2,19 @@
 History
 =======
 
+1.0.0 (2017-09-19)
+------------------
+
+* Add --version flag (`#47`_).
+* Provide a better error message when 'environment.devenv.yml' file is not found (`#48`_).
+* Support for pip on dependencies section (`#55`_).
+
+
+.. _`#47`: https://github.com/ESSS/conda-devenv/issues/53
+.. _`#48`: https://github.com/ESSS/conda-devenv/issues/48
+.. _`#55`: https://github.com/ESSS/conda-devenv/issues/55
+
+
 0.9.6 (2017-07-24)
 ------------------
 
