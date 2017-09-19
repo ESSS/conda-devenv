@@ -89,6 +89,11 @@ Documentation
 
 https://conda-devenv.readthedocs.io.
 
+Development
+-----------
+
+Please see [CONTRIBUTING](./CONTRIBUTING.rst).
+
 
 License
 -------
