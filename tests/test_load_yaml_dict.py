@@ -39,3 +39,27 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_
 
     assert exception_message_start in str(e.value)
     assert "a_wrong_definition_at_environment.yml" in str(e.value)
+
+
+@pytest.mark.parametrize('cmd_line_name', [True, False])
+def test_get_env_name(mocker, tmpdir, cmd_line_name):
+    import textwrap
+    filename = tmpdir.join('env.yml')
+    filename.write(textwrap.dedent('''\
+        name: bar
+        dependencies:
+          - a_dependency
+    '''))
+
+    args = mocker.Mock()
+    if cmd_line_name:
+        args.name = 'foo'
+    else:
+        args.name = None
+
+    from conda_devenv.devenv import get_env_name
+    name = get_env_name(args, str(filename), None)
+    if cmd_line_name:
+        assert name == 'foo'
+    else:
+        assert name == 'bar'

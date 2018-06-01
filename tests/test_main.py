@@ -13,6 +13,8 @@ def patch_conda_calls(mocker):
     Patches all necessary functions so that we can do integration testing without actually calling
     conda.
     """
+    mocker.patch.object(devenv, 'get_env_directory', autospec=True)
+    mocker.patch.object(devenv, 'truncate_history_file', autospec=True)
     mocker.patch.object(devenv, '_call_conda', autospec=True, return_value=0)
     mocker.patch.object(devenv, 'write_activate_deactivate_scripts', autospec=True)
 
@@ -22,8 +24,9 @@ def patch_conda_calls(mocker):
     ('environment.yml', 0),
 ])
 @pytest.mark.parametrize('return_none', [True, False])
+@pytest.mark.parametrize('no_prune, truncate_call_count', [(True, 0), (False, 1)])
 @pytest.mark.usefixtures('patch_conda_calls')
-def test_handle_input_file(tmpdir, input_name, write_scripts_call_count, return_none):
+def test_handle_input_file(tmpdir, input_name, write_scripts_call_count, return_none, no_prune, truncate_call_count):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
     """
@@ -44,11 +47,18 @@ def test_handle_input_file(tmpdir, input_name, write_scripts_call_count, return_
         dependencies:
           - a_dependency
     '''))
-    assert devenv.main(['--file', str(filename), '--quiet']) == 0
+    devenv_cmdline_args = ['--file', str(filename), '--quiet']
+    expected_conda_cmdline_args = [
+        'env', 'update', '--file', tmpdir.join('environment.yml'), '--prune', '--quiet']
+    if no_prune:
+        devenv_cmdline_args.append('--no-prune')
+        expected_conda_cmdline_args.remove('--prune')
+
+    assert devenv.main(devenv_cmdline_args) == 0
     assert devenv._call_conda.call_count == 1
-    cmdline = 'env update --file {} --prune --quiet'.format(tmpdir.join('environment.yml'))
-    assert argv == cmdline.split()
+    assert argv == expected_conda_cmdline_args
     assert devenv.write_activate_deactivate_scripts.call_count == write_scripts_call_count
+    assert devenv.truncate_history_file.call_count == truncate_call_count
 
 
 @pytest.mark.parametrize('input_name', ['environment.devenv.yml', 'environment.yml'])

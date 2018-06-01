@@ -319,6 +319,35 @@ def __write_conda_environment_file(args, filename, rendered_contents):
     return output_filename
 
 
+def truncate_history_file(env_directory):
+    """
+    Since conda version 4.4 the "--prune" option does not prune the environment to match just the
+    supplied specs but take in account the previous environment history we truncate the history
+    file so only the package and version specs from the environment description file are used.
+
+    This is based on the comments:
+    - https://github.com/conda/conda/issues/6809#issuecomment-367877250
+    - https://github.com/conda/conda/issues/7279#issuecomment-389359679
+
+    If the behavior of the "--prune" option changes again or something in the lines
+    "--ignore-history" or "--prune-hard" ar implemented we should revisit this function and
+    update the "conda-env" arguments.
+    """
+    if env_directory is None:
+        return  # Environment does not exists, no history to truncate
+
+    from os.path import join
+    from time import time
+    from shutil import copyfile
+
+    history_filename = join(env_directory, 'conda-meta', 'history')
+    history_backup_filename = '%s.%s' % (history_filename, time())
+    copyfile(history_filename, history_backup_filename)
+
+    with open(history_filename, 'w') as history:
+        history.truncate()
+
+
 def __call_conda_env_update(args, output_filename):
     import sys
     command = [
@@ -360,21 +389,12 @@ def _call_conda():
     return main()
 
 
-def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
-    env_name = args.name or conda_yaml_dict["name"]
-
-    import subprocess
-    import json
-    info = subprocess.check_output(["conda", "info", "--json"]).decode()
-    info = json.loads(info)
-    envs = info["envs"]
-
-    for env in envs:
-        if os.path.basename(env) == env_name:
-            env_directory = env
-            break
-    else:
-        raise ValueError("Couldn't find directory of environment '%s'" % env_name)
+def write_activate_deactivate_scripts(args, conda_yaml_dict, environment, env_directory):
+    if env_directory is None:
+        env_name = args.name or conda_yaml_dict["name"]
+        env_directory = get_env_directory(env_name)
+        if env_directory is None:
+            raise ValueError("Couldn't find directory of environment '%s'" % env_name)
 
     from os.path import join
     activate_directory = join(env_directory, "etc", "conda", "activate.d")
@@ -399,6 +419,41 @@ def write_activate_deactivate_scripts(args, conda_yaml_dict, environment):
             f.write(activate_script)
         with open(join(deactivate_directory, filename), "w") as f:
             f.write(deactivate_script)
+
+
+def get_env_name(args, output_filename, conda_yaml_dict=None):
+    """
+    :param argparse.Namespace args:
+        When the user supplies the name option in the command line this namespace have a "name"
+        defined with a not `None` value and this value is returned.
+    :param str output_filename:
+        No jinja rendering is performed on this file if it is used.
+    :param Optional[Dict[str,Any]] conda_yaml_dict:
+        If supplied and not `None` then `output_filename` is ignored.
+    """
+    if args.name:
+        return args.name
+
+    if conda_yaml_dict is None:
+        import yaml
+        with open(output_filename, 'r') as stream:
+            conda_yaml_dict = yaml.safe_load(stream)
+
+    return conda_yaml_dict['name']
+
+
+def get_env_directory(env_name):
+    import subprocess
+    import json
+    info = subprocess.check_output(["conda", "info", "--json"]).decode()
+    info = json.loads(info)
+    envs = info["envs"]
+
+    for env in envs:
+        if os.path.basename(env) == env_name:
+            return env
+
+    return None
 
 
 def main(args=None):
@@ -446,6 +501,7 @@ def main(args=None):
         # Write to the output file
         output_filename = __write_conda_environment_file(args, filename, rendered_contents)
     else:
+        conda_yaml_dict = environment = None
         # Just call conda-env directly in plain environment.yml files
         output_filename = filename
         if args.print:
@@ -453,13 +509,20 @@ def main(args=None):
                 print(f.read())
             return 0
 
+    env_name = get_env_name(args, output_filename, conda_yaml_dict)
+    env_directory = get_env_directory(env_name)
+
+    if not args.no_prune:
+        # Truncate the history file
+        truncate_history_file(env_directory)
+
     # Call conda-env update
     retcode = __call_conda_env_update(args, output_filename)
     if retcode:
         return retcode
 
     if is_devenv_input_file:
-        write_activate_deactivate_scripts(args, conda_yaml_dict, environment)
+        write_activate_deactivate_scripts(args, conda_yaml_dict, environment, env_directory)
     return 0
 
 
