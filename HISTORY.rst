@@ -2,6 +2,15 @@
 History
 =======
 
+Dev
+------------------
+
+* Truncate the environment's history file to have the old "prune" behavior when needed (`#59`_).
+
+
+.. _`#59`: https://github.com/ESSS/conda-devenv/issues/59
+
+
 1.0.0 (2017-09-19)
 ------------------
 
