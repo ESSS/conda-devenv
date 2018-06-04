@@ -2,7 +2,7 @@
 History
 =======
 
-Dev
+1.0.1 (2018-06-04)
 ------------------
 
 * Truncate the environment's history file to have the old "prune" behavior when needed (`#59`_).
