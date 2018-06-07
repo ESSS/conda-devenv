@@ -72,10 +72,13 @@ def test_print(tmpdir, input_name, capsys):
         name: a
         dependencies:
           - a_dependency
+          - channel::another_dependency ==3.14
     '''))
     assert devenv.main(['--file', str(filename), '--quiet', '--print']) == 0
     out, err = capsys.readouterr()
     assert 'dependencies:' in out
+    assert '- a_dependency' in out
+    assert '- channel::another_dependency ==3.14' in out
     assert 'name: a' in out
 
 
@@ -89,6 +92,7 @@ def test_print_full(tmpdir, capsys):
         name: a
         dependencies:
           - a_dependency
+          - channel::another_dependency ==3.14
         environment:
           PYTHONPATH: {{ root }}/source
     '''))
@@ -96,6 +100,8 @@ def test_print_full(tmpdir, capsys):
     out, err = capsys.readouterr()
     assert err == ''
     assert 'dependencies:' in out
+    assert '- a_dependency' in out
+    assert '- channel::another_dependency ==3.14' in out
     assert 'name: a' in out
     assert 'environment:' in out
     assert 'PYTHONPATH:' in out
