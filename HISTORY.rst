@@ -2,6 +2,15 @@
 History
 =======
 
+1.0.2 (2018-06-07)
+------------------
+
+* Fix problem with channel specification being wrongly exported (`#62`_).
+
+
+.. _`#62`: https://github.com/ESSS/conda-devenv/issues/62
+
+
 1.0.1 (2018-06-04)
 ------------------
 

@@ -136,8 +136,12 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge):
     if value_to_merge is None:
         return
 
-    # regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
-    package_pattern = r'^([a-z0-9_\-.]+)\s*(.*)$'
+    package_pattern = (
+        r'^(?P<channel>[a-z0-9_\-/.]+::)?'
+        # package regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
+        r'(?P<package>[a-z0-9_\-.]+)'
+        r'\s*(?P<version>.*)$'
+    )
 
     new_dependencies = {}
     new_dict_dependencies = []
@@ -151,11 +155,16 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge):
             if m is None:
                 raise RuntimeError('The package version specification "{}" do not follow the'
                                    ' expected format.'.format(dep))
+            # Consider the channel name as part of the package name. If multiple channels are specified, the package
+            # will be repeated.
+            package_name = m.group('package')
+            if m.group('channel'):
+                package_name = m.group('channel') + package_name
 
             # OrderedDict is used as an ordered set, the value is ignored.
-            version_matchers = new_dependencies.setdefault(m.group(1), collections.OrderedDict())
-            if len(m.group(2)) > 0:
-                version_matchers[m.group(2)] = True
+            version_matchers = new_dependencies.setdefault(package_name, collections.OrderedDict())
+            if len(m.group('version')) > 0:
+                version_matchers[m.group('version')] = True
         else:
             raise RuntimeError("Only strings and dicts are supported, got: {!r}".format(dep))
 
