@@ -461,8 +461,8 @@ def get_env_directory(env_name):
     for directory in envs_dirs:
         env = os.path.join(directory, env_name)
         conda_meta_dir = os.path.join(env, 'conda-meta')
-        if os.path.isdir(conda_meta_dir) and os.path.basename(env) == env_name:
-            return env
+        if os.path.isdir(conda_meta_dir):
+            return os.path.normpath(env)
 
     return None
 

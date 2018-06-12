@@ -130,3 +130,27 @@ def test_error_message_environment_file_not_found(capsys, tmpdir, explicit_file,
     out, err = capsys.readouterr()
     assert out == ''
     assert err == 'File "{0}" does not exist.\n'.format(str(tmpdir / expected_name))
+
+
+def test_get_env_directory(mocker, tmpdir):
+    import os
+    env_0 = tmpdir.join('0/envs/my_env').ensure(dir=1)
+    conda_meta_env_0 = tmpdir.join('0/envs/my_env/conta-meta').ensure(dir=1)
+
+    env_1 = tmpdir.join('1/envs/my_env').ensure(dir=1)
+    conda_meta_env_1 = tmpdir.join('1/envs/my_env/conda-meta').ensure(dir=1)
+
+    # Replacing separators because of Windows
+    mock_output = '''
+        {{
+        "envs": ["{0}", "{1}"],
+        "envs_dirs": ["{2}"]
+        }}
+    '''.format(str(env_0), str(env_1), str(tmpdir.join('1/envs'))).replace('\\','\\\\').encode()
+    mocker.patch('subprocess.check_output', return_value=mock_output)
+
+    obtained = devenv.get_env_directory('my_env')
+    assert obtained == str(env_1)
+
+    env_1.remove()
+    assert devenv.get_env_directory('my_env') is None
