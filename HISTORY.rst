@@ -2,6 +2,12 @@
 History
 =======
 
+1.0.3 (2018-06-20)
+------------------
+
+* Find correct env directory through 'envs_dir' instead of matching first in 'envs'
+
+
 1.0.2 (2018-06-07)
 ------------------
 
