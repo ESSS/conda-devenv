@@ -5,7 +5,8 @@ History
 1.0.3 (2018-06-20)
 ------------------
 
-* Find correct env directory through 'envs_dir' instead of matching first in 'envs'
+* Find correct env directory through ``envs_dir`` instead of matching first in ``envs``. This makes 
+  environment directory location more reliable in newer conda versions.
 
 
 1.0.2 (2018-06-07)
