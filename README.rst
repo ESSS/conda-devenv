@@ -12,7 +12,7 @@ conda-devenv
     :target: https://conda-devenv.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-.. image:: https://anaconda.org/conda-forge/conda-devenv/badges/version.svg
+.. image:: https://img.shields.io/conda/vn/conda-forge/conda-devenv.svg
     :target: https://anaconda.org/conda-forge/conda-devenv
 
 .. image:: https://anaconda.org/conda-forge/conda-devenv/badges/downloads.svg
