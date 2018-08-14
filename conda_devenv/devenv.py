@@ -451,12 +451,17 @@ def get_env_name(args, output_filename, conda_yaml_dict=None):
     return conda_yaml_dict['name']
 
 
+def _get_envs_dirs_from_conda():
+    from conda.base.context import context
+    return context.envs_dirs
+
+
 def get_env_directory(env_name):
-    import subprocess
-    import json
-    info = subprocess.check_output(["conda", "info", "--json"]).decode()
-    info = json.loads(info)
-    envs_dirs = info["envs_dirs"]
+    """
+    :rtype: Optional[str]
+    :return: The environment path if the enviromment exists.
+    """
+    envs_dirs = _get_envs_dirs_from_conda()
 
     for directory in envs_dirs:
         env = os.path.join(directory, env_name)
