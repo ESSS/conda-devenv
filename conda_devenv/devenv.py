@@ -345,16 +345,17 @@ def truncate_history_file(env_directory):
     if env_directory is None:
         return  # Environment does not exists, no history to truncate
 
-    from os.path import join
+    from os.path import isfile, join
     from time import time
     from shutil import copyfile
 
     history_filename = join(env_directory, 'conda-meta', 'history')
     history_backup_filename = '%s.%s' % (history_filename, time())
-    copyfile(history_filename, history_backup_filename)
+    if isfile(history_filename):
+        copyfile(history_filename, history_backup_filename)
 
-    with open(history_filename, 'w') as history:
-        history.truncate()
+        with open(history_filename, 'w') as history:
+            history.truncate()
 
 
 def __call_conda_env_update(args, output_filename):

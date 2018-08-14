@@ -2,6 +2,14 @@
 History
 =======
 
+Next
+------------------
+
+* Do not fail if history file does not exists (`#66`_).
+
+
+.. _`#66`: https://github.com/ESSS/conda-devenv/issues/66
+
 1.0.3 (2018-06-20)
 ------------------
 
