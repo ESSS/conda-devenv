@@ -21,3 +21,11 @@ def test_truncate_history_file_backups_file(mocker, tmpdir):
     backup = tmpdir.join('conda-meta', 'history.123')
     assert backup.read() == history
     assert history_file.read() == ''
+
+
+def test_truncate_history_file_ingores_missing(mocker, tmpdir):
+    conda_meta_dir = tmpdir.join('conda-meta')
+    conda_meta_dir.ensure(dir=True)  # Just meta folder no history.
+    from conda_devenv.devenv import truncate_history_file
+    truncate_history_file(str(tmpdir))
+    # Truncate should not raise.
