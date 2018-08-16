@@ -5,10 +5,14 @@ History
 Next
 ------------------
 
+
 * Do not fail if history file does not exists (`#66`_).
 
+* Obtain  ``envs_dir`` without using a subprocess (`#67`_).
 
 .. _`#66`: https://github.com/ESSS/conda-devenv/issues/66
+.. _`#67`: https://github.com/ESSS/conda-devenv/issues/67
+
 
 1.0.3 (2018-06-20)
 ------------------

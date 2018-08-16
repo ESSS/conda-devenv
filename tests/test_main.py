@@ -140,14 +140,14 @@ def test_get_env_directory(mocker, tmpdir):
     env_1 = tmpdir.join('1/envs/my_env').ensure(dir=1)
     conda_meta_env_1 = tmpdir.join('1/envs/my_env/conda-meta').ensure(dir=1)
 
-    # Replacing separators because of Windows
-    mock_output = '''
-        {{
-        "envs": ["{0}", "{1}"],
-        "envs_dirs": ["{2}"]
-        }}
-    '''.format(str(env_0), str(env_1), str(tmpdir.join('1/envs'))).replace('\\','\\\\').encode()
-    mocker.patch('subprocess.check_output', return_value=mock_output)
+    mocker.patch('subprocess.check_output', side_effect=AssertionError())
+    mocker.patch.object(
+        devenv, '_get_envs_dirs_from_conda',
+        return_value=[
+            str(tmpdir.join('0/envs')),
+            str(tmpdir.join('1/envs')),
+        ],
+    )
 
     obtained = devenv.get_env_directory('my_env')
     assert obtained == str(env_1)
