@@ -2,6 +2,14 @@
 History
 =======
 
+Next
+------------------
+
+* Obtain  ``envs_dir`` without using a subprocess (`#67`_).
+
+
+.. _`#67`: https://github.com/ESSS/conda-devenv/issues/67
+
 1.0.3 (2018-06-20)
 ------------------
 
