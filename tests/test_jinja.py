@@ -10,7 +10,11 @@ from conda_devenv.devenv import render_jinja
 
 
 def test_jinja_root():
-    assert render_jinja("{{root}}", filename="path/to/file") == os.path.abspath("path/to")
+    assert render_jinja(
+        "{{root}}",
+        filename="path/to/file",
+        is_included=False,
+    ) == os.path.abspath("path/to")
 
 
 def test_jinja_os(monkeypatch):
@@ -22,13 +26,13 @@ def test_jinja_os(monkeypatch):
         {%- endif %}
     """).strip()
 
-    assert render_jinja(template, filename="") == "variable is not set"
+    assert render_jinja(template, filename="", is_included=False) == "variable is not set"
 
     monkeypatch.setenv('ENV_VARIABLE', '1')
-    assert render_jinja(template, filename="") == "variable is set"
+    assert render_jinja(template, filename="", is_included=False) == "variable is set"
 
     monkeypatch.setenv('ENV_VARIABLE', '2')
-    assert render_jinja(template, filename="") == "variable is not set"
+    assert render_jinja(template, filename="", is_included=False) == "variable is not set"
 
 
 def test_jinja_sys(monkeypatch):
@@ -43,27 +47,27 @@ def test_jinja_sys(monkeypatch):
     """).strip()
 
     monkeypatch.setattr(sys, 'platform', 'linux')
-    assert render_jinja(template, filename="") == "linux!"
+    assert render_jinja(template, filename="", is_included=False) == "linux!"
 
     monkeypatch.setattr(sys, 'platform', 'windows')
-    assert render_jinja(template, filename="") == "windows!"
+    assert render_jinja(template, filename="", is_included=False) == "windows!"
 
     monkeypatch.setattr(sys, 'platform', 'darwin')
-    assert render_jinja(template, filename="") == "others!"
+    assert render_jinja(template, filename="", is_included=False) == "others!"
 
 
 def test_jinja_platform(monkeypatch):
     template = "{{ platform.python_revision() }}"
-    assert render_jinja(template, filename="") == platform.python_revision()
+    assert render_jinja(template, filename="", is_included=False) == platform.python_revision()
 
 
 def test_jinja_invalid_template():
-    # TODO: change this to pytest's nicer syntax: with pytest.raises()
-    try:
-        render_jinja(textwrap.dedent("""\
+    with pytest.raises(jinja2.exceptions.TemplateSyntaxError):
+        render_jinja(
+            textwrap.dedent("""\
                 {%- if os.environ['ENV_VARIABLE'] == '1' %}
                 {% %}
-            """), filename="")
-        pytest.fail("Should raise an exception")
-    except jinja2.exceptions.TemplateSyntaxError as e:
-        pass
+            """),
+            filename="",
+            is_included=False,
+        )
