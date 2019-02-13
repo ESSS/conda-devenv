@@ -39,20 +39,20 @@ most useful capabilities of ``conda-devenv``.
 
 The following variables are available in the Jira 2 namespace:
 
-* :command:`root`: this is the full path to the directory containing the ``environment.devenv.yml`` file.
-* :command:`os`: the standard Python module object obtained with ``import os``.
-* :command:`sys`: the standard Python module object obtained with ``import sys``.
-* :command:`platform`: the standard Python module object obtained with ``import platform``.
-* :command:`x86`: ``True`` if the system architecture is x86, both 32-bit and 64-bit, for Intel or AMD chips.
-* :command:`x86_64`: ``True`` if the system architecture is x86_64, which is 64-bit, for Intel or AMD chips.
-* :command:`linux`: ``True`` if the platform is Linux.
-* :command:`linux32`: ``True`` if the platform is Linux and the Python architecture is 32-bit.
-* :command:`linux64`: ``True`` if the platform is Linux and the Python architecture is 64-bit.
-* :command:`osx`: ``True`` if the platform is macOS.
-* :command:`unix`: ``True`` if the platform is either macOS or Linux.
-* :command:`win`: ``True`` if the platform is Windows.
-* :command:`win32`: ``True`` if the platform is Windows and the Python architecture is 32-bit.
-* :command:`win64`: ``True`` if the platform is Windows and the Python architecture is 64-bit.
+* ``root``: this is the full path to the directory containing the ``environment.devenv.yml`` file.
+* ``os``: the standard Python module object obtained with ``import os``.
+* ``sys``: the standard Python module object obtained with ``import sys``.
+* ``platform``: the standard Python module object obtained with ``import platform``.
+* ``x86``: ``True`` if the system architecture is x86, both 32-bit and 64-bit, for Intel or AMD chips.
+* ``x86_64``: ``True`` if the system architecture is x86_64, which is 64-bit, for Intel or AMD chips.
+* ``linux``: ``True`` if the platform is Linux.
+* ``linux32``: ``True`` if the platform is Linux and the Python architecture is 32-bit.
+* ``linux64``: ``True`` if the platform is Linux and the Python architecture is 64-bit.
+* ``osx``: ``True`` if the platform is macOS.
+* ``unix``: ``True`` if the platform is either macOS or Linux.
+* ``win``: ``True`` if the platform is Windows.
+* ``win32``: ``True`` if the platform is Windows and the Python architecture is 32-bit.
+* ``win64``: ``True`` if the platform is Windows and the Python architecture is 64-bit.
 
 
 Environment Variables
