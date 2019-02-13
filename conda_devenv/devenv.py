@@ -21,11 +21,13 @@ def render_jinja(contents, filename, is_included):
     is32bit = '32bit' == platform.architecture()[0]
     is64bit = not is32bit
 
+
     jinja_dict = {
-        "root": os.path.dirname(os.path.abspath(filename)),
+        "is_included": is_included,
         "os": os,
-        "sys": sys,
         "platform": platform,
+        "root": os.path.dirname(os.path.abspath(filename)),
+        "sys": sys,
         "x86": 'x86' == platform.machine(),
         "x86_64": 'x86_64' == platform.machine(),
         "linux": islinux,
