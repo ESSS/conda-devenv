@@ -63,3 +63,34 @@ def test_get_env_name(mocker, tmpdir, cmd_line_name):
         assert name == 'foo'
     else:
         assert name == 'bar'
+
+
+def test_is_included_var(datadir):
+    import six
+    import textwrap
+    a_env_file = datadir / 'a.devenv.yml'
+    a_env_file.write_text(six.text_type(textwrap.dedent('''\
+        name: a
+        includes:
+          - {{root}}/b.devenv.yml
+        environment:
+          VARIABLE: value_a
+          IS_A_INCLUDED: {{is_included}}
+    ''')))
+    b_env_file = datadir / 'b.devenv.yml'
+    b_env_file.write_text(six.text_type(textwrap.dedent('''\
+        name: b
+        environment:
+          {% if not is_included %}
+          VARIABLE: value_b
+          {% endif %}
+          IS_B_INCLUDED: {{is_included}}
+    ''')))
+
+    conda_env, os_env = load_yaml_dict(str(a_env_file))
+    assert conda_env == {'name': 'a'}
+    assert os_env == {
+        'IS_A_INCLUDED': False,
+        'IS_B_INCLUDED': True,
+        'VARIABLE': 'value_a',
+    }

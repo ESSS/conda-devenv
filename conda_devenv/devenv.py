@@ -7,16 +7,17 @@ import sys
 import six
 
 
-def render_jinja(contents, filename):
+def render_jinja(contents, filename, is_included):
     import jinja2
     import sys
     import platform
 
     jinja_dict = {
-        "root": os.path.dirname(os.path.abspath(filename)),
+        "is_included": is_included,
         "os": os,
-        "sys": sys,
         "platform": platform,
+        "root": os.path.dirname(os.path.abspath(filename)),
+        "sys": sys,
     }
 
     return jinja2.Template(contents).render(**jinja_dict)
@@ -49,7 +50,7 @@ def handle_includes(root_filename, root_yaml):
                         filename=filename
                     ))
             with open(included_filename, "r") as f:
-                jinja_contents = render_jinja(f.read(), included_filename)
+                jinja_contents = render_jinja(f.read(), included_filename, is_included=True)
             included_yaml_dict = yaml.safe_load(jinja_contents)
             if included_yaml_dict is None:
                 raise ValueError("The file '{included_filename}' which was"
@@ -182,7 +183,7 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge):
 def load_yaml_dict(filename):
     with open(filename, "r") as f:
         contents = f.read()
-    rendered_contents = render_jinja(contents, filename)
+    rendered_contents = render_jinja(contents, filename, is_included=False)
 
     import yaml
     root_yaml = yaml.load(rendered_contents)
