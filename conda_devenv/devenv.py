@@ -40,9 +40,6 @@ def render_jinja(contents, filename, is_included):
         "win": iswin,
         "win32": iswin and is32bit,
         "win64": iswin and is64bit,
-        "py": int(pyversion[0] + pyversion[1]),
-        "py2k": pyversion[0] == 2,
-        "py3k": pyversion[0] == 3,
     }
 
     return jinja2.Template(contents).render(**jinja_dict)

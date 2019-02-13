@@ -64,29 +64,21 @@ def test_jinja_platform(monkeypatch):
 def test_jinja_x86(monkeypatch):
     template = "{{ x86 }}"
 
-    platform_bkp = platform
-
-    platform.machine = lambda : 'x86'
+    monkeypatch.setattr(platform, 'machine', 'x86')
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
-    platform.machine = lambda : 'x86_64'
+    monkeypatch.setattr(platform, 'machine', 'x86_64')
     assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform = platform_bkp
 
 
 def test_jinja_x86_64(monkeypatch):
     template = "{{ x86_64 }}"
 
-    platform_bkp = platform
-
-    platform.machine = lambda : 'x86'
+    monkeypatch.setattr(platform, 'machine', 'x86')
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
-    platform.machine = lambda : 'x86_64'
+    monkeypatch.setattr(platform, 'machine', 'x86_64')
     assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform = platform_bkp
 
 
 def test_jinja_linux(monkeypatch):
@@ -107,15 +99,11 @@ def test_jinja_linux32(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'linux')
 
-    platform_bkp = platform
-
-    platform.architecture = lambda : ('32bit', '')
+    monkeypatch.setattr(platform, 'architecture', '32bit')
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
-    platform.architecture = lambda : ('64bit', '')
+    monkeypatch.setattr(platform, 'architecture', '64bit')
     assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform = platform_bkp
 
 
 def test_jinja_linux64(monkeypatch):
@@ -123,15 +111,11 @@ def test_jinja_linux64(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'linux')
 
-    platform_bkp = platform
-
-    platform.architecture = lambda : ('32bit', '')
+    monkeypatch.setattr(platform, 'architecture', '32bit')
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
-    platform.architecture = lambda : ('64bit', '')
+    monkeypatch.setattr(platform, 'architecture', '64bit')
     assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform = platform_bkp
 
 
 def test_jinja_armv6l(monkeypatch):
@@ -192,15 +176,11 @@ def test_jinja_win32(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'win')
 
-    platform_bkp = platform
-
-    platform.architecture = lambda : ('32bit', '')
+    monkeypatch.setattr(platform, 'architecture', '32bit')
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
-    platform.architecture = lambda : ('64bit', '')
+    monkeypatch.setattr(platform, 'architecture', '64bit')
     assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform = platform_bkp
 
 
 def test_jinja_win64(monkeypatch):
@@ -208,84 +188,30 @@ def test_jinja_win64(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'win')
 
-    platform_bkp = platform
-
-    platform.architecture = lambda : ('32bit', '')
+    monkeypatch.setattr(platform, 'architecture', '32bit')
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
-    platform.architecture = lambda : ('64bit', '')
+    monkeypatch.setattr(platform, 'architecture', '64bit')
     assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform = platform_bkp
 
 
 def test_jinja_py(monkeypatch):
     template = "{{ py }}"
 
-    platform_bkp = platform
-
-    platform.python_version = lambda : '2.7.XYZ+'
+    monkeypatch.setattr(platform, 'python_version', '2.7.XYZ+')
     assert render_jinja(template, filename="", is_included=False) == '27'
 
-    platform.python_version = lambda : '3.4.XYZ+'
+    monkeypatch.setattr(platform, 'python_version', '3.4.XYZ+')
     assert render_jinja(template, filename="", is_included=False) == '34'
 
-    platform.python_version = lambda : '3.5.XYZ+'
+    monkeypatch.setattr(platform, 'python_version', '3.5.XYZ+')
     assert render_jinja(template, filename="", is_included=False) == '35'
 
-    platform.python_version = lambda : '3.6.XYZ+'
+    monkeypatch.setattr(platform, 'python_version', '3.6.XYZ+')
     assert render_jinja(template, filename="", is_included=False) == '36'
 
-    platform.python_version = lambda : '3.7.XYZ+'
+    monkeypatch.setattr(platform, 'python_version', '3.7.XYZ+')
     assert render_jinja(template, filename="", is_included=False) == '37'
-
-    platform = platform_bkp
-
-
-def test_jinja_py2k(monkeypatch):
-    template = "{{ py2k }}"
-
-    platform_bkp = platform
-
-    platform.python_version = lambda : '2.7.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform.python_version = lambda : '3.4.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform.python_version = lambda : '3.5.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform.python_version = lambda : '3.6.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform.python_version = lambda : '3.7.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform = platform_bkp
-
-
-def test_jinja_py3k(monkeypatch):
-    template = "{{ py3k }}"
-
-    platform_bkp = platform
-
-    platform.python_version = lambda : '2.7.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'False'
-
-    platform.python_version = lambda : '3.4.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform.python_version = lambda : '3.5.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform.python_version = lambda : '3.6.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform.python_version = lambda : '3.7.XYZ+'
-    assert render_jinja(template, filename="", is_included=False) == 'True'
-
-    platform = platform_bkp
 
 
 def test_jinja_invalid_template():
