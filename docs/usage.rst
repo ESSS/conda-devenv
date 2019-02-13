@@ -33,8 +33,8 @@ based python version, etc. For example:
       {% endif %}
 
 Note that in the example above, we are able to define dependency requirements
-that are specific to Linux, macOS, and Windows (e.g., `ccache` is needed in
-Linux and macOS, whereas `clcache` is needed in Windows). This is one of the
+that are specific to Linux, macOS, and Windows (e.g., ``ccache`` is needed in
+Linux and macOS, whereas ``clcache`` is needed in Windows). This is one of the
 most useful capabilities of ``conda-devenv``.
 
 The following variables are available in the Jira 2 namespace:
