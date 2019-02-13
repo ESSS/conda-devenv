@@ -21,7 +21,6 @@ def render_jinja(contents, filename, is_included):
     is32bit = '32bit' == platform.architecture()[0]
     is64bit = not is32bit
 
-
     jinja_dict = {
         "is_included": is_included,
         "os": os,
