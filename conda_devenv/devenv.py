@@ -12,8 +12,6 @@ def render_jinja(contents, filename, is_included):
     import sys
     import platform
 
-    pyversion = platform.python_version().split('.')
-
     iswin = sys.platform.startswith('win')
     islinux = sys.platform.startswith('linux')
     isosx = sys.platform.startswith('darwin')
