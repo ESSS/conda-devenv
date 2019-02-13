@@ -1,6 +1,5 @@
 PyYAML
 Sphinx
-sphinx_rtd_theme
 bumpversion
 coverage
 cryptography
