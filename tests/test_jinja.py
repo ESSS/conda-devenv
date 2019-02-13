@@ -99,10 +99,10 @@ def test_jinja_linux32(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'linux')
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '32bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '64bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
 
@@ -111,10 +111,10 @@ def test_jinja_linux64(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'linux')
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '32bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '64bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
 
@@ -176,10 +176,10 @@ def test_jinja_win32(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'win')
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '32bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '64bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
 
@@ -188,10 +188,10 @@ def test_jinja_win64(monkeypatch):
 
     monkeypatch.setattr(sys, 'platform', 'win')
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '32bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'False'
 
-    monkeypatch.setattr(platform, 'architecture', lambda: '64bit')
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
 
