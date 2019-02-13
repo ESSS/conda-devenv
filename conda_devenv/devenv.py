@@ -12,12 +12,36 @@ def render_jinja(contents, filename, is_included):
     import sys
     import platform
 
+    pyversion = platform.python_version().split('.')
+
+    iswin = sys.platform.startswith('win')
+    islinux = sys.platform.startswith('linux')
+    isosx = sys.platform.startswith('darwin')
+
+    is32bit = '32bit' == platform.architecture()[0]
+    is64bit = not is32bit
+
     jinja_dict = {
-        "is_included": is_included,
-        "os": os,
-        "platform": platform,
         "root": os.path.dirname(os.path.abspath(filename)),
+        "os": os,
         "sys": sys,
+        "platform": platform,
+        "x86": 'x86' == platform.machine(),
+        "x86_64": 'x86_64' == platform.machine(),
+        "linux": islinux,
+        "linux32": islinux and is32bit,
+        "linux64": islinux and is64bit,
+        "armv6l": None,
+        "armv7l": None,
+        "ppc64le": None,
+        "osx": isosx,
+        "unix": islinux or isosx,
+        "win": iswin,
+        "win32": iswin and is32bit,
+        "win64": iswin and is64bit,
+        "py": int(pyversion[0] + pyversion[1]),
+        "py2k": pyversion[0] == 2,
+        "py3k": pyversion[0] == 3,
     }
 
     return jinja2.Template(contents).render(**jinja_dict)
