@@ -2,6 +2,31 @@
 History
 =======
 
+1.1.0 (2019-02-14)
+------------------
+
+* New ``is_included`` jinja variable which is a boolean indicating if the current file was included by
+  another ``devenv.yml`` file (``True``) or it is the original file passed to ``conda devenv`` (``False``) (`#72`_).
+
+* Added shortcuts to common jinja 2 checks, for example ``win`` which is equal to ``sys.platform.startswith("win")`` (`#75`_).
+
+* Added support conda-build-style YAML line comments (`` # [win]``) (`#79`_).
+
+* New ``min_conda_devenv_version`` jinja2 function that can be used to specify a minimum conda-devenv version:
+
+  .. code-block:: yaml
+
+      {{ min_conda_devenv_version("1.1") }}
+      name: my-environment
+
+  This is recommended when using new features so users will be shown a descriptive error message instead of subtle failures (`#81`_).
+
+.. _`#72`: https://github.com/ESSS/conda-devenv/pull/72
+.. _`#75`: https://github.com/ESSS/conda-devenv/pull/75
+.. _`#79`: https://github.com/ESSS/conda-devenv/pull/79
+.. _`#81`: https://github.com/ESSS/conda-devenv/pull/81
+
+
 1.0.4 (2018-09-20)
 ------------------
 
@@ -17,7 +42,7 @@ History
 1.0.3 (2018-06-20)
 ------------------
 
-* Find correct env directory through ``envs_dir`` instead of matching first in ``envs``. This makes 
+* Find correct env directory through ``envs_dir`` instead of matching first in ``envs``. This makes
   environment directory location more reliable in newer conda versions.
 
 
