@@ -13,8 +13,9 @@ def preprocess_selector_in_line(line):
     if x is None:
         return line
     if x.lastindex != 5:
-        raise RuntimeError(f'Could not understand pattern in `{line}`')
-    return f'{{% if { x.group(3).strip() } %}}{ x.group(0) }{{% endif %}}'
+        raise RuntimeError('Could not understand pattern in `{}`'.format(line))
+    expr = x.group(3).strip()
+    return '{{% if {0} %}}{1}{{% endif %}}'.format(expr, line)
 
 
 def preprocess_selectors(contents):
