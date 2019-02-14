@@ -76,8 +76,7 @@ Ready to contribute? Here's how to set up ``conda-devenv`` for local development
 
 5. When you're done making changes, check that your changes pass the tests::
 
-    $ py.test tests
-
+    $ pytest tests
 
 6. Commit your changes and push your branch to GitHub::
 
