@@ -7,6 +7,7 @@ import sys
 
 import six
 
+
 def preprocess_selector_in_line(line):
     pattern = r"(.*?)#\s+(\[)(.*)(\])(.*)"
     x = re.search(pattern, line)
