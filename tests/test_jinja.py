@@ -118,20 +118,6 @@ def test_jinja_linux64(monkeypatch):
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
 
-def test_jinja_armv6l(monkeypatch):
-    template = "{{ armv6l }}"
-    pass
-
-def test_jinja_armv7l(monkeypatch):
-    template = "{{ armv7l }}"
-    pass
-
-
-def test_jinja_ppc64le(monkeypatch):
-    template = "{{ ppc64le }}"
-    pass
-
-
 def test_jinja_osx(monkeypatch):
     template = "{{ osx }}"
 
