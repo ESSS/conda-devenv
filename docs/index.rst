@@ -19,24 +19,16 @@ See example below:
       - eigen
       - pip:
         - sphinx
-      {% if linux %}
-      - gxx_linux-64=7.3.0
-      {% endif %}
-
-      {% if unix %}
-        - ccache
-      {% endif %}
-
-      {% if win %}
-        - clcache
-      {% endif %}
+      - gxx_linux-64=7.3.0  # [linux]
+      - ccache              # [unix]
+      - clcache             # [win]
 
     environment:
       CPATH:
-        - $CONDA_PREFIX/include
+        - $CONDA_PREFIX/include           # [unix]
+        - $CONDA_PREFIX/Library/include   # [win]
 
-      LD_LIBRARY_PATH:
-        - $CONDA_PREFIX/lib
+      LD_LIBRARY_PATH: $CONDA_PREFIX/lib  # [unix]
 
 By executing:
 
@@ -53,7 +45,9 @@ We can now activate the conda environment ``mylib`` as follows:
 
 This will not only resolve the dependencies for the current operating system,
 but also set environment variables ``CPATH`` and ``LD_LIBRARY_PATH`` to the
-list of paths specified in the ``environment.devenv.yml`` file.
+list of paths specified in the ``environment.devenv.yml`` file. Note, however,
+that ``LD_LIBRARY_PATH`` will only be set in Linux and macOS (Unix) whereas
+``CPATH`` will be set differently in Linux and macOS compared to Windows.
 
 Continue reading to learn more about the full capabilities of ``conda-devenv``!
 
