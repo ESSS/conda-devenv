@@ -8,14 +8,14 @@ import sys
 import six
 
 
+_selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
+
+
 def preprocess_selector_in_line(line):
-    pattern = r"(.*?)#\s+(\[)(.*)(\])(.*)"
-    x = re.search(pattern, line)
+    x = _selector_pattern.search(line)
     if x is None:
         return line
-    if x.lastindex != 5:
-        raise RuntimeError('Could not understand pattern in `{}`'.format(line))
-    expr = x.group(3).strip()
+    expr = x.group(1).strip()
     return '{{% if {0} %}}{1}{{% endif %}}'.format(expr, line)
 
 
