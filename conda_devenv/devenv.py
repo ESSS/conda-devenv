@@ -2,9 +2,25 @@ from __future__ import print_function, absolute_import
 
 import argparse
 import os
+import re
 import sys
 
 import six
+
+def preprocess_selector_in_line(line):
+    pattern = r"(.*?)#\s+(\[)(.*)(\])(.*)"
+    x = re.search(pattern, line)
+    if x is None:
+        return line
+    if x.lastindex != 5:
+        raise RuntimeError(f'Could not understand pattern in `{line}`')
+    return f'{{% if { x.group(3).strip() } %}}{ x.group(0) }{{% endif %}}'
+
+
+def preprocess_selectors(contents):
+    contents = contents.split('\n')
+    lines = [preprocess_selector_in_line(line) for line in contents]
+    return '\n'.join(lines)
 
 
 def render_jinja(contents, filename, is_included):
@@ -36,6 +52,8 @@ def render_jinja(contents, filename, is_included):
         "win32": iswin and is32bit,
         "win64": iswin and is64bit,
     }
+
+    contents = preprocess_selectors(contents)
 
     return jinja2.Template(contents).render(**jinja_dict)
 

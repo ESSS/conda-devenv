@@ -6,6 +6,8 @@ import platform
 import pytest
 import sys
 
+from conda_devenv.devenv import preprocess_selector_in_line
+from conda_devenv.devenv import preprocess_selectors
 from conda_devenv.devenv import render_jinja
 
 
@@ -118,20 +120,6 @@ def test_jinja_linux64(monkeypatch):
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
 
-def test_jinja_armv6l(monkeypatch):
-    template = "{{ armv6l }}"
-    pass
-
-def test_jinja_armv7l(monkeypatch):
-    template = "{{ armv7l }}"
-    pass
-
-
-def test_jinja_ppc64le(monkeypatch):
-    template = "{{ ppc64le }}"
-    pass
-
-
 def test_jinja_osx(monkeypatch):
     template = "{{ osx }}"
 
@@ -193,6 +181,87 @@ def test_jinja_win64(monkeypatch):
 
     monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
     assert render_jinja(template, filename="", is_included=False) == 'True'
+
+
+def test_preprocess_selector_in_line():
+    line = "  - ccache    # [linux or osx]"
+    expected = f"{{% if linux or osx %}}{ line }{{% endif %}}"
+    assert preprocess_selector_in_line(line) == expected
+
+    line = "  - clcache    # [ win ]"
+    expected = f"{{% if win %}}{ line }{{% endif %}}"
+    assert preprocess_selector_in_line(line) == expected
+
+    line = "  - boost"
+    expected = line
+    assert preprocess_selector_in_line(line) == expected
+
+    line = "  - cmake  # cmake is a required dependency"
+    expected = line
+    assert preprocess_selector_in_line(line) == expected
+
+    line = "  - cmake  # [linux] cmake is a required dependency in linux"
+    expected = f"{{% if linux %}}{ line }{{% endif %}}"
+    assert preprocess_selector_in_line(line) == expected
+
+
+def test_preprocess_selectors():
+    template = textwrap.dedent("""\
+        name: lib
+        dependencies:
+          - cmake
+          - ccache    # [unix]
+          - clcache   # [win] Windows has clcache instead of ccache
+    """).strip()
+
+    expected = textwrap.dedent("""\
+        name: lib
+        dependencies:
+          - cmake
+        {% if unix %}  - ccache    # [unix]{% endif %}
+        {% if win %}  - clcache   # [win] Windows has clcache instead of ccache{% endif %}
+    """).strip()
+
+    assert preprocess_selectors(template) == expected
+
+
+def test_render_jinja_with_preprocessing_selectors(monkeypatch):
+    template = textwrap.dedent("""\
+        {% set name = 'mylib' %}
+        name: {{ name }}
+        dependencies:
+          - cmake
+          - ccache    # [unix]
+          - clcache   # [win] Windows has clcache instead of ccache
+    """).strip()
+
+    expected_unix = textwrap.dedent("""\
+        name: mylib
+        dependencies:
+          - cmake
+          - ccache    # [unix]
+    """).strip()
+
+    expected_win = textwrap.dedent("""\
+        name: mylib
+        dependencies:
+          - cmake
+
+          - clcache   # [win] Windows has clcache instead of ccache
+    """).strip()
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    actual_linux = render_jinja(template, filename="", is_included=False).strip()
+
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    actual_osx = render_jinja(template, filename="", is_included=False).strip()
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+    actual_win = render_jinja(template, filename="", is_included=False).strip()
+
+    assert actual_linux == expected_unix
+    assert actual_osx == expected_unix
+    assert actual_win == expected_win
 
 
 def test_jinja_invalid_template():
