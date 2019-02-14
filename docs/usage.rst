@@ -72,6 +72,30 @@ The following variables are available in the Jira 2 namespace:
      - True if the platform is Windows and the Python architecture is 64-bit.
 
 
+Checking minimum conda-devenv version
+-------------------------------------
+
+If your ``environment.devenv.yml`` files make use of features available only in later ``conda-devenv`` versions,
+you can specify a minimum  version using the ``min_conda_devenv_version`` function at the top of your file:
+
+.. code-block:: yaml
+
+    {{ min_conda_devenv_version("1.1") }}
+    name: web-ui
+
+
+If users are using an old version, they will get then an error message indicating that they should update
+their ``conda-devenv`` version.
+
+It is recommended to use this setting to avoid confusing errors of users updating your software when new
+``conda-devenv`` features are used.
+
+.. note::
+
+    Unfortunately this feature was added in ``conda-devenv 1.1``, so ``1.0`` users will get a more cryptic message
+    about ``min_conda_devenv_version`` not being defined.
+
+
 Environment Variables
 =====================
 
