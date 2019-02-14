@@ -61,6 +61,126 @@ def test_jinja_platform(monkeypatch):
     assert render_jinja(template, filename="", is_included=False) == platform.python_revision()
 
 
+def test_jinja_x86(monkeypatch):
+    template = "{{ x86 }}"
+
+    monkeypatch.setattr(platform, 'machine', lambda: 'x86')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+    monkeypatch.setattr(platform, 'machine', lambda: 'x86_64')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+
+def test_jinja_x86_64(monkeypatch):
+    template = "{{ x86_64 }}"
+
+    monkeypatch.setattr(platform, 'machine', lambda: 'x86')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(platform, 'machine', lambda: 'x86_64')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+
+def test_jinja_linux(monkeypatch):
+    template = "{{ linux }}"
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+
+def test_jinja_linux32(monkeypatch):
+    template = "{{ linux32 }}"
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+
+def test_jinja_linux64(monkeypatch):
+    template = "{{ linux64 }}"
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+
+def test_jinja_osx(monkeypatch):
+    template = "{{ osx }}"
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+
+def test_jinja_unix(monkeypatch):
+    template = "{{ unix }}"
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+
+def test_jinja_win(monkeypatch):
+    template = "{{ win }}"
+
+    monkeypatch.setattr(sys, 'platform', 'linux')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+    monkeypatch.setattr(sys, 'platform', 'darwin')
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+
+def test_jinja_win32(monkeypatch):
+    template = "{{ win32 }}"
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+
+def test_jinja_win64(monkeypatch):
+    template = "{{ win64 }}"
+
+    monkeypatch.setattr(sys, 'platform', 'win')
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('32bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'False'
+
+    monkeypatch.setattr(platform, 'architecture', lambda: ('64bit', ''))
+    assert render_jinja(template, filename="", is_included=False) == 'True'
+
+
 def test_jinja_invalid_template():
     with pytest.raises(jinja2.exceptions.TemplateSyntaxError):
         render_jinja(
