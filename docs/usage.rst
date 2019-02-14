@@ -22,20 +22,20 @@ based python version, etc. For example:
     dependencies:
       - boost
       - cmake
-      {% if linux %}
-      - gcc
-      {% endif %}
-      {% if unix %}
-      - ccache
-      {% endif %}
-      {% if win %}
-      - clcache
-      {% endif %}
+      - gcc     # [linux]
+      - ccache  # [not win]
+      - clcache # [win] Windows has clcache
 
 Note that in the example above, we are able to define dependency requirements
 that are specific to Linux, macOS, and Windows (e.g., ``ccache`` is needed in
 Linux and macOS, whereas ``clcache`` is needed in Windows). This is one of the
 most useful capabilities of ``conda-devenv``.
+
+.. tip::
+
+  You can actually write any Python expression that evaluates to a boolean
+  inside the brackets following the YAML comment mark ``#``. For example,
+  ``# [linux]`` could be replaced with ``# [sys.platform.startswith('linux')]``.
 
 The following variables are available in the Jira 2 namespace:
 

@@ -47,9 +47,7 @@ Here's a simple ``environment.devenv.yml`` file:
       - {{ root }}/../core-business/environment.devenv.yml
 
     dependencies:
-      {% if sys.platform.startswith('linux') %}
-      - gcc
-      {% endif %}
+      - gcc  # [linux]
 
     environment:
       PYTHONPATH:
