@@ -107,6 +107,38 @@ def test_print_full(tmpdir, capsys):
     assert 'PYTHONPATH:' in out
 
 
+def test_min_version_failure(tmpdir, capsys):
+    """
+    Check the "min_conda_devenv_version()" fails with the expected message.
+    """
+    import conda_devenv
+    filename = tmpdir.join('environment.devenv.yml')
+    filename.write(textwrap.dedent('''\
+        {{ min_conda_devenv_version("999.9") }}
+        name: a                
+    '''))
+    with pytest.raises(SystemExit) as e:
+        devenv.main(['--file', str(filename)])
+    assert e.value.code == 1
+    out, err = capsys.readouterr()
+    assert out == ''
+    msg = 'This file requires at minimum conda-devenv 999.9, but you have {ver} installed.'
+    assert msg.format(ver=conda_devenv.__version__) in err
+
+
+def test_min_version_ok(tmpdir, capsys):
+    """
+    Check the "min_conda_devenv_version()" does not fail with current version.
+    """
+    import conda_devenv
+    filename = tmpdir.join('environment.devenv.yml')
+    filename.write(textwrap.dedent('''\
+        {{{{ min_conda_devenv_version("{}") }}}}
+        name: a                
+    '''.format(conda_devenv.__version__)))
+    assert devenv.main(['--file', str(filename), '--print-full']) == 0
+
+
 def test_version(capsys):
     """
     Test --version flag.

@@ -25,6 +25,20 @@ def preprocess_selectors(contents):
     return '\n'.join(lines)
 
 
+def _min_conda_devenv_version(min_version):
+    """Checks that the current conda devenv version is at least the given version"""
+    from distutils.version import LooseVersion
+    import conda_devenv
+
+    if LooseVersion(conda_devenv.__version__) < LooseVersion(min_version):
+        msg = 'This file requires at minimum conda-devenv {}, but you have {} installed.\n'
+        sys.stderr.write(msg.format(min_version, conda_devenv.__version__))
+        sys.stderr.write('Please update conda-devenv.\n')
+        raise SystemExit(1)
+
+    return ''
+
+
 def render_jinja(contents, filename, is_included):
     import jinja2
     import sys
@@ -53,6 +67,7 @@ def render_jinja(contents, filename, is_included):
         "win": iswin,
         "win32": iswin and is32bit,
         "win64": iswin and is64bit,
+        "min_conda_devenv_version": _min_conda_devenv_version,
     }
 
     contents = preprocess_selectors(contents)
