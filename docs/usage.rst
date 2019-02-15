@@ -37,7 +37,7 @@ most useful capabilities of ``conda-devenv``.
   inside the brackets following the YAML comment mark ``#``. For example,
   ``# [linux]`` could be replaced with ``# [sys.platform.startswith('linux')]``.
 
-The following variables are available in the Jira 2 namespace:
+The following variables are available in the Jinja 2 namespace:
 
 .. list-table::
    :widths: 20 80
