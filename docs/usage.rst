@@ -70,6 +70,8 @@ The following variables are available in the Jira 2 namespace:
      - True if the platform is Windows and the Python architecture is 32-bit.
    * - ``win64``
      - True if the platform is Windows and the Python architecture is 64-bit.
+   * - ``is_included``
+     - True if the current file is processed because it was included by another file.
 
 
 Checking minimum conda-devenv version
