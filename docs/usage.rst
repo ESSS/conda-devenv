@@ -16,15 +16,17 @@ based python version, etc. For example:
 
 .. code-block:: yaml
 
-    {% set conda_py = os.environ.get('CONDA_PY', '35') %}
+    {% set conda_py = env('CONDA_PY') or '35' %}
+
     name: web-ui-py{{ conda_py }}
 
     dependencies:
+      - python={{ versionformat(conda_py) }}
       - boost
       - cmake
-      - gcc     # [linux]
-      - ccache  # [not win]
-      - clcache # [win] Windows has clcache
+      - gcc        # [linux]
+      - ccache     # [not win]
+      - clcache    # [win]
 
 Note that in the example above, we are able to define dependency requirements
 that are specific to Linux, macOS, and Windows (e.g., ``ccache`` is needed in
@@ -37,7 +39,7 @@ most useful capabilities of ``conda-devenv``.
   inside the brackets following the YAML comment mark ``#``. For example,
   ``# [linux]`` could be replaced with ``# [sys.platform.startswith('linux')]``.
 
-The following variables are available in the Jinja 2 namespace:
+The following variables and functions are available in the Jinja 2 namespace:
 
 .. list-table::
    :widths: 20 80
@@ -50,6 +52,13 @@ The following variables are available in the Jinja 2 namespace:
      - The standard Python module object ``sys`` obtained with ``import sys``.
    * - ``platform``
      - The standard Python module object ``platform`` obtained with ``import platform``.
+   * - ``env``
+     - Function to get environment variables (e.g., ``env('CONDA_PY')``).
+   * - ``versionformat``
+     - Function to perform semantic version formatting (e.g., ``versionformat('37')`` returns
+       ``'3.7'``, while ``versionformat('3.7.5')`` returns ``'3.7.5'``).
+       Useful when version information is formatted as integers (e.g., ``27`` and ``3.5``
+       instead of ``2.7`` and ``3.5``).
    * - ``x86``
      - True if the system architecture is x86, both 32-bit and 64-bit, for Intel or AMD chips.
    * - ``x86_64``
