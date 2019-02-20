@@ -39,6 +39,19 @@ def _min_conda_devenv_version(min_version):
     return ''
 
 
+def _env(name):
+    """Alias for os.environ.get method"""
+    return os.environ.get(name)
+
+
+def _versionformat(ver):
+    """Convert string `ver` to a semantic version formatted string if not already"""
+    # Case 1: if ver is '372' (string without dots), return '3.7.2'
+    # Case 2: if ver is '3.7.2' (string with dots), return ver (in this case, '3.7.2')
+    # Case 3: if ver is None, return None
+    return '.'.join(ver) if ver and '.' not in ver else ver
+
+
 def render_jinja(contents, filename, is_included):
     import jinja2
     import sys
@@ -68,6 +81,8 @@ def render_jinja(contents, filename, is_included):
         "win32": iswin and is32bit,
         "win64": iswin and is64bit,
         "min_conda_devenv_version": _min_conda_devenv_version,
+        "env": _env,
+        "versionformat": _versionformat
     }
 
     contents = preprocess_selectors(contents)

@@ -183,6 +183,33 @@ def test_jinja_win64(monkeypatch):
     assert render_jinja(template, filename="", is_included=False) == 'True'
 
 
+def test_jinja_env(monkeypatch):
+
+    template = "{{ env('VAR') }}"
+
+    monkeypatch.setattr(os, 'environ', { 'VAR': '10' })
+    assert render_jinja(template, filename="", is_included=False) == '10'
+
+    template = "{{ env('NON_EXISTING_VAR') }}"
+    monkeypatch.setattr(os, 'environ', {})
+    assert render_jinja(template, filename="", is_included=False) == 'None'
+
+
+def test_jinja_versionformat(monkeypatch):
+
+    template = "{{ versionformat('12') }}"
+    assert render_jinja(template, filename="", is_included=False) == '1.2'
+
+    template = "{{ versionformat('1.2.12') }}"
+    assert render_jinja(template, filename="", is_included=False) == '1.2.12'
+
+    template = "{{ versionformat(None) }}"
+    assert render_jinja(template, filename="", is_included=False) == 'None'
+
+    template = "{{ versionformat('') }}"
+    assert render_jinja(template, filename="", is_included=False) == ''
+
+
 def test_preprocess_selector_in_line():
     line = "  - ccache    # [linux or osx]"
     expected = "{{% if linux or osx %}}{0}{{% endif %}}".format(line)
