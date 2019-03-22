@@ -58,6 +58,11 @@ def test_include(datadir):
         ],
     }
 
+    dicts = obtain_yaml_dicts(str(datadir / "empty_includes.yml"))
+    assert dicts["empty_includes"] == {
+        "name": "empty_includes",
+    }
+
 
 def test_include_non_dag(datadir):
     dicts = obtain_yaml_dicts(str(datadir / "b_non_dag.yml"))

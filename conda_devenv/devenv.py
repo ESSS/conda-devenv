@@ -91,7 +91,7 @@ def handle_includes(root_filename, root_yaml):
         if filename in visited:
             continue
 
-        for included_filename in yaml_dict.get("includes", []):
+        for included_filename in yaml_dict.get("includes") or []:
             included_filename = os.path.abspath(included_filename)
             if not os.path.isfile(included_filename):
                 raise ValueError(
