@@ -238,7 +238,7 @@ def load_yaml_dict(filename):
     rendered_contents = render_jinja(contents, filename, is_included=False)
 
     import yaml
-    root_yaml = yaml.load(rendered_contents)
+    root_yaml = yaml.safe_load(rendered_contents)
 
     all_yaml_dicts = handle_includes(filename, root_yaml)
 
