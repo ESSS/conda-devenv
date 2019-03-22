@@ -2,6 +2,14 @@
 History
 =======
 
+1.1.1 (2019-03-22)
+------------------
+
+* Remove yaml load warnings by using ``yaml.safe_load`` instead of ``yaml.load``.
+
+* Fix ``NoneType object is not iterable`` error when ``includes`` is empty.
+
+
 1.1.0 (2019-02-14)
 ------------------
 
