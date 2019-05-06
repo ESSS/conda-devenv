@@ -1,4 +1,7 @@
+import copy
+
 import pytest
+
 from conda_devenv.devenv import merge, merge_dependencies_version_specifications, \
     separate_strings_from_dicts
 
@@ -180,6 +183,22 @@ def test_merge_dependencies_version_specifications_errors():
     with pytest.raises(RuntimeError, match='.*Only strings and dicts are supported.*'):
         merge_dependencies_version_specifications(merged_dict, key_to_merge='dependencies')
 
+
+def test_merge_dependencies_version_specifications_pip_dependencies():
+    """Regression test for issue #91."""
+    merged_dict = {
+        "dependencies": [
+            'pip',
+            {'pip': [
+                'hg+ssh://hg@bitbucket.org/mforbes/mmfutils-fork@0.4.12',
+                'hg+ssh://hg@bitbucket.org/mforbes/pytimeode@0.9']}
+        ]
+    }
+    merged_dict_ = copy.deepcopy(merged_dict)
+    merge_dependencies_version_specifications(
+        merged_dict, key_to_merge='dependencies')
+    assert merged_dict_ == merged_dict
+    
 
 def test_merge_error_can_not_merge():
     with pytest.raises(ValueError, match='.*because it will override the previous value.*'):
