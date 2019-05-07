@@ -182,7 +182,8 @@ def merge(dicts, keys_to_skip=('name',)):
     return final_dict
 
 
-def merge_dependencies_version_specifications(yaml_dict, key_to_merge):
+def merge_dependencies_version_specifications(yaml_dict, key_to_merge,
+                                              pip=False):
     import collections
     import re
     value_to_merge = yaml_dict.get(key_to_merge, None)
@@ -201,23 +202,35 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge):
     for dep in value_to_merge:
         if isinstance(dep, dict):
             for key in dep:
-                merge_dependencies_version_specifications(dep, key_to_merge=key)
+                merge_dependencies_version_specifications(
+                    dep, key_to_merge=key, pip=(key == 'pip'))
             new_dict_dependencies.append(dep)
         elif isinstance(dep, six.string_types):
-            m = re.match(package_pattern, dep)
-            if m is None:
-                raise RuntimeError('The package version specification "{}" do not follow the'
-                                   ' expected format.'.format(dep))
-            # Consider the channel name as part of the package name. If multiple channels are specified, the package
-            # will be repeated.
-            package_name = m.group('package')
-            if m.group('channel'):
-                package_name = m.group('channel') + package_name
+            if pip and ("+" in dep or ":" in dep):
+                # Look for dependencies in the pip section that are
+                # managed by version control.  For example:
+                #   hg+ssh://hg@bitbucket.org/mforbes/mmfutils-fork@0.4.12
+                # Skip processing these and just pass them through
+                package_name = dep
+                package_version = ''
+            else:
+                m = re.match(package_pattern, dep)
+                if m is None:
+                    raise RuntimeError(
+                        'The package version specification "{}" do not follow the'
+                        ' expected format.'.format(dep))
+                # Consider the channel name as part of the package name.
+                # If multiple channels are specified, the package will be repeated.
+                package_name = m.group('package')
+                if m.group('channel'):
+                    package_name = m.group('channel') + package_name
+
+                package_version = m.group('version')
 
             # OrderedDict is used as an ordered set, the value is ignored.
             version_matchers = new_dependencies.setdefault(package_name, collections.OrderedDict())
-            if len(m.group('version')) > 0:
-                version_matchers[m.group('version')] = True
+            if len(package_version) > 0:
+                version_matchers[package_version] = True
         else:
             raise RuntimeError("Only strings and dicts are supported, got: {!r}".format(dep))
 
