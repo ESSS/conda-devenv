@@ -2,6 +2,14 @@
 History
 =======
 
+1.1.2 (2019-05-07)
+------------------
+
+* Correctly support git and mercurial repositories in ``pip`` dependencies. (`#92_`).
+
+.. _`#92`: https://github.com/ESSS/conda-devenv/pull/92
+
+
 1.1.1 (2019-03-22)
 ------------------
 
