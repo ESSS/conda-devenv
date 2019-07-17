@@ -85,8 +85,8 @@ def test_include_non_dag(datadir):
 def test_include_non_existent_file(datadir):
     with pytest.raises(ValueError) as e:
         obtain_yaml_dicts(str(datadir / "includes_non_existent_file.yml"))
-    assert "includes_non_existent_file.yml" in str(e)
-    assert "non_existent_file.yml" in str(e)
+    assert "includes_non_existent_file.yml" in str(e.value)
+    assert "some_non_existent_file.yml" in str(e.value)
 
 
 def test_include_file_with_relative_includes(datadir):
