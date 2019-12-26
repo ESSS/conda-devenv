@@ -133,14 +133,17 @@ def test_merge_dependencies_version_specifications_errors():
 
 
 def test_merge_dependencies_version_specifications_pip_dependencies():
-    """Regression test for issue #91."""
+    """Regression test for issue #91 and #92."""
     merged_dict = {
         "dependencies": [
             "pip",
             {
                 "pip": [
+                    # issue #92
+                    "ConfigAndParse ==0.15.2",
+                    # issue #91
+                    "git+git@github.com:ESSS/conda-devenv.git@0.1",
                     "hg+ssh://hg@bitbucket.org/mforbes/mmfutils-fork@0.4.12",
-                    "hg+ssh://hg@bitbucket.org/mforbes/pytimeode@0.9",
                 ]
             },
         ]
