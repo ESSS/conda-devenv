@@ -235,4 +235,3 @@ Don't pass the ``--prune`` flag when calling ``conda env update``
 ~~~~~~~~~~~~~~~~~
 
 Specifies the ``conda-env`` file which will be created.
-

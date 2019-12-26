@@ -66,6 +66,7 @@ Ready to contribute? Here's how to set up ``conda-devenv`` for local development
 
     $ conda create -n devenv --file requirements_dev.txt
     $ source activate devenv
+    $ pre-commit install
     $ pip install -e .
 
 4. Create a branch for local development::
@@ -99,10 +100,4 @@ Before you submit a pull request, check that it meets these guidelines:
    https://travis-ci.org/ESSS/conda-devenv/pull_requests
    and make sure that the tests pass for all supported Python versions.
 
-Tips
-----
-
-To run a subset of tests::
-
-$ py.test tests.test_conda_devenv
 
