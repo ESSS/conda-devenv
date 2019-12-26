@@ -2,11 +2,8 @@
 conda-devenv
 ============
 
-.. image:: https://img.shields.io/travis/ESSS/conda-devenv.svg
-    :target: https://travis-ci.org/ESSS/conda-devenv
-
-.. image:: https://ci.appveyor.com/api/projects/status/w7kwn4k9gkvi2j63?svg=true
-    :target: https://ci.appveyor.com/project/ESSS/conda-devenv
+.. image:: https://github.com/pytest-dev/pytest-mock/workflows/build/badge.svg
+    :target: https://github.com/pytest-dev/pytest-mock/actions
 
 .. image:: https://readthedocs.org/projects/conda-devenv/badge/?version=latest
     :target: https://conda-devenv.readthedocs.io/en/latest/?badge=latest
