@@ -26,36 +26,20 @@ def test_include(datadir):
 
     assert dicts["a"] == {
         "name": "a",
-        "dependencies": [
-            "a_dependency",
-        ],
-        "environment": {
-            "PATH": [
-                "a_path"
-            ]
-        }
+        "dependencies": ["a_dependency",],
+        "environment": {"PATH": ["a_path"]},
     }
 
     assert dicts["b"] == {
         "name": "b",
-        "dependencies": [
-            "b_dependency",
-        ],
-        "environment": {
-            "PATH": [
-                "b_path"
-            ]
-        },
-        "channels": [
-            "b_channel",
-        ],
+        "dependencies": ["b_dependency",],
+        "environment": {"PATH": ["b_path"]},
+        "channels": ["b_channel",],
     }
 
     assert dicts["c"] == {
         "name": "c",
-        "channels": [
-            "c_channel",
-        ],
+        "channels": ["c_channel",],
     }
 
     dicts = obtain_yaml_dicts(str(datadir / "empty_includes.yml"))
@@ -69,16 +53,12 @@ def test_include_non_dag(datadir):
 
     assert dicts["a"] == {
         "name": "a",
-        "dependencies": [
-            "a_dependency",
-        ],
+        "dependencies": ["a_dependency",],
     }
 
     assert dicts["b"] == {
         "name": "b",
-        "dependencies": [
-            "b_dependency",
-        ],
+        "dependencies": ["b_dependency",],
     }
 
 

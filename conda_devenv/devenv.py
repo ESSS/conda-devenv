@@ -16,13 +16,13 @@ def preprocess_selector_in_line(line):
     if x is None:
         return line
     expr = x.group(1).strip()
-    return '{{% if {0} %}}{1}{{% endif %}}'.format(expr, line)
+    return "{{% if {0} %}}{1}{{% endif %}}".format(expr, line)
 
 
 def preprocess_selectors(contents):
-    contents = contents.split('\n')
+    contents = contents.split("\n")
     lines = [preprocess_selector_in_line(line) for line in contents]
-    return '\n'.join(lines)
+    return "\n".join(lines)
 
 
 def _min_conda_devenv_version(min_version):
@@ -31,12 +31,12 @@ def _min_conda_devenv_version(min_version):
     import conda_devenv
 
     if LooseVersion(conda_devenv.__version__) < LooseVersion(min_version):
-        msg = 'This file requires at minimum conda-devenv {}, but you have {} installed.\n'
+        msg = "This file requires at minimum conda-devenv {}, but you have {} installed.\n"
         sys.stderr.write(msg.format(min_version, conda_devenv.__version__))
-        sys.stderr.write('Please update conda-devenv.\n')
+        sys.stderr.write("Please update conda-devenv.\n")
         raise SystemExit(1)
 
-    return ''
+    return ""
 
 
 def render_jinja(contents, filename, is_included):
@@ -44,11 +44,11 @@ def render_jinja(contents, filename, is_included):
     import sys
     import platform
 
-    iswin = sys.platform.startswith('win')
-    islinux = sys.platform.startswith('linux')
-    isosx = sys.platform.startswith('darwin')
+    iswin = sys.platform.startswith("win")
+    islinux = sys.platform.startswith("linux")
+    isosx = sys.platform.startswith("darwin")
 
-    is32bit = '32bit' == platform.architecture()[0]
+    is32bit = "32bit" == platform.architecture()[0]
     is64bit = not is32bit
 
     jinja_dict = {
@@ -57,8 +57,8 @@ def render_jinja(contents, filename, is_included):
         "platform": platform,
         "root": os.path.dirname(os.path.abspath(filename)),
         "sys": sys,
-        "x86": 'x86' == platform.machine(),
-        "x86_64": 'x86_64' == platform.machine(),
+        "x86": "x86" == platform.machine(),
+        "x86_64": "x86_64" == platform.machine(),
         "linux": islinux,
         "linux32": islinux and is32bit,
         "linux64": islinux and is64bit,
@@ -79,12 +79,16 @@ def handle_includes(root_filename, root_yaml):
     # This is a depth-first search
     import yaml
     import collections
+
     queue = collections.OrderedDict({root_filename: root_yaml})
     visited = collections.OrderedDict()
 
     if root_yaml is None:
-        raise ValueError("The root file '{root_filename}' is empty."
-                         .format(root_filename=root_filename))
+        raise ValueError(
+            "The root file '{root_filename}' is empty.".format(
+                root_filename=root_filename
+            )
+        )
 
     while queue:
         filename, yaml_dict = queue.popitem()
@@ -96,21 +100,22 @@ def handle_includes(root_filename, root_yaml):
             if not os.path.isfile(included_filename):
                 raise ValueError(
                     "Couldn't find the file '{included_filename}' "
-                    "while processing the file '{filename}'."
-                    .format(
-                        included_filename=included_filename,
-                        filename=filename
-                    ))
+                    "while processing the file '{filename}'.".format(
+                        included_filename=included_filename, filename=filename
+                    )
+                )
             with open(included_filename, "r") as f:
-                jinja_contents = render_jinja(f.read(), included_filename, is_included=True)
+                jinja_contents = render_jinja(
+                    f.read(), included_filename, is_included=True
+                )
             included_yaml_dict = yaml.safe_load(jinja_contents)
             if included_yaml_dict is None:
-                raise ValueError("The file '{included_filename}' which was"
-                                 " included by '{filename}' is empty."
-                                 .format(
-                                     included_filename=included_filename,
-                                     filename=filename
-                                 ))
+                raise ValueError(
+                    "The file '{included_filename}' which was"
+                    " included by '{filename}' is empty.".format(
+                        included_filename=included_filename, filename=filename
+                    )
+                )
             queue[included_filename] = included_yaml_dict
 
         if "includes" in yaml_dict:
@@ -137,17 +142,21 @@ def separate_strings_from_dicts(elements):
         elif isinstance(item, dict):
             all_dicts.append(item)
         else:
-            raise RuntimeError("Only strings and dicts are supported, got: {!r}".format(item))
+            raise RuntimeError(
+                "Only strings and dicts are supported, got: {!r}".format(item)
+            )
     return all_strs, all_dicts
 
 
-def merge(dicts, keys_to_skip=('name',)):
+def merge(dicts, keys_to_skip=("name",)):
     final_dict = {}
 
     for d in dicts:
         if not isinstance(d, dict):
-            raise ValueError("Found '{!r}' when a dict is expected, check if our's '*.devenv.yml'"
-                             " files are properly formatted.".format(d))
+            raise ValueError(
+                "Found '{!r}' when a dict is expected, check if our's '*.devenv.yml'"
+                " files are properly formatted.".format(d)
+            )
         for key, value in d.items():
             if key in keys_to_skip:
                 continue
@@ -157,7 +166,9 @@ def merge(dicts, keys_to_skip=('name',)):
                     final_dict[key] = merge([final_dict[key], value])
                 elif isinstance(value, list):
                     # The can be dicts inside lists `'dependencies': [{'pip': ['foo', 'bar']}]`.
-                    target_strings, target_dicts = separate_strings_from_dicts(final_dict[key])
+                    target_strings, target_dicts = separate_strings_from_dicts(
+                        final_dict[key]
+                    )
                     new_strings, new_dicts = separate_strings_from_dicts(value)
                     s = set()
                     s.update(target_strings)
@@ -171,30 +182,32 @@ def merge(dicts, keys_to_skip=('name',)):
                 elif value is None:
                     continue
                 else:
-                    message = ' '.join([
-                        "Can't merge the key: '{key}' because it will override the previous value.",
-                        "Only lists and dicts can be merged. The type obtained was: {type}",
-                    ]).format(key=key, type=type(value))
+                    message = " ".join(
+                        [
+                            "Can't merge the key: '{key}' because it will override the previous value.",
+                            "Only lists and dicts can be merged. The type obtained was: {type}",
+                        ]
+                    ).format(key=key, type=type(value))
                     raise ValueError(message)
             elif value is not None:
                 final_dict[key] = value
-    merge_dependencies_version_specifications(final_dict, key_to_merge='dependencies')
+    merge_dependencies_version_specifications(final_dict, key_to_merge="dependencies")
     return final_dict
 
 
-def merge_dependencies_version_specifications(yaml_dict, key_to_merge,
-                                              pip=False):
+def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False):
     import collections
     import re
+
     value_to_merge = yaml_dict.get(key_to_merge, None)
     if value_to_merge is None:
         return
 
     package_pattern = (
-        r'^(?P<channel>[a-z0-9_\-/.]+::)?'
+        r"^(?P<channel>[a-z0-9_\-/.]+::)?"
         # package regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
-        r'(?P<package>[a-z0-9_\-.]+)'
-        r'\s*(?P<version>.*)$'
+        r"(?P<package>[a-z0-9_\-.]+)"
+        r"\s*(?P<version>.*)$"
     )
 
     new_dependencies = {}
@@ -203,7 +216,8 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge,
         if isinstance(dep, dict):
             for key in dep:
                 merge_dependencies_version_specifications(
-                    dep, key_to_merge=key, pip=(key == 'pip'))
+                    dep, key_to_merge=key, pip=(key == "pip")
+                )
             new_dict_dependencies.append(dep)
         elif isinstance(dep, six.string_types):
             if pip and ("+" in dep or ":" in dep):
@@ -212,32 +226,37 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge,
                 #   hg+ssh://hg@bitbucket.org/mforbes/mmfutils-fork@0.4.12
                 # Skip processing these and just pass them through
                 package_name = dep
-                package_version = ''
+                package_version = ""
             else:
                 m = re.match(package_pattern, dep)
                 if m is None:
                     raise RuntimeError(
                         'The package version specification "{}" do not follow the'
-                        ' expected format.'.format(dep))
+                        " expected format.".format(dep)
+                    )
                 # Consider the channel name as part of the package name.
                 # If multiple channels are specified, the package will be repeated.
-                package_name = m.group('package')
-                if m.group('channel'):
-                    package_name = m.group('channel') + package_name
+                package_name = m.group("package")
+                if m.group("channel"):
+                    package_name = m.group("channel") + package_name
 
-                package_version = m.group('version')
+                package_version = m.group("version")
 
             # OrderedDict is used as an ordered set, the value is ignored.
-            version_matchers = new_dependencies.setdefault(package_name, collections.OrderedDict())
+            version_matchers = new_dependencies.setdefault(
+                package_name, collections.OrderedDict()
+            )
             if len(package_version) > 0:
                 version_matchers[package_version] = True
         else:
-            raise RuntimeError("Only strings and dicts are supported, got: {!r}".format(dep))
+            raise RuntimeError(
+                "Only strings and dicts are supported, got: {!r}".format(dep)
+            )
 
     result = set()
     for dep_name, dep_version_matchers in new_dependencies.items():
         if len(dep_version_matchers) > 0:
-            result.add(dep_name + ' ' + ','.join(dep_version_matchers))
+            result.add(dep_name + " " + ",".join(dep_version_matchers))
         else:
             result.add(dep_name)
 
@@ -251,6 +270,7 @@ def load_yaml_dict(filename):
     rendered_contents = render_jinja(contents, filename, is_included=False)
 
     import yaml
+
     root_yaml = yaml.safe_load(rendered_contents)
 
     all_yaml_dicts = handle_includes(filename, root_yaml)
@@ -258,8 +278,12 @@ def load_yaml_dict(filename):
     for filename, yaml_dict in all_yaml_dicts.items():
         environment_key_value = yaml_dict.get("environment", {})
         if not isinstance(environment_key_value, dict):
-            raise ValueError("The 'environment' key is supposed to be a dictionary, but you have the type "
-                             "'{type}' at '{filename}'.".format(type=type(environment_key_value), filename=filename))
+            raise ValueError(
+                "The 'environment' key is supposed to be a dictionary, but you have the type "
+                "'{type}' at '{filename}'.".format(
+                    type=type(environment_key_value), filename=filename
+                )
+            )
 
     merged_dict = merge(all_yaml_dicts.values())
 
@@ -275,6 +299,7 @@ DEFAULT_HEADER = "# generated by conda-devenv, do not modify and do not commit t
 
 def render_for_conda_env(yaml_dict, header=DEFAULT_HEADER):
     import yaml
+
     contents = header
     contents += yaml.dump(yaml_dict, default_flow_style=False)
     return contents
@@ -303,21 +328,43 @@ def render_activate_script(environment, shell):
 
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = pathsep.join(value) + pathsep + "${variable}".format(variable=variable)
+                value = (
+                    pathsep.join(value)
+                    + pathsep
+                    + "${variable}".format(variable=variable)
+                )
 
-            script.append("if [ ! -z ${{{variable}+x}} ]; then".format(variable=variable))
-            script.append("    export CONDA_DEVENV_BKP_{variable}=\"${variable}\"".format(variable=variable))
+            script.append(
+                "if [ ! -z ${{{variable}+x}} ]; then".format(variable=variable)
+            )
+            script.append(
+                '    export CONDA_DEVENV_BKP_{variable}="${variable}"'.format(
+                    variable=variable
+                )
+            )
             script.append("fi")
-            script.append("export {variable}=\"{value}\"".format(variable=variable, value=value))
+            script.append(
+                'export {variable}="{value}"'.format(variable=variable, value=value)
+            )
 
         elif shell == "cmd":
             pathsep = ";"
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = pathsep.join(value) + pathsep + "%{variable}%".format(variable=variable)
+                value = (
+                    pathsep.join(value)
+                    + pathsep
+                    + "%{variable}%".format(variable=variable)
+                )
 
-            script.append("set \"CONDA_DEVENV_BKP_{variable}=%{variable}%\"".format(variable=variable))
-            script.append("set \"{variable}={value}\"".format(variable=variable, value=value))
+            script.append(
+                'set "CONDA_DEVENV_BKP_{variable}=%{variable}%"'.format(
+                    variable=variable
+                )
+            )
+            script.append(
+                'set "{variable}={value}"'.format(variable=variable, value=value)
+            )
 
         elif shell == "fish":
             quote = '"'
@@ -333,10 +380,16 @@ def render_activate_script(environment, shell):
                     pathsep = ":"
                 value = pathsep.join(value) + pathsep + ("$%s" % variable)
 
-            script.append("set -gx CONDA_DEVENV_BKP_{variable} ${variable}".format(variable=variable))
-            script.append("set -gx {variable} {quote}{value}{quote}".format(
+            script.append(
+                "set -gx CONDA_DEVENV_BKP_{variable} ${variable}".format(
+                    variable=variable
+                )
+            )
+            script.append(
+                "set -gx {variable} {quote}{value}{quote}".format(
                     variable=variable, value=value, quote=quote
-                ))
+                )
+            )
 
         else:
             raise ValueError("Unknown shell: %s" % shell)
@@ -344,7 +397,7 @@ def render_activate_script(environment, shell):
     return "\n".join(script)
 
 
-def render_deactivate_script(environment, shell='bash'):
+def render_deactivate_script(environment, shell="bash"):
     script = []
     if shell == "bash":
         script = ["#!/bin/bash"]
@@ -353,25 +406,45 @@ def render_deactivate_script(environment, shell='bash'):
 
     for variable in sorted(environment):
         if shell == "bash":
-            script.append("if [ ! -z ${{CONDA_DEVENV_BKP_{variable}+x}} ]; then".format(variable=variable))
-            script.append("    export {variable}=\"$CONDA_DEVENV_BKP_{variable}\"".format(variable=variable))
-            script.append("    unset CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+            script.append(
+                "if [ ! -z ${{CONDA_DEVENV_BKP_{variable}+x}} ]; then".format(
+                    variable=variable
+                )
+            )
+            script.append(
+                '    export {variable}="$CONDA_DEVENV_BKP_{variable}"'.format(
+                    variable=variable
+                )
+            )
+            script.append(
+                "    unset CONDA_DEVENV_BKP_{variable}".format(variable=variable)
+            )
             script.append("else")
             script.append("    unset {variable}".format(variable=variable))
             script.append("fi")
 
         elif shell == "cmd":
-            script.append("set \"{variable}=%CONDA_DEVENV_BKP_{variable}%\"".format(variable=variable))
+            script.append(
+                'set "{variable}=%CONDA_DEVENV_BKP_{variable}%"'.format(
+                    variable=variable
+                )
+            )
             script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
 
         elif shell == "fish":
-            script.append("set -gx {variable} $CONDA_DEVENV_BKP_{variable}".format(variable=variable))
-            script.append("set -e CONDA_DEVENV_BKP_{variable}".format(variable=variable))
+            script.append(
+                "set -gx {variable} $CONDA_DEVENV_BKP_{variable}".format(
+                    variable=variable
+                )
+            )
+            script.append(
+                "set -e CONDA_DEVENV_BKP_{variable}".format(variable=variable)
+            )
 
         else:
             raise ValueError("Unknown platform")
 
-    return '\n'.join(script)
+    return "\n".join(script)
 
 
 def __write_conda_environment_file(args, filename, rendered_contents):
@@ -383,12 +456,14 @@ def __write_conda_environment_file(args, filename, rendered_contents):
         if yaml_ext == "" or devenv_ext == "":
             # File has no extension or has a single extension, if we proceed we
             # will override the input file
-            raise ValueError("Can't guess the output filename, please provide "
-                             "the output filename with the --output-filename "
-                             "flag")
+            raise ValueError(
+                "Can't guess the output filename, please provide "
+                "the output filename with the --output-filename "
+                "flag"
+            )
         output_filename += yaml_ext
 
-    with open(output_filename, 'w') as f:
+    with open(output_filename, "w") as f:
         f.write(rendered_contents)
 
     return output_filename
@@ -415,17 +490,18 @@ def truncate_history_file(env_directory):
     from time import time
     from shutil import copyfile
 
-    history_filename = join(env_directory, 'conda-meta', 'history')
-    history_backup_filename = '%s.%s' % (history_filename, time())
+    history_filename = join(env_directory, "conda-meta", "history")
+    history_backup_filename = "%s.%s" % (history_filename, time())
     if isfile(history_filename):
         copyfile(history_filename, history_backup_filename)
 
-        with open(history_filename, 'w') as history:
+        with open(history_filename, "w") as history:
             history.truncate()
 
 
 def __call_conda_env_update(args, output_filename):
     import sys
+
     command = [
         "conda",
         "env",
@@ -441,7 +517,7 @@ def __call_conda_env_update(args, output_filename):
         command.extend(["--quiet"])
 
     if not args.quiet:
-        print("> Executing: %s" % ' '.join(command))
+        print("> Executing: %s" % " ".join(command))
 
     old_argv = sys.argv[:]
     try:
@@ -462,10 +538,13 @@ def _call_conda():
     We have this indirection here so we can mock this function during testing.
     """
     from conda_env.cli.main import main
+
     return main()
 
 
-def write_activate_deactivate_scripts(args, conda_yaml_dict, environment, env_directory):
+def write_activate_deactivate_scripts(
+    args, conda_yaml_dict, environment, env_directory
+):
     if env_directory is None:
         env_name = args.name or conda_yaml_dict["name"]
         env_directory = get_env_directory(env_name)
@@ -473,6 +552,7 @@ def write_activate_deactivate_scripts(args, conda_yaml_dict, environment, env_di
             raise ValueError("Couldn't find directory of environment '%s'" % env_name)
 
     from os.path import join
+
     activate_directory = join(env_directory, "etc", "conda", "activate.d")
     deactivate_directory = join(env_directory, "etc", "conda", "deactivate.d")
 
@@ -481,7 +561,7 @@ def write_activate_deactivate_scripts(args, conda_yaml_dict, environment, env_di
     if not os.path.exists(deactivate_directory):
         os.makedirs(deactivate_directory)
 
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         files = [("devenv-vars.bat", "cmd")]
     else:
         # Linux and Mac should create a .sh
@@ -512,14 +592,16 @@ def get_env_name(args, output_filename, conda_yaml_dict=None):
 
     if conda_yaml_dict is None:
         import yaml
-        with open(output_filename, 'r') as stream:
+
+        with open(output_filename, "r") as stream:
             conda_yaml_dict = yaml.safe_load(stream)
 
-    return conda_yaml_dict['name']
+    return conda_yaml_dict["name"]
 
 
 def _get_envs_dirs_from_conda():
     from conda.base.context import context
+
     return context.envs_dirs
 
 
@@ -532,7 +614,7 @@ def get_env_directory(env_name):
 
     for directory in envs_dirs:
         env = os.path.join(directory, env_name)
-        conda_meta_dir = os.path.join(env, 'conda-meta')
+        conda_meta_dir = os.path.join(env, "conda-meta")
         if os.path.isdir(conda_meta_dir):
             return os.path.normpath(env)
 
@@ -542,25 +624,46 @@ def get_env_directory(env_name):
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
-    parser = argparse.ArgumentParser(description="Work with multiple conda-environment-like yaml files in dev mode.")
-    parser.add_argument("--file", "-f", nargs="?", help="The environment.devenv.yml file to process. "
-                                                        "The default value is '%(default)s'.",
-                        default="environment.devenv.yml")
+    parser = argparse.ArgumentParser(
+        description="Work with multiple conda-environment-like yaml files in dev mode."
+    )
+    parser.add_argument(
+        "--file",
+        "-f",
+        nargs="?",
+        help="The environment.devenv.yml file to process. "
+        "The default value is '%(default)s'.",
+        default="environment.devenv.yml",
+    )
     parser.add_argument("--name", "-n", nargs="?", help="Name of environment.")
-    parser.add_argument("--print", help="Prints the rendered file as will be sent to conda-"
-                                        "env to stdout and exits.", action="store_true")
-    parser.add_argument("--print-full", help="Similar to --print, but also "
-                                             "includes the 'environment' section.", action="store_true")
-    parser.add_argument("--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true")
+    parser.add_argument(
+        "--print",
+        help="Prints the rendered file as will be sent to conda-"
+        "env to stdout and exits.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--print-full",
+        help="Similar to --print, but also " "includes the 'environment' section.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true"
+    )
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
-    parser.add_argument("--quiet", action="store_true", default=False, help="Do not show progress")
-    parser.add_argument("--version", action="store_true", default=False, help="Show version and exit")
+    parser.add_argument(
+        "--quiet", action="store_true", default=False, help="Do not show progress"
+    )
+    parser.add_argument(
+        "--version", action="store_true", default=False, help="Show version and exit"
+    )
 
     args = parser.parse_args(args)
 
     if args.version:
         from ._version import version
-        print('conda-devenv version {0}'.format(version))
+
+        print("conda-devenv version {0}".format(version))
         return 0
 
     filename = args.file
@@ -569,7 +672,7 @@ def main(args=None):
         print('File "{0}" does not exist.'.format(filename), file=sys.stderr)
         return 1
 
-    is_devenv_input_file = filename.endswith('.devenv.yml')
+    is_devenv_input_file = filename.endswith(".devenv.yml")
     if is_devenv_input_file:
         # render conda-devenv file
         conda_yaml_dict, environment = load_yaml_dict(filename)
@@ -578,11 +681,13 @@ def main(args=None):
         if args.print or args.print_full:
             print(rendered_contents)
             if args.print_full:
-                print(render_for_conda_env({'environment': environment}, header=''))
+                print(render_for_conda_env({"environment": environment}, header=""))
             return 0
 
         # Write to the output file
-        output_filename = __write_conda_environment_file(args, filename, rendered_contents)
+        output_filename = __write_conda_environment_file(
+            args, filename, rendered_contents
+        )
     else:
         conda_yaml_dict = environment = None
         # Just call conda-env directly in plain environment.yml files
@@ -605,7 +710,9 @@ def main(args=None):
         return retcode
 
     if is_devenv_input_file:
-        write_activate_deactivate_scripts(args, conda_yaml_dict, environment, env_directory)
+        write_activate_deactivate_scripts(
+            args, conda_yaml_dict, environment, env_directory
+        )
     return 0
 
 
