@@ -228,7 +228,7 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
                 package_name = dep
                 package_version = ""
             else:
-                m = re.match(package_pattern, dep)
+                m = re.match(package_pattern, dep, flags=re.IGNORECASE)
                 if m is None:
                     raise RuntimeError(
                         'The package version specification "{}" do not follow the'

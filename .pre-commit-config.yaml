@@ -15,6 +15,6 @@ repos:
       - id: rst
         name: rst
         entry: rst-lint --encoding utf-8
-        files: ^(CHANGELOG.rst|README.rst|HOWTORELEASE.rst|changelog/.*)$
+        files: ^(README.rst|HOWTORELEASE.rst)$
         language: python
         additional_dependencies: [pygments, restructuredtext_lint]

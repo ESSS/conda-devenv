@@ -2,10 +2,18 @@
 History
 =======
 
+1.1.3 (2019-12-26)
+------------------
+
+* Accept package version specifiers containing upper case letters  (`#95`_).
+
+.. _`#95`: https://github.com/ESSS/conda-devenv/issues/95
+
+
 1.1.2 (2019-05-07)
 ------------------
 
-* Correctly support git and mercurial repositories in ``pip`` dependencies. (`#92_`).
+* Correctly support git and mercurial repositories in ``pip`` dependencies (`#92`_).
 
 .. _`#92`: https://github.com/ESSS/conda-devenv/pull/92
 
