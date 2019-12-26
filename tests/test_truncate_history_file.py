@@ -5,7 +5,7 @@ def test_truncate_history_file_backups_file(mocker, tmpdir):
     import textwrap
 
     history = textwrap.dedent(
-        """\
+        r"""\
         ==> 2018-06-01 10:58:59 <==
         # cmd: D:\Miniconda\Scripts\conda create -n devenv --file requirements_dev.txt
         +mirror-conda-forge::argh-0.26.2-py36_1
