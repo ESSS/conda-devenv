@@ -1,7 +1,4 @@
-import os
-
 import pytest
-import sys
 
 from conda_devenv.devenv import load_yaml_dict
 
@@ -70,7 +67,6 @@ def test_get_env_name(mocker, tmpdir, cmd_line_name):
 
 
 def test_is_included_var(datadir):
-    import six
     import textwrap
 
     a_env_file = datadir / "a.devenv.yml"

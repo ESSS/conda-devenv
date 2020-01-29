@@ -3,9 +3,6 @@ import os
 import re
 import sys
 
-import six
-
-
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
 
