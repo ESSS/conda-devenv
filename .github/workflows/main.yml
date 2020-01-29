@@ -10,11 +10,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tox_env: ["py27", "py36", "py37", "py38", "linting", "docs"]
+        tox_env: ["py36", "py37", "py38", "linting", "docs"]
         os: [ubuntu-latest, windows-latest]
         include:
-          - tox_env: "py27"
-            python: "2.7"
           - tox_env: "py36"
             python: "3.6"
           - tox_env: "py37"

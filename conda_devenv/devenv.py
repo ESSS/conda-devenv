@@ -137,9 +137,7 @@ def separate_strings_from_dicts(elements):
         elif isinstance(item, dict):
             all_dicts.append(item)
         else:
-            raise RuntimeError(
-                f"Only strings and dicts are supported, got: {item!r}"
-            )
+            raise RuntimeError(f"Only strings and dicts are supported, got: {item!r}")
     return all_strs, all_dicts
 
 
@@ -244,9 +242,7 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
             if len(package_version) > 0:
                 version_matchers[package_version] = True
         else:
-            raise RuntimeError(
-                f"Only strings and dicts are supported, got: {dep!r}"
-            )
+            raise RuntimeError(f"Only strings and dicts are supported, got: {dep!r}")
 
     result = set()
     for dep_name, dep_version_matchers in new_dependencies.items():
@@ -323,43 +319,29 @@ def render_activate_script(environment, shell):
 
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = (
-                    pathsep.join(value)
-                    + pathsep
-                    + f"${variable}"
-                )
+                value = pathsep.join(value) + pathsep + f"${variable}"
 
-            script.append(
-                f"if [ ! -z ${{{variable}+x}} ]; then"
-            )
+            script.append(f"if [ ! -z ${{{variable}+x}} ]; then")
             script.append(
                 '    export CONDA_DEVENV_BKP_{variable}="${variable}"'.format(
                     variable=variable
                 )
             )
             script.append("fi")
-            script.append(
-                f'export {variable}="{value}"'
-            )
+            script.append(f'export {variable}="{value}"')
 
         elif shell == "cmd":
             pathsep = ";"
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = (
-                    pathsep.join(value)
-                    + pathsep
-                    + f"%{variable}%"
-                )
+                value = pathsep.join(value) + pathsep + f"%{variable}%"
 
             script.append(
                 'set "CONDA_DEVENV_BKP_{variable}=%{variable}%"'.format(
                     variable=variable
                 )
             )
-            script.append(
-                f'set "{variable}={value}"'
-            )
+            script.append(f'set "{variable}={value}"')
 
         elif shell == "fish":
             quote = '"'
@@ -411,9 +393,7 @@ def render_deactivate_script(environment, shell="bash"):
                     variable=variable
                 )
             )
-            script.append(
-                f"    unset CONDA_DEVENV_BKP_{variable}"
-            )
+            script.append(f"    unset CONDA_DEVENV_BKP_{variable}")
             script.append("else")
             script.append(f"    unset {variable}")
             script.append("fi")
@@ -432,9 +412,7 @@ def render_deactivate_script(environment, shell="bash"):
                     variable=variable
                 )
             )
-            script.append(
-                f"set -e CONDA_DEVENV_BKP_{variable}"
-            )
+            script.append(f"set -e CONDA_DEVENV_BKP_{variable}")
 
         else:
             raise ValueError("Unknown platform")
