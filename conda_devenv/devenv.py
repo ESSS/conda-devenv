@@ -1,12 +1,7 @@
-from __future__ import print_function, absolute_import
-
 import argparse
 import os
 import re
 import sys
-
-import six
-
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
@@ -16,7 +11,7 @@ def preprocess_selector_in_line(line):
     if x is None:
         return line
     expr = x.group(1).strip()
-    return "{{% if {0} %}}{1}{{% endif %}}".format(expr, line)
+    return f"{{% if {expr} %}}{line}{{% endif %}}"
 
 
 def preprocess_selectors(contents):
@@ -137,14 +132,12 @@ def separate_strings_from_dicts(elements):
     all_strs = []
     all_dicts = []
     for item in elements:
-        if isinstance(item, six.string_types):
+        if isinstance(item, str):
             all_strs.append(item)
         elif isinstance(item, dict):
             all_dicts.append(item)
         else:
-            raise RuntimeError(
-                "Only strings and dicts are supported, got: {!r}".format(item)
-            )
+            raise RuntimeError(f"Only strings and dicts are supported, got: {item!r}")
     return all_strs, all_dicts
 
 
@@ -219,7 +212,7 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
                     dep, key_to_merge=key, pip=(key == "pip")
                 )
             new_dict_dependencies.append(dep)
-        elif isinstance(dep, six.string_types):
+        elif isinstance(dep, str):
             if pip and ("+" in dep or ":" in dep):
                 # Look for dependencies in the pip section that are
                 # managed by version control.  For example:
@@ -249,9 +242,7 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
             if len(package_version) > 0:
                 version_matchers[package_version] = True
         else:
-            raise RuntimeError(
-                "Only strings and dicts are supported, got: {!r}".format(dep)
-            )
+            raise RuntimeError(f"Only strings and dicts are supported, got: {dep!r}")
 
     result = set()
     for dep_name, dep_version_matchers in new_dependencies.items():
@@ -328,43 +319,29 @@ def render_activate_script(environment, shell):
 
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = (
-                    pathsep.join(value)
-                    + pathsep
-                    + "${variable}".format(variable=variable)
-                )
+                value = pathsep.join(value) + pathsep + f"${variable}"
 
-            script.append(
-                "if [ ! -z ${{{variable}+x}} ]; then".format(variable=variable)
-            )
+            script.append(f"if [ ! -z ${{{variable}+x}} ]; then")
             script.append(
                 '    export CONDA_DEVENV_BKP_{variable}="${variable}"'.format(
                     variable=variable
                 )
             )
             script.append("fi")
-            script.append(
-                'export {variable}="{value}"'.format(variable=variable, value=value)
-            )
+            script.append(f'export {variable}="{value}"')
 
         elif shell == "cmd":
             pathsep = ";"
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
-                value = (
-                    pathsep.join(value)
-                    + pathsep
-                    + "%{variable}%".format(variable=variable)
-                )
+                value = pathsep.join(value) + pathsep + f"%{variable}%"
 
             script.append(
                 'set "CONDA_DEVENV_BKP_{variable}=%{variable}%"'.format(
                     variable=variable
                 )
             )
-            script.append(
-                'set "{variable}={value}"'.format(variable=variable, value=value)
-            )
+            script.append(f'set "{variable}={value}"')
 
         elif shell == "fish":
             quote = '"'
@@ -416,11 +393,9 @@ def render_deactivate_script(environment, shell="bash"):
                     variable=variable
                 )
             )
-            script.append(
-                "    unset CONDA_DEVENV_BKP_{variable}".format(variable=variable)
-            )
+            script.append(f"    unset CONDA_DEVENV_BKP_{variable}")
             script.append("else")
-            script.append("    unset {variable}".format(variable=variable))
+            script.append(f"    unset {variable}")
             script.append("fi")
 
         elif shell == "cmd":
@@ -429,7 +404,7 @@ def render_deactivate_script(environment, shell="bash"):
                     variable=variable
                 )
             )
-            script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
+            script.append(f"set CONDA_DEVENV_BKP_{variable}=")
 
         elif shell == "fish":
             script.append(
@@ -437,9 +412,7 @@ def render_deactivate_script(environment, shell="bash"):
                     variable=variable
                 )
             )
-            script.append(
-                "set -e CONDA_DEVENV_BKP_{variable}".format(variable=variable)
-            )
+            script.append(f"set -e CONDA_DEVENV_BKP_{variable}")
 
         else:
             raise ValueError("Unknown platform")
@@ -491,7 +464,7 @@ def truncate_history_file(env_directory):
     from shutil import copyfile
 
     history_filename = join(env_directory, "conda-meta", "history")
-    history_backup_filename = "%s.%s" % (history_filename, time())
+    history_backup_filename = "{}.{}".format(history_filename, time())
     if isfile(history_filename):
         copyfile(history_filename, history_backup_filename)
 
@@ -663,13 +636,13 @@ def main(args=None):
     if args.version:
         from ._version import version
 
-        print("conda-devenv version {0}".format(version))
+        print(f"conda-devenv version {version}")
         return 0
 
     filename = args.file
     filename = os.path.abspath(filename)
     if not os.path.isfile(filename):
-        print('File "{0}" does not exist.'.format(filename), file=sys.stderr)
+        print(f'File "{filename}" does not exist.', file=sys.stderr)
         return 1
 
     is_devenv_input_file = filename.endswith(".devenv.yml")

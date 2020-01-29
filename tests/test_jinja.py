@@ -194,11 +194,11 @@ def test_jinja_win64(monkeypatch):
 
 def test_preprocess_selector_in_line():
     line = "  - ccache    # [linux or osx]"
-    expected = "{{% if linux or osx %}}{0}{{% endif %}}".format(line)
+    expected = f"{{% if linux or osx %}}{line}{{% endif %}}"
     assert preprocess_selector_in_line(line) == expected
 
     line = "  - clcache    # [ win ]"
-    expected = "{{% if win %}}{0}{{% endif %}}".format(line)
+    expected = f"{{% if win %}}{line}{{% endif %}}"
     assert preprocess_selector_in_line(line) == expected
 
     line = "  - boost"
@@ -210,7 +210,7 @@ def test_preprocess_selector_in_line():
     assert preprocess_selector_in_line(line) == expected
 
     line = "  - cmake  # [linux] cmake is a required dependency in linux"
-    expected = "{{% if linux %}}{0}{{% endif %}}".format(line)
+    expected = f"{{% if linux %}}{line}{{% endif %}}"
     assert preprocess_selector_in_line(line) == expected
 
 

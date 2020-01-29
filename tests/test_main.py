@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, print_function, unicode_literals
-
 import sys
 import textwrap
 
@@ -205,7 +203,7 @@ def test_error_message_environment_file_not_found(
     assert devenv.main(args) == 1
     out, err = capsys.readouterr()
     assert out == ""
-    assert err == 'File "{0}" does not exist.\n'.format(str(tmpdir / expected_name))
+    assert err == 'File "{}" does not exist.\n'.format(str(tmpdir / expected_name))
 
 
 def test_get_env_directory(mocker, tmpdir):
