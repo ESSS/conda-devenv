@@ -17,16 +17,10 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir):
     with pytest.raises(ValueError) as e:
         load_yaml_dict(filename)
 
-    if sys.version_info >= (3,):
-        exception_message_start = (
-            "The 'environment' key is supposed to be a dictionary, but you have the type "
-            "'<class 'list'>' at "
-        )
-    else:
-        exception_message_start = (
-            "The 'environment' key is supposed to be a dictionary, but you have the type "
-            "'<type 'list'>' at "
-        )
+    exception_message_start = (
+        "The 'environment' key is supposed to be a dictionary, but you have the type "
+        "'<class 'list'>' at "
+    )
     assert exception_message_start in str(e.value)
 
 
@@ -36,16 +30,10 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_
     with pytest.raises(ValueError) as e:
         load_yaml_dict(str(datadir / "b_includes_wrong_definition_at_environment.yml"))
 
-    if sys.version_info >= (3,):
-        exception_message_start = (
-            "The 'environment' key is supposed to be a dictionary, but you have the type "
-            "'<class 'list'>' at "
-        )
-    else:
-        exception_message_start = (
-            "The 'environment' key is supposed to be a dictionary, but you have the type "
-            "'<type 'list'>' at "
-        )
+    exception_message_start = (
+        "The 'environment' key is supposed to be a dictionary, but you have the type "
+        "'<class 'list'>' at "
+    )
 
     assert exception_message_start in str(e.value)
     assert "a_wrong_definition_at_environment.yml" in str(e.value)
@@ -87,7 +75,7 @@ def test_is_included_var(datadir):
 
     a_env_file = datadir / "a.devenv.yml"
     a_env_file.write_text(
-        six.text_type(
+        str(
             textwrap.dedent(
                 """\
         name: a
@@ -102,7 +90,7 @@ def test_is_included_var(datadir):
     )
     b_env_file = datadir / "b.devenv.yml"
     b_env_file.write_text(
-        six.text_type(
+        str(
             textwrap.dedent(
                 """\
         name: b
