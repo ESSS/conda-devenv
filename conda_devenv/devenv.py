@@ -2,6 +2,7 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
@@ -75,7 +76,7 @@ def handle_includes(root_filename, root_yaml):
     import yaml
     import collections
 
-    queue = collections.OrderedDict({root_filename: root_yaml})
+    queue = collections.OrderedDict({Path(root_filename).resolve(): root_yaml})
     visited = collections.OrderedDict()
 
     if root_yaml is None:
@@ -91,18 +92,23 @@ def handle_includes(root_filename, root_yaml):
             continue
 
         for included_filename in yaml_dict.get("includes") or []:
-            included_filename = os.path.abspath(included_filename)
-            if not os.path.isfile(included_filename):
+            if Path(included_filename).is_absolute():
+                included_filename = Path(included_filename)
+            else:
+                included_filename = Path(filename).parent / included_filename
+
+            if not included_filename.is_file():
                 raise ValueError(
                     "Couldn't find the file '{included_filename}' "
                     "while processing the file '{filename}'.".format(
                         included_filename=included_filename, filename=filename
                     )
                 )
-            with open(included_filename, "r") as f:
-                jinja_contents = render_jinja(
-                    f.read(), included_filename, is_included=True
-                )
+            jinja_contents = render_jinja(
+                included_filename.read_text(encoding="UTF-8"),
+                included_filename,
+                is_included=True,
+            )
             included_yaml_dict = yaml.safe_load(jinja_contents)
             if included_yaml_dict is None:
                 raise ValueError(
@@ -111,7 +117,7 @@ def handle_includes(root_filename, root_yaml):
                         included_filename=included_filename, filename=filename
                     )
                 )
-            queue[included_filename] = included_yaml_dict
+            queue[included_filename.resolve()] = included_yaml_dict
 
         if "includes" in yaml_dict:
             del yaml_dict["includes"]

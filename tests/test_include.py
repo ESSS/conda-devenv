@@ -76,6 +76,18 @@ def test_include_file_with_relative_includes(datadir):
     assert sorted(dicts.keys()) == ["proj1", "proj2", "set_variable"]
 
 
+def test_include_relative_to_env_filename(datadir, monkeypatch):
+    monkeypatch.chdir(datadir / "proj1")
+    dicts = obtain_yaml_dicts(str(datadir / "relative_includes.yml"))
+    assert len(dicts) == 4
+    assert sorted(dicts.keys()) == [
+        "non_root_relative",
+        "proj1",
+        "proj2",
+        "set_variable",
+    ]
+
+
 def test_include_empty_file(datadir):
     with pytest.raises(ValueError):
         obtain_yaml_dicts(str(datadir / "includes_empty_file.yml"))
