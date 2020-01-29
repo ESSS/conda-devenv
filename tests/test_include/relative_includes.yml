@@ -1,0 +1,3 @@
+name: non_root_relative
+includes:
+  - proj1/relative_include.yml
