@@ -14,7 +14,7 @@ def patch_conda_calls(mocker):
     conda.
     """
     mocker.patch.object(devenv, "get_env_directory", autospec=True)
-    mocker.patch.object(devenv, "truncate_history_file", autospec=True)
+    mocker.patch.object(devenv, "ensure_history", autospec=True)
     mocker.patch.object(devenv, "_call_conda", autospec=True, return_value=0)
     mocker.patch.object(devenv, "write_activate_deactivate_scripts", autospec=True)
 
@@ -24,7 +24,7 @@ def patch_conda_calls(mocker):
     [("environment.devenv.yml", 1), ("environment.yml", 0),],
 )
 @pytest.mark.parametrize("return_none", [True, False])
-@pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
+@pytest.mark.parametrize("no_prune, ensure_history_call_count", [(True, 1), (False, 1)])
 @pytest.mark.usefixtures("patch_conda_calls")
 def test_handle_input_file(
     tmpdir,
@@ -32,7 +32,7 @@ def test_handle_input_file(
     write_scripts_call_count,
     return_none,
     no_prune,
-    truncate_call_count,
+    ensure_history_call_count,
 ):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
@@ -78,7 +78,7 @@ def test_handle_input_file(
     assert (
         devenv.write_activate_deactivate_scripts.call_count == write_scripts_call_count
     )
-    assert devenv.truncate_history_file.call_count == truncate_call_count
+    assert devenv.ensure_history.call_count == ensure_history_call_count
 
 
 @pytest.mark.parametrize("input_name", ["environment.devenv.yml", "environment.yml"])

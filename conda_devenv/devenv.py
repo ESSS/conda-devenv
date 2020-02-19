@@ -4,6 +4,7 @@ import argparse
 import os
 import re
 import sys
+from pathlib import Path
 
 import six
 
@@ -469,34 +470,77 @@ def __write_conda_environment_file(args, filename, rendered_contents):
     return output_filename
 
 
-def truncate_history_file(env_directory):
+def _regen(env_path, history_path):
+    """Regenerate conda history in case it was truncated before."""
+    import conda.gateways.logging  # noqa # This alters logging.Logger and if we don't import it other conda imports break.
+    import datetime
+
+    from conda.core.prefix_data import PrefixData
+
+    pd = PrefixData(str(env_path))
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    print("History was truncated previously. Regenerating.")
+
+    with history_path.open("w") as history:
+        print(f"==> {timestamp} <==", file=history)
+        print("# cmd: env create", file=history)
+        for prec in pd.iter_records():
+            *_, channel = str(prec.channel.name).split("/")
+            print(
+                f"+{channel}/{prec.channel.subdir}::{prec.name}-{prec.version}-{prec.build}",
+                file=history,
+            )
+        print("# update specs: ['python']", file=history)
+
+
+def regenerate_history(env_path, history_path):
     """
-    Since conda version 4.4 the "--prune" option does not prune the environment to match just the
-    supplied specs but take in account the previous environment history we truncate the history
-    file so only the package and version specs from the environment description file are used.
+    Invoke _regen in a separate process.
 
-    This is based on the comments:
-    - https://github.com/conda/conda/issues/6809#issuecomment-367877250
-    - https://github.com/conda/conda/issues/7279#issuecomment-389359679
+    Conda has some global state that is set when _regen runs. So we use a
+    separate process, since we use conda later in devenv and this global state
+    breaks our use.
+    """
+    from multiprocessing import Process
 
-    If the behavior of the "--prune" option changes again or something in the lines
-    "--ignore-history" or "--prune-hard" ar implemented we should revisit this function and
-    update the "conda-env" arguments.
+    r = Process(target=_regen, args=(env_path, history_path))
+    r.start()
+    r.join()
+
+
+def ensure_history(env_directory):
+    """
+    Previously, we used to truncate the history as a workaround for an issue with Conda 4.4 where
+    `env update --prune` was not working if the history was present.
+
+    Since conda 4.7, this workaround does not work anymore, and the following change was made so that
+    prune works again:
+
+    - https://github.com/conda/conda/pull/9614#issuecomment-583666120
+
+    Conda seems to rely on the history to calculate the full transaction now, so truncating it makes
+    it so that no package is removed on the transaction. To keep supporting environments that had
+    their history truncated, we now generate a fake history emulating the installation of every package
+    in the environment.
+
+    If the behavior of the "--prune" option changes again we should still revisit this function.
     """
     if env_directory is None:
-        return  # Environment does not exists, no history to truncate
+        return
 
-    from os.path import isfile, join
-    from time import time
-    from shutil import copyfile
+    env_path = Path(env_directory)
 
-    history_filename = join(env_directory, "conda-meta", "history")
-    history_backup_filename = "%s.%s" % (history_filename, time())
-    if isfile(history_filename):
-        copyfile(history_filename, history_backup_filename)
+    history_path = env_path / "conda-meta" / "history"
 
-        with open(history_filename, "w") as history:
-            history.truncate()
+    if not (
+        env_path.is_dir()
+        and (not history_path.exists() or history_path.stat().st_size == 0)
+    ):
+        return
+
+    regenerate_history(env_path, history_path)
 
 
 def __call_conda_env_update(args, output_filename):
@@ -700,9 +744,7 @@ def main(args=None):
     env_name = get_env_name(args, output_filename, conda_yaml_dict)
     env_directory = get_env_directory(env_name)
 
-    if not args.no_prune:
-        # Truncate the history file
-        truncate_history_file(env_directory)
+    ensure_history(env_directory)
 
     # Call conda-env update
     retcode = __call_conda_env_update(args, output_filename)

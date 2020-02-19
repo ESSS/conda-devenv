@@ -1,36 +1,53 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
+import pytest
 
-def test_truncate_history_file_backups_file(mocker, tmpdir):
-    import textwrap
+from conda_devenv import devenv
+from conda_devenv.devenv import ensure_history
 
-    history = textwrap.dedent(
-        r"""\
-        ==> 2018-06-01 10:58:59 <==
-        # cmd: D:\Miniconda\Scripts\conda create -n devenv --file requirements_dev.txt
-        +mirror-conda-forge::argh-0.26.2-py36_1
-        +mirror-conda-forge::bumpversion-0.5.3-py36_0
-        +mirror-conda-forge::pathtools-0.1.2-py36_0
+
+@pytest.fixture
+def patch_regenerate_history(mocker):
     """
-    )
-    history_file = tmpdir.join("conda-meta", "history")
-    history_file.ensure()
-    history_file.write(history)
-    mocker.patch("time.time", return_value=123)
-
-    from conda_devenv.devenv import truncate_history_file
-
-    truncate_history_file(str(tmpdir))
-
-    backup = tmpdir.join("conda-meta", "history.123")
-    assert backup.read() == history
-    assert history_file.read() == ""
+    Patches all necessary functions so that we can do integration testing without actually calling
+    conda.
+    """
+    mocker.patch.object(devenv, "regenerate_history", autospec=True)
 
 
-def test_truncate_history_file_ingores_missing(mocker, tmpdir):
+def test_ensure_history_does_not_touch_history_if_it_contains_anything(
+    patch_regenerate_history, tmpdir
+):
     conda_meta_dir = tmpdir.join("conda-meta")
     conda_meta_dir.ensure(dir=True)  # Just meta folder no history.
-    from conda_devenv.devenv import truncate_history_file
+    history = conda_meta_dir.join("history")
+    history.ensure()
 
-    truncate_history_file(str(tmpdir))
-    # Truncate should not raise.
+    with history.open("w") as h:
+        print("anything", file=h)
+
+    ensure_history(str(tmpdir))
+
+    assert devenv.regenerate_history.call_count == 0
+
+
+def test_ensure_history_file_regenerates_truncated_history(
+    patch_regenerate_history, tmpdir
+):
+    conda_meta_dir = tmpdir.join("conda-meta")
+    conda_meta_dir.ensure(dir=True)  # Just meta folder no history.
+    history = conda_meta_dir.join("history")
+    history.ensure()
+
+    ensure_history(str(tmpdir))
+
+    assert devenv.regenerate_history.call_count == 1
+
+
+def test_ensure_history_file_does_not_ignore_missing(patch_regenerate_history, tmpdir):
+    conda_meta_dir = tmpdir.join("conda-meta")
+    conda_meta_dir.ensure(dir=True)  # Just meta folder no history.
+
+    ensure_history(str(tmpdir))
+
+    assert devenv.regenerate_history.call_count == 1
