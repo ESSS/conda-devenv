@@ -448,34 +448,46 @@ def __write_conda_environment_file(args, filename, rendered_contents):
     return output_filename
 
 
-def truncate_history_file(env_directory):
+def ensure_history(env_directory):
     """
-    Since conda version 4.4 the "--prune" option does not prune the environment to match just the
-    supplied specs but take in account the previous environment history we truncate the history
-    file so only the package and version specs from the environment description file are used.
+    Previously, we used to truncate the history as a workaround for an issue with Conda 4.4 where
+    `env update --prune` was not working if the history was present.
 
-    This is based on the comments:
-    - https://github.com/conda/conda/issues/6809#issuecomment-367877250
-    - https://github.com/conda/conda/issues/7279#issuecomment-389359679
+    Since conda 4.7, this workaround does not work anymore, and the following change was made so that
+    prune works again:
 
-    If the behavior of the "--prune" option changes again or something in the lines
-    "--ignore-history" or "--prune-hard" ar implemented we should revisit this function and
-    update the "conda-env" arguments.
+    - https://github.com/conda/conda/pull/9614#issuecomment-583666120
+
+    Conda seems to rely on the history to calculate the full transaction now, so truncating it makes
+    it so that no package is removed on the transaction. To keep supporting environments that had
+    their history truncated, we now generate a fake history emulating the installation of every package
+    in the environment.
+
+    If the behavior of the "--prune" option changes again we should still revisit this function.
     """
-    if env_directory is None:
-        return  # Environment does not exists, no history to truncate
+    env_path = Path(env_directory)
 
-    from os.path import isfile, join
-    from time import time
-    from shutil import copyfile
+    history_path = env_path / 'conda-meta' / 'history')
 
-    history_filename = join(env_directory, "conda-meta", "history")
-    history_backup_filename = "{}.{}".format(history_filename, time())
-    if isfile(history_filename):
-        copyfile(history_filename, history_backup_filename)
+    if not (env_path.is_dir() and history_path.exists() and history_path.stat().st_rsize > 0):
+        return
 
-        with open(history_filename, "w") as history:
-            history.truncate()
+    import conda.gateways.logging  # This alters logging.Logger and if we don't import it other conda imports break.
+    import datetime
+
+    from conda.core.prefix_data import PrefixData
+
+    pd = PrefixData(str(env_directory))
+
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    with history_path.open('w') as history:
+        print(f'==> {timestamp} <==', file=history)
+        for prec in pd.iter_records():
+            *_, channel = str(prec.channel.name).split('/')
+            print(f'+{channel}::{prec.name}-{prec.version}-{prec.build}', file=history)
+        print('# update specs: []', file=history)
+
 
 
 def __call_conda_env_update(args, output_filename):
@@ -679,9 +691,7 @@ def main(args=None):
     env_name = get_env_name(args, output_filename, conda_yaml_dict)
     env_directory = get_env_directory(env_name)
 
-    if not args.no_prune:
-        # Truncate the history file
-        truncate_history_file(env_directory)
+    ensure_history(env_directory)
 
     # Call conda-env update
     retcode = __call_conda_env_update(args, output_filename)
