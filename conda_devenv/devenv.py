@@ -2,7 +2,9 @@ import argparse
 import os
 import re
 import sys
+import shlex
 from pathlib import Path
+from textwrap import dedent
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
@@ -317,6 +319,17 @@ def render_activate_script(environment, shell):
         script = ["#!/bin/bash"]
     elif shell == "cmd":
         script = ["@echo off"]
+    elif shell == "fish":
+        script = dedent(
+            """\
+            function add_path
+                if contains -- $argv $fish_user_paths
+                    return
+                end
+
+                set -U fish_user_paths $fish_user_paths $argv
+            end"""
+        ).splitlines()
 
     for variable in sorted(environment):
         value = environment[variable]
@@ -351,16 +364,14 @@ def render_activate_script(environment, shell):
 
         elif shell == "fish":
             quote = '"'
+            pathsep = ":"
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
                 if variable == "PATH":
-                    # HACK: Fish handles the PATH variable in a different way
-                    # than other variables. So it needs a specific syntax to add
-                    # values to PATH
-                    pathsep = " "
-                    quote = ""
-                else:
-                    pathsep = ":"
+                    path_entries = environment[variable]
+                    for entry in path_entries:
+                        script.append(f"add_path {shlex.quote(entry)}")
+                    continue
                 value = pathsep.join(value) + pathsep + ("$%s" % variable)
 
             script.append(
@@ -384,11 +395,37 @@ def render_deactivate_script(environment, shell="bash"):
     script = []
     if shell == "bash":
         script = ["#!/bin/bash"]
+        script.extend(
+            dedent(
+                """\
+                function remove_path() {
+                   local p=":$1:"
+                   local d=":$PATH:"
+                   d=${d//$p/:}
+                   d=${d/#:/}
+                   export PATH=${d/%:/}
+                }"""
+            ).splitlines()
+        )
     elif shell == "cmd":
         script = ["@echo off"]
+    elif shell == "fish":
+        script = dedent(
+            """\
+            function remove_path
+                if set -l index (contains -i $argv[1] $PATH)
+                    set --erase --universal fish_user_paths[$index]
+                end
+            end"""
+        ).splitlines()
 
     for variable in sorted(environment):
         if shell == "bash":
+            if variable == "PATH":
+                path_entries = environment[variable]
+                for entry in path_entries:
+                    script.append(f"remove_path {shlex.quote(entry)}")
+                continue
             script.append(
                 "if [ ! -z ${{CONDA_DEVENV_BKP_{variable}+x}} ]; then".format(
                     variable=variable
@@ -413,6 +450,12 @@ def render_deactivate_script(environment, shell="bash"):
             script.append(f"set CONDA_DEVENV_BKP_{variable}=")
 
         elif shell == "fish":
+            if variable == "PATH":
+                path_entries = environment[variable]
+                for entry in path_entries:
+                    script.append(f"remove_path {shlex.quote(entry)}")
+                continue
+
             script.append(
                 "set -gx {variable} $CONDA_DEVENV_BKP_{variable}".format(
                     variable=variable
