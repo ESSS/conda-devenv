@@ -200,7 +200,7 @@ def render_activate_script(environment: Environment, shell: str):
 
 
 def bash_and_fish_remove_path(value: List[str]) -> str:
-    """Renders the code to remove directories from the path for bash and fish.
+    """Renders the code to remove directories from the path in bash and fish.
 
     :param value: A list of values to prepend to the path.
     :return: The code to prepend to path.
@@ -218,11 +218,10 @@ def cmd_remove_path(value: List[str]) -> str:
 
 
 def bash_unset_variable(variable_name: str):
-    """Render the code to unset a variable and/or restore its backp in bash.
+    """Render the code to unset a variable and/or restore its backup in bash.
 
     :param variable_name: The name of the variable.
-    :param value: The new value to set the variable to.
-    :return: The code to backup and set the variable.
+    :return: The code to restore and/or unset the variable.
     """
     return dedent(
         f"""\
@@ -236,11 +235,10 @@ def bash_unset_variable(variable_name: str):
 
 
 def fish_unset_variable(variable_name: str):
-    """Render the code to unset a variable and/or restore its backp in bash.
+    """Render the code to unset a variable and/or restore its backup in bash.
 
     :param variable_name: The name of the variable.
-    :param value: The new value to set the variable to.
-    :return: The code to backup and set the variable.
+    :return: The code to restore and/or unset the variable.
     """
     return dedent(
         f"""\
@@ -267,9 +265,11 @@ def deactivate_body(
     remove_path: Callable[[List[str]], str],
     variable_unset_renderer: Callable[[str], str],
 ):
-    """Render the activate script body for bash and fish.
+    """Render the activate script body.
 
     :param environment: The environment to base the script on.
+    :param remove_path: A function capable of rendering the code to remove
+                        entries from PATH.
     :param variable_unset_renderer: A function capable of rendering the code to
                                     restore backup or unset a variable.
     :return: The script body.
