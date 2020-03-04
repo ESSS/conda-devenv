@@ -9,11 +9,23 @@ Environment = Dict[str, Value]
 
 
 class ScriptRenderer(NamedTuple):
+    """Renders a script.
+
+    Should be provided a preamble with needed boilerplate, a function capable
+    of generating a script body based on the environment, and an optional
+    epilogue.
+    """
+
     preamble: str
     generate_body: Callable[[Environment], str]
     epilogue: str = ""
 
-    def render(self, environment: Environment):
+    def render(self, environment: Environment) -> str:
+        """Render the script.
+
+        :param environment: The environment to base the script on.
+        :return: A full script.
+        """
         return "\n".join(
             s
             for s in (
@@ -26,16 +38,35 @@ class ScriptRenderer(NamedTuple):
 
 
 def bash_and_fish_path(value: List[str]) -> str:
+    """Renders the code to add directories to the path for bash and fish.
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
     return "\n".join(f"add_path {shlex.quote(entry)}" for entry in reversed(value))
 
 
 def list_prepend(
     variable_name: str, value: List[str], *, separator=":", variable_format: str
 ) -> str:
+    """Render the value of a shell list with prepended extra values.
+
+    :param variable_name: The name of the list variable.
+    :param value: A list of values to prepend to the variable.
+    :param separator: The desired separator.
+    :param variable_format: The format for dereferencing a variable on the shell.
+    :return: The new value portion to use for the list.
+    """
     return separator.join((*value, variable_format.format(variable_name=variable_name)))
 
 
 def bash_variable(variable_name: str, value: str):
+    """Render the code to backup and set a variable in bash.
+
+    :param variable_name: The name of the variable.
+    :param value: The new value to set the variable to.
+    :return: The code to backup and set the variable.
+    """
     return dedent(
         f'''\
         if [ ! -z ${{{variable_name}+x}} ]; then
@@ -46,6 +77,12 @@ def bash_variable(variable_name: str, value: str):
 
 
 def fish_variable(variable_name: str, value: str):
+    """Render the code to backup and set a variable in fish.
+
+    :param variable_name: The name of the variable.
+    :param value: The new value to set the variable to.
+    :return: The code to backup and set the variable.
+    """
     return dedent(
         f'''\
         set -gx CONDA_DEVENV_BKP_{variable_name} ${variable_name}
@@ -53,9 +90,17 @@ def fish_variable(variable_name: str, value: str):
     )
 
 
-def activate_body(
+def bash_and_fish_activate_body(
     environment: Environment, variable_renderer: Callable[[str, str], str]
 ):
+    """Render the activate script body for bash and fish.
+
+    :param environment: The environment to base the script on.
+    :param variable_renderer: A function capable of rendering the code to backup
+                              and set a variable.
+    :return: The script body.
+    """
+
     def make_variable(variable_name: str, value: Value) -> str:
         if variable_name == "PATH":
             assert isinstance(value, List)
@@ -75,6 +120,11 @@ def activate_body(
 
 
 def cmd_activate_body(environment: Environment):
+    """Render the activate script body for cmd.
+
+    :param environment: The environment to base the script on.
+    :return: The script body.
+    """
     body = []
 
     for variable in sorted(environment):
@@ -101,7 +151,7 @@ ACTIVATE_RENDERERS = {
                 [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
             }"""
         ),
-        generate_body=lambda env: activate_body(env, bash_variable),
+        generate_body=lambda env: bash_and_fish_activate_body(env, bash_variable),
     ),
     "fish": ScriptRenderer(
         preamble=dedent(
@@ -114,7 +164,7 @@ ACTIVATE_RENDERERS = {
                 set PATH $argv[1] $PATH
             end"""
         ),
-        generate_body=lambda env: activate_body(env, fish_variable),
+        generate_body=lambda env: bash_and_fish_activate_body(env, fish_variable),
     ),
     "cmd": ScriptRenderer(
         preamble=dedent(
@@ -127,14 +177,16 @@ ACTIVATE_RENDERERS = {
 
 
 def render_activate_script(environment: Environment, shell: str):
-    """
-    :param dict environment:
-    :param string shell:
+    """Render the activating script for a given environment and a given shell.
+
+    :param environment: The environment to base the script on.
+    :param shell:
         Valid values are:
             - bash
             - fish
             - cmd
-    :return: string
+    :return string: The activate script for the given shell based on the
+                    environment.
     """
     try:
         renderer = ACTIVATE_RENDERERS[shell]
@@ -145,10 +197,21 @@ def render_activate_script(environment: Environment, shell: str):
 
 
 def bash_and_fish_remove_path(value: List[str]) -> str:
+    """Renders the code to remove directories from the path for bash and fish.
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
     return "\n".join(f"remove_path {shlex.quote(entry)}" for entry in value)
 
 
 def bash_unset_variable(variable_name: str):
+    """Render the code to unset a variable and/or restore its backp in bash.
+
+    :param variable_name: The name of the variable.
+    :param value: The new value to set the variable to.
+    :return: The code to backup and set the variable.
+    """
     return dedent(
         f"""\
         if [ ! -z ${{CONDA_DEVENV_BKP_{variable_name}+x}} ]; then
@@ -161,6 +224,12 @@ def bash_unset_variable(variable_name: str):
 
 
 def fish_unset_variable(variable_name: str):
+    """Render the code to unset a variable and/or restore its backp in bash.
+
+    :param variable_name: The name of the variable.
+    :param value: The new value to set the variable to.
+    :return: The code to backup and set the variable.
+    """
     return dedent(
         f"""\
         set -gx {variable_name} $CONDA_DEVENV_BKP_{variable_name}
@@ -171,6 +240,14 @@ def fish_unset_variable(variable_name: str):
 def deactivate_body(
     environment: Environment, variable_unset_renderer: Callable[[str], str]
 ):
+    """Render the activate script body for bash and fish.
+
+    :param environment: The environment to base the script on.
+    :param variable_unset_renderer: A function capable of rendering the code to
+                                    restore backup or unset a variable.
+    :return: The script body.
+    """
+
     def unset_variable(variable_name: str, value: Value) -> str:
         if variable_name == "PATH":
             assert isinstance(value, List)
@@ -184,6 +261,11 @@ def deactivate_body(
 
 
 def cmd_deactivate_body(environment):
+    """Render the deactivate script body for cmd.
+
+    :param environment: The environment to base the script on.
+    :return: The script body.
+    """
     body = []
     for variable in sorted(environment):
         body.append(
@@ -231,6 +313,17 @@ DEACTIVATE_RENDERERS = {
 
 
 def render_deactivate_script(environment: Environment, shell="bash"):
+    """Render the deactivating script for a given environment and a given shell.
+
+    :param environment: The environment to base the script on.
+    :param shell:
+        Valid values are:
+            - bash
+            - fish
+            - cmd
+    :return string: The deactivate script for the given shell based on the
+                    environment.
+    """
     try:
         renderer = DEACTIVATE_RENDERERS[shell]
     except KeyError as e:
