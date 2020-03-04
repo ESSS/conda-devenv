@@ -208,6 +208,15 @@ def bash_and_fish_remove_path(value: List[str]) -> str:
     return "\n".join(f"remove_path {shlex.quote(entry)}" for entry in value)
 
 
+def cmd_remove_path(value: List[str]) -> str:
+    """Renders the code to remove directories from the path in cmd.
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
+    return "\n".join(f"set PATH=%PATH:{Path(entry)};=%" for entry in value)
+
+
 def bash_unset_variable(variable_name: str):
     """Render the code to unset a variable and/or restore its backp in bash.
 
@@ -240,8 +249,23 @@ def fish_unset_variable(variable_name: str):
     )
 
 
+def cmd_unset_variable(variable_name: str):
+    """Render the code to unset a variable and/or restore its backup in cmd.
+
+    :param variable_name: The name of the variable.
+    :return: The code to restore and/or unset the variable.
+    """
+    return dedent(
+        f"""\
+        set "{variable_name}=%CONDA_DEVENV_BKP_{variable_name}%"
+        set CONDA_DEVENV_BKP_{variable_name}="""
+    )
+
+
 def deactivate_body(
-    environment: Environment, variable_unset_renderer: Callable[[str], str]
+    environment: Environment,
+    remove_path: Callable[[List[str]], str],
+    variable_unset_renderer: Callable[[str], str],
 ):
     """Render the activate script body for bash and fish.
 
@@ -254,32 +278,9 @@ def deactivate_body(
     def unset_variable(variable_name: str, value: Value) -> str:
         if variable_name == "PATH":
             assert isinstance(value, List)
-            return bash_and_fish_remove_path(value)
+            return remove_path(value)
 
         return variable_unset_renderer(variable_name)
-
-    return "\n".join(
-        unset_variable(name, value) for name, value in sorted(environment.items())
-    )
-
-
-def cmd_deactivate_body(environment):
-    """Render the deactivate script body for cmd.
-
-    :param environment: The environment to base the script on.
-    :return: The script body.
-    """
-
-    def unset_variable(variable_name: str, value: Value) -> str:
-        if variable_name == "PATH":
-            assert isinstance(value, List)
-            return "\n".join(f"set PATH=%PATH:{Path(entry)};=%" for entry in value)
-
-        return dedent(
-            f"""\
-            set "{variable_name}=%CONDA_DEVENV_BKP_{variable_name}%"
-            set CONDA_DEVENV_BKP_{variable_name}="""
-        )
 
     return "\n".join(
         unset_variable(name, value) for name, value in sorted(environment.items())
@@ -299,7 +300,9 @@ DEACTIVATE_RENDERERS = {
                export PATH=${d/%:/}
             }"""
         ),
-        generate_body=lambda env: deactivate_body(env, bash_unset_variable),
+        generate_body=lambda env: deactivate_body(
+            env, bash_and_fish_remove_path, bash_unset_variable
+        ),
         epilogue="unset -f remove_path",
     ),
     "fish": ScriptRenderer(
@@ -311,7 +314,9 @@ DEACTIVATE_RENDERERS = {
                 end
             end"""
         ),
-        generate_body=lambda env: deactivate_body(env, fish_unset_variable),
+        generate_body=lambda env: deactivate_body(
+            env, bash_and_fish_remove_path, fish_unset_variable
+        ),
         epilogue="functions --erase remove_path",
     ),
     "cmd": ScriptRenderer(
@@ -319,7 +324,9 @@ DEACTIVATE_RENDERERS = {
             """\
             @echo off"""
         ),
-        generate_body=cmd_deactivate_body,
+        generate_body=lambda env: deactivate_body(
+            env, cmd_remove_path, cmd_unset_variable
+        ),
     ),
 }
 
