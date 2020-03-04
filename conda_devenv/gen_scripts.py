@@ -240,6 +240,7 @@ def cmd_remove_path(value: List[str]) -> str:
     :param value: A list of values to prepend to the path.
     :return: The code to prepend to path.
     """
+    # Path here ensures normalization of separators.
     return "\n".join(f"set PATH=%PATH:{Path(entry)};=%" for entry in value)
 
 
