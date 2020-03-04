@@ -148,8 +148,8 @@ def test_render_activate_and_deactivate_scripts_cmd(single_values, multiple_valu
         @echo off
         set "LD_LIBRARY_PATH=%CONDA_DEVENV_BKP_LD_LIBRARY_PATH%"
         set CONDA_DEVENV_BKP_LD_LIBRARY_PATH=
-        set "PATH=%CONDA_DEVENV_BKP_PATH%"
-        set CONDA_DEVENV_BKP_PATH=
+        set PATH=%PATH:path_a;=%
+        set PATH=%PATH:path_b;=%
         """
         ).strip()
     )

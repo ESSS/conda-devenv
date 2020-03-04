@@ -1,4 +1,5 @@
 import shlex
+from pathlib import Path
 from textwrap import dedent
 
 from typing import Callable, Dict, List, Union, NamedTuple
@@ -268,14 +269,21 @@ def cmd_deactivate_body(environment):
     :param environment: The environment to base the script on.
     :return: The script body.
     """
-    body = []
-    for variable in sorted(environment):
-        body.append(
-            'set "{variable}=%CONDA_DEVENV_BKP_{variable}%"'.format(variable=variable)
-        )
-        body.append(f"set CONDA_DEVENV_BKP_{variable}=")
 
-    return "\n".join(body)
+    def unset_variable(variable_name: str, value: Value) -> str:
+        if variable_name == "PATH":
+            assert isinstance(value, List)
+            return "\n".join(f"set PATH=%PATH:{Path(entry)};=%" for entry in value)
+
+        return dedent(
+            f"""\
+            set "{variable_name}=%CONDA_DEVENV_BKP_{variable_name}%"
+            set CONDA_DEVENV_BKP_{variable_name}="""
+        )
+
+    return "\n".join(
+        unset_variable(name, value) for name, value in sorted(environment.items())
+    )
 
 
 DEACTIVATE_RENDERERS = {
