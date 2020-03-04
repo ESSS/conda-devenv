@@ -2,7 +2,7 @@ import shlex
 from pathlib import Path
 from textwrap import dedent
 
-from typing import Callable, Dict, List, Union, NamedTuple
+from typing import Callable, Dict, Iterable, List, Union, NamedTuple
 
 
 Value = Union[str, List[str]]
@@ -38,17 +38,12 @@ class ScriptRenderer(NamedTuple):
         )
 
 
-def bash_and_fish_path(value: List[str]) -> str:
-    """Renders the code to add directories to the path for bash and fish.
-
-    :param value: A list of values to prepend to the path.
-    :return: The code to prepend to path.
-    """
-    return "\n".join(f"add_path {shlex.quote(entry)}" for entry in reversed(value))
-
-
 def list_prepend(
-    variable_name: str, value: List[str], *, separator=":", variable_format: str
+    variable_name: str,
+    value: Iterable[str],
+    *,
+    separator=":",
+    variable_format: str = "${variable_name}",
 ) -> str:
     """Render the value of a shell list with prepended extra values.
 
@@ -59,6 +54,27 @@ def list_prepend(
     :return: The new value portion to use for the list.
     """
     return separator.join((*value, variable_format.format(variable_name=variable_name)))
+
+
+def bash_and_fish_add_path(value: List[str]) -> str:
+    """Renders the code to add directories to the path for bash and fish.
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
+    return "\n".join(f"add_path {shlex.quote(entry)}" for entry in reversed(value))
+
+
+def cmd_add_path(value: List[str]) -> str:
+    """Renders the code to add directories to the path for bash and fish.
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
+    path_value = list_prepend(
+        "PATH", reversed(value), separator=";", variable_format="%{variable_name}%"
+    )
+    return f'set "PATH={path_value}"'
 
 
 def bash_variable(variable_name: str, value: str):
@@ -91,8 +107,26 @@ def fish_variable(variable_name: str, value: str):
     )
 
 
-def bash_and_fish_activate_body(
-    environment: Environment, variable_renderer: Callable[[str, str], str]
+def cmd_variable(variable_name: str, value: str):
+    """Render the code to backup and set a variable in cmd.
+
+    :param variable_name: The name of the variable.
+    :param value: The new value to set the variable to.
+    :return: The code to backup and set the variable.
+    """
+    return dedent(
+        f'''\
+        set "CONDA_DEVENV_BKP_{variable_name}=%{variable_name}%"
+        set "{variable_name}={value}"'''
+    )
+
+
+def activate_body(
+    environment: Environment,
+    add_path: Callable[[List[str]], str],
+    variable_renderer: Callable[[str, str], str],
+    separator=":",
+    variable_format="${variable_name}",
 ):
     """Render the activate script body for bash and fish.
 
@@ -105,10 +139,15 @@ def bash_and_fish_activate_body(
     def make_variable(variable_name: str, value: Value) -> str:
         if variable_name == "PATH":
             assert isinstance(value, List)
-            return bash_and_fish_path(value)
+            return add_path(value)
 
         value = (
-            list_prepend(variable_name, value, variable_format="${variable_name}")
+            list_prepend(
+                variable_name,
+                value,
+                separator=separator,
+                variable_format=variable_format,
+            )
             if isinstance(value, List)
             else value
         )
@@ -120,29 +159,6 @@ def bash_and_fish_activate_body(
     )
 
 
-def cmd_activate_body(environment: Environment):
-    """Render the activate script body for cmd.
-
-    :param environment: The environment to base the script on.
-    :return: The script body.
-    """
-    body = []
-
-    for variable in sorted(environment):
-        value = environment[variable]
-        pathsep = ";"
-        if isinstance(value, list):
-            # Lists are supposed to prepend to the existing value
-            value = pathsep.join(value) + pathsep + f"%{variable}%"
-
-        body.append(
-            'set "CONDA_DEVENV_BKP_{variable}=%{variable}%"'.format(variable=variable)
-        )
-        body.append(f'set "{variable}={value}"')
-
-    return "\n".join(body)
-
-
 ACTIVATE_RENDERERS = {
     "bash": ScriptRenderer(
         preamble=dedent(
@@ -152,7 +168,9 @@ ACTIVATE_RENDERERS = {
                 [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
             }"""
         ),
-        generate_body=lambda env: bash_and_fish_activate_body(env, bash_variable),
+        generate_body=lambda env: activate_body(
+            env, bash_and_fish_add_path, bash_variable,
+        ),
         epilogue="unset -f add_path",
     ),
     "fish": ScriptRenderer(
@@ -166,7 +184,9 @@ ACTIVATE_RENDERERS = {
                 set PATH $argv[1] $PATH
             end"""
         ),
-        generate_body=lambda env: bash_and_fish_activate_body(env, fish_variable),
+        generate_body=lambda env: activate_body(
+            env, bash_and_fish_add_path, fish_variable,
+        ),
         epilogue="functions --erase add_path",
     ),
     "cmd": ScriptRenderer(
@@ -174,7 +194,13 @@ ACTIVATE_RENDERERS = {
             """\
             @echo off"""
         ),
-        generate_body=cmd_activate_body,
+        generate_body=lambda env: activate_body(
+            env,
+            cmd_add_path,
+            cmd_variable,
+            separator=";",
+            variable_format="%{variable_name}%",
+        ),
     ),
 }
 
@@ -301,7 +327,7 @@ DEACTIVATE_RENDERERS = {
             }"""
         ),
         generate_body=lambda env: deactivate_body(
-            env, bash_and_fish_remove_path, bash_unset_variable
+            env, bash_and_fish_remove_path, bash_unset_variable,
         ),
         epilogue="unset -f remove_path",
     ),
@@ -315,7 +341,7 @@ DEACTIVATE_RENDERERS = {
             end"""
         ),
         generate_body=lambda env: deactivate_body(
-            env, bash_and_fish_remove_path, fish_unset_variable
+            env, bash_and_fish_remove_path, fish_unset_variable,
         ),
         epilogue="functions --erase remove_path",
     ),
@@ -325,7 +351,7 @@ DEACTIVATE_RENDERERS = {
             @echo off"""
         ),
         generate_body=lambda env: deactivate_body(
-            env, cmd_remove_path, cmd_unset_variable
+            env, cmd_remove_path, cmd_unset_variable,
         ),
     ),
 }
