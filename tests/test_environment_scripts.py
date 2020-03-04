@@ -26,6 +26,9 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
         == textwrap.dedent(
             """\
         #!/bin/bash
+        function add_path {
+            [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
+        }
         if [ ! -z ${VALUE+x} ]; then
             export CONDA_DEVENV_BKP_VALUE="$VALUE"
         fi
@@ -38,14 +41,15 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
         == textwrap.dedent(
             """\
         #!/bin/bash
+        function add_path {
+            [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
+        }
         if [ ! -z ${LD_LIBRARY_PATH+x} ]; then
             export CONDA_DEVENV_BKP_LD_LIBRARY_PATH="$LD_LIBRARY_PATH"
         fi
         export LD_LIBRARY_PATH="path_a:path_b:$LD_LIBRARY_PATH"
-        if [ ! -z ${PATH+x} ]; then
-            export CONDA_DEVENV_BKP_PATH="$PATH"
-        fi
-        export PATH="path_a:path_b:$PATH"
+        add_path path_b
+        add_path path_a
         """
         ).strip()
     )
@@ -154,11 +158,11 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
         == textwrap.dedent(
             """\
         function add_path
-            if contains -- $argv $fish_user_paths
+            if contains -- $argv[1] $PATH
                 return
             end
 
-            set -U fish_user_paths $fish_user_paths $argv
+            set PATH $argv[1] $PATH
         end
         set -gx CONDA_DEVENV_BKP_VALUE $VALUE
         set -gx VALUE "value"
@@ -170,16 +174,16 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
         == textwrap.dedent(
             """\
         function add_path
-            if contains -- $argv $fish_user_paths
+            if contains -- $argv[1] $PATH
                 return
             end
 
-            set -U fish_user_paths $fish_user_paths $argv
+            set PATH $argv[1] $PATH
         end
         set -gx CONDA_DEVENV_BKP_LD_LIBRARY_PATH $LD_LIBRARY_PATH
         set -gx LD_LIBRARY_PATH "path_a:path_b:$LD_LIBRARY_PATH"
-        add_path path_a
         add_path path_b
+        add_path path_a
         """
         ).strip()
     )
@@ -191,7 +195,7 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
             """\
         function remove_path
             if set -l index (contains -i $argv[1] $PATH)
-                set --erase --universal fish_user_paths[$index]
+                set --erase PATH[$index]
             end
         end
         set -gx VALUE $CONDA_DEVENV_BKP_VALUE
@@ -205,7 +209,7 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
             """\
         function remove_path
             if set -l index (contains -i $argv[1] $PATH)
-                set --erase --universal fish_user_paths[$index]
+                set --erase PATH[$index]
             end
         end
         set -gx LD_LIBRARY_PATH $CONDA_DEVENV_BKP_LD_LIBRARY_PATH

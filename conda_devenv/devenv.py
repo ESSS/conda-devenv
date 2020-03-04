@@ -317,17 +317,25 @@ def render_activate_script(environment, shell):
     script = []
     if shell == "bash":
         script = ["#!/bin/bash"]
+        script.extend(
+            dedent(
+                """\
+                function add_path {
+                    [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
+                }"""
+            ).splitlines()
+        )
     elif shell == "cmd":
         script = ["@echo off"]
     elif shell == "fish":
         script = dedent(
             """\
             function add_path
-                if contains -- $argv $fish_user_paths
+                if contains -- $argv[1] $PATH
                     return
                 end
 
-                set -U fish_user_paths $fish_user_paths $argv
+                set PATH $argv[1] $PATH
             end"""
         ).splitlines()
 
@@ -338,8 +346,12 @@ def render_activate_script(environment, shell):
 
             if isinstance(value, list):
                 # Lists are supposed to prepend to the existing value
+                if variable == "PATH":
+                    path_entries = environment[variable]
+                    for entry in reversed(path_entries):
+                        script.append(f"add_path {shlex.quote(entry)}")
+                    continue
                 value = pathsep.join(value) + pathsep + f"${variable}"
-
             script.append(f"if [ ! -z ${{{variable}+x}} ]; then")
             script.append(
                 '    export CONDA_DEVENV_BKP_{variable}="${variable}"'.format(
@@ -369,7 +381,7 @@ def render_activate_script(environment, shell):
                 # Lists are supposed to prepend to the existing value
                 if variable == "PATH":
                     path_entries = environment[variable]
-                    for entry in path_entries:
+                    for entry in reversed(path_entries):
                         script.append(f"add_path {shlex.quote(entry)}")
                     continue
                 value = pathsep.join(value) + pathsep + ("$%s" % variable)
@@ -414,7 +426,7 @@ def render_deactivate_script(environment, shell="bash"):
             """\
             function remove_path
                 if set -l index (contains -i $argv[1] $PATH)
-                    set --erase --universal fish_user_paths[$index]
+                    set --erase PATH[$index]
                 end
             end"""
         ).splitlines()
