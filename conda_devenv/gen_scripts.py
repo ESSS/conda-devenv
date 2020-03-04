@@ -152,6 +152,7 @@ ACTIVATE_RENDERERS = {
             }"""
         ),
         generate_body=lambda env: bash_and_fish_activate_body(env, bash_variable),
+        epilogue="unset -f add_path",
     ),
     "fish": ScriptRenderer(
         preamble=dedent(
@@ -165,6 +166,7 @@ ACTIVATE_RENDERERS = {
             end"""
         ),
         generate_body=lambda env: bash_and_fish_activate_body(env, fish_variable),
+        epilogue="functions --erase add_path",
     ),
     "cmd": ScriptRenderer(
         preamble=dedent(
@@ -290,6 +292,7 @@ DEACTIVATE_RENDERERS = {
             }"""
         ),
         generate_body=lambda env: deactivate_body(env, bash_unset_variable),
+        epilogue="unset -f remove_path",
     ),
     "fish": ScriptRenderer(
         preamble=dedent(
@@ -301,6 +304,7 @@ DEACTIVATE_RENDERERS = {
             end"""
         ),
         generate_body=lambda env: deactivate_body(env, fish_unset_variable),
+        epilogue="functions --erase remove_path",
     ),
     "cmd": ScriptRenderer(
         preamble=dedent(

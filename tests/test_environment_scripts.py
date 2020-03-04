@@ -33,6 +33,7 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
             export CONDA_DEVENV_BKP_VALUE="$VALUE"
         fi
         export VALUE="value"
+        unset -f add_path
         """
         ).strip()
     )
@@ -50,6 +51,7 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
         export LD_LIBRARY_PATH="path_a:path_b:$LD_LIBRARY_PATH"
         add_path path_b
         add_path path_a
+        unset -f add_path
         """
         ).strip()
     )
@@ -73,6 +75,7 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
         else
             unset VALUE
         fi
+        unset -f remove_path
         """
         ).strip()
     )
@@ -96,6 +99,7 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
         fi
         remove_path path_a
         remove_path path_b
+        unset -f remove_path
         """
         ).strip()
     )
@@ -166,6 +170,7 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
         end
         set -gx CONDA_DEVENV_BKP_VALUE $VALUE
         set -gx VALUE "value"
+        functions --erase add_path
         """
         ).strip()
     )
@@ -184,6 +189,7 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
         set -gx LD_LIBRARY_PATH "path_a:path_b:$LD_LIBRARY_PATH"
         add_path path_b
         add_path path_a
+        functions --erase add_path
         """
         ).strip()
     )
@@ -200,6 +206,7 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
         end
         set -gx VALUE $CONDA_DEVENV_BKP_VALUE
         set -e CONDA_DEVENV_BKP_VALUE
+        functions --erase remove_path
         """
         ).strip()
     )
@@ -216,6 +223,7 @@ def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_val
         set -e CONDA_DEVENV_BKP_LD_LIBRARY_PATH
         remove_path path_a
         remove_path path_b
+        functions --erase remove_path
         """
         ).strip()
     )
