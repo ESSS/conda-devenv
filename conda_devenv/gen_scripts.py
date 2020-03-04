@@ -1,36 +1,28 @@
 import shlex
 from textwrap import dedent
 
-from typing import Callable, Dict, List, Union
-
-
-ACTIVATE_PREAMBLE = {
-    "bash": dedent(
-        """\
-            #!/bin/bash
-            function add_path {
-                [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
-            }"""
-    ),
-    "cmd": dedent(
-        """\
-            @echo off"""
-    ),
-    "fish": dedent(
-        """\
-            function add_path
-                if contains -- $argv[1] $PATH
-                    return
-                end
-
-                set PATH $argv[1] $PATH
-            end"""
-    ),
-}
+from typing import Callable, Dict, List, Union, NamedTuple
 
 
 Value = Union[str, List[str]]
 Environment = Dict[str, Value]
+
+
+class ScriptRenderer(NamedTuple):
+    preamble: str
+    generate_body: Callable[[Environment], str]
+    epilogue: str = ""
+
+    def render(self, environment: Environment):
+        return "\n".join(
+            s
+            for s in (
+                f"{self.preamble}",
+                f"{self.generate_body(environment)}",
+                f"{self.epilogue}",
+            )
+            if s
+        )
 
 
 def bash_and_fish_path(value: List[str]) -> str:
@@ -100,6 +92,40 @@ def cmd_activate_body(environment: Environment):
     return "\n".join(body)
 
 
+ACTIVATE_RENDERERS = {
+    "bash": ScriptRenderer(
+        preamble=dedent(
+            """\
+            #!/bin/bash
+            function add_path {
+                [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
+            }"""
+        ),
+        generate_body=lambda env: activate_body(env, bash_variable),
+    ),
+    "fish": ScriptRenderer(
+        preamble=dedent(
+            """\
+            function add_path
+                if contains -- $argv[1] $PATH
+                    return
+                end
+
+                set PATH $argv[1] $PATH
+            end"""
+        ),
+        generate_body=lambda env: activate_body(env, fish_variable),
+    ),
+    "cmd": ScriptRenderer(
+        preamble=dedent(
+            """\
+            @echo off"""
+        ),
+        generate_body=cmd_activate_body,
+    ),
+}
+
+
 def render_activate_script(environment: Environment, shell: str):
     """
     :param dict environment:
@@ -110,45 +136,12 @@ def render_activate_script(environment: Environment, shell: str):
             - cmd
     :return: string
     """
-    script = ACTIVATE_PREAMBLE[shell].splitlines()
+    try:
+        renderer = ACTIVATE_RENDERERS[shell]
+    except KeyError as e:
+        raise ValueError("Unknown shell: %s" % shell) from e
 
-    if shell == "bash":
-        script.append(activate_body(environment, bash_variable))
-    elif shell == "fish":
-        script.append(activate_body(environment, fish_variable))
-    elif shell == "cmd":
-        script.append(cmd_activate_body(environment))
-    else:
-        raise ValueError("Unknown shell: %s" % shell)
-
-    return "\n".join(script)
-
-
-DEACTIVATE_PREAMBLE = {
-    "bash": dedent(
-        """\
-            #!/bin/bash
-            function remove_path() {
-               local p=":$1:"
-               local d=":$PATH:"
-               d=${d//$p/:}
-               d=${d/#:/}
-               export PATH=${d/%:/}
-            }"""
-    ),
-    "cmd": dedent(
-        """\
-            @echo off"""
-    ),
-    "fish": dedent(
-        """\
-            function remove_path
-                if set -l index (contains -i $argv[1] $PATH)
-                    set --erase PATH[$index]
-                end
-            end"""
-    ),
-}
+    return renderer.render(environment)
 
 
 def bash_and_fish_remove_path(value: List[str]) -> str:
@@ -201,16 +194,46 @@ def cmd_deactivate_body(environment):
     return "\n".join(body)
 
 
+DEACTIVATE_RENDERERS = {
+    "bash": ScriptRenderer(
+        preamble=dedent(
+            """\
+            #!/bin/bash
+            function remove_path() {
+               local p=":$1:"
+               local d=":$PATH:"
+               d=${d//$p/:}
+               d=${d/#:/}
+               export PATH=${d/%:/}
+            }"""
+        ),
+        generate_body=lambda env: deactivate_body(env, bash_unset_variable),
+    ),
+    "fish": ScriptRenderer(
+        preamble=dedent(
+            """\
+            function remove_path
+                if set -l index (contains -i $argv[1] $PATH)
+                    set --erase PATH[$index]
+                end
+            end"""
+        ),
+        generate_body=lambda env: deactivate_body(env, fish_unset_variable),
+    ),
+    "cmd": ScriptRenderer(
+        preamble=dedent(
+            """\
+            @echo off"""
+        ),
+        generate_body=cmd_deactivate_body,
+    ),
+}
+
+
 def render_deactivate_script(environment: Environment, shell="bash"):
-    script = DEACTIVATE_PREAMBLE[shell].splitlines()
+    try:
+        renderer = DEACTIVATE_RENDERERS[shell]
+    except KeyError as e:
+        raise ValueError("Unknown shell: %s" % shell) from e
 
-    if shell == "bash":
-        script.append(deactivate_body(environment, bash_unset_variable))
-    elif shell == "fish":
-        script.append(deactivate_body(environment, fish_unset_variable))
-    elif shell == "cmd":
-        script.append(cmd_deactivate_body(environment))
-    else:
-        raise ValueError("Unknown platform")
-
-    return "\n".join(script)
+    return renderer.render(environment)
