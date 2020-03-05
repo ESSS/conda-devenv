@@ -65,7 +65,7 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
             function remove_path() {
                local p=":$1:"
                local d=":$PATH:"
-               d=${d//$p/:}
+               d=${d/$p/:}
                d=${d/#:/}
                export PATH=${d/%:/}
             }
@@ -87,7 +87,7 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
             function remove_path() {
                local p=":$1:"
                local d=":$PATH:"
-               d=${d//$p/:}
+               d=${d/$p/:}
                d=${d/#:/}
                export PATH=${d/%:/}
             }

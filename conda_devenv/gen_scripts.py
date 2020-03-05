@@ -342,7 +342,7 @@ DEACTIVATE_RENDERERS = {
             function remove_path() {
                local p=":$1:"
                local d=":$PATH:"
-               d=${d//$p/:}
+               d=${d/$p/:}
                d=${d/#:/}
                export PATH=${d/%:/}
             }"""
