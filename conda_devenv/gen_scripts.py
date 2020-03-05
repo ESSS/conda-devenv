@@ -187,7 +187,7 @@ ACTIVATE_RENDERERS = {
         preamble=dedent(
             """\
             function add_path {
-                [[ ":$PATH:" != *":${1}:"* ]] && export PATH="${1}:${PATH}" || return 0
+                export PATH="${1}:${PATH}"
             }"""
         ),
         generate_body=lambda env: activate_body(
