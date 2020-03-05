@@ -316,7 +316,7 @@ def deactivate_body(
     remove_path: Callable[[List[str]], str],
     variable_unset_renderer: Callable[[str], str],
 ):
-    """Render the activate script body.
+    """Render the deactivate script body.
 
     :param environment: The environment to base the script on.
     :param remove_path: A function capable of rendering the code to remove
