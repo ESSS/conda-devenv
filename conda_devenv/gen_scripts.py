@@ -66,17 +66,20 @@ def list_prepend(
     value: Iterable[str],
     *,
     separator=":",
-    variable_format: str = "${variable_name}",
+    variable_template: str = "${variable_name}",
 ) -> str:
     """Render the value of a shell list with prepended extra values.
 
     :param variable_name: The name of the list variable.
     :param value: A list of values to prepend to the variable.
     :param separator: The desired separator.
-    :param variable_format: The format for dereferencing a variable on the shell.
+    :param variable_template: The format template for dereferencing a variable
+                              on the shell.
     :return: The new value portion to use for the list.
     """
-    return separator.join((*value, variable_format.format(variable_name=variable_name)))
+    return separator.join(
+        (*value, variable_template.format(variable_name=variable_name))
+    )
 
 
 def bash_and_fish_add_path(value: List[str]) -> str:
@@ -95,7 +98,7 @@ def cmd_add_path(value: List[str]) -> str:
     :return: The code to prepend to path.
     """
     path_value = list_prepend(
-        "PATH", reversed(value), separator=";", variable_format="%{variable_name}%"
+        "PATH", reversed(value), separator=";", variable_template="%{variable_name}%"
     )
     return f'set "PATH={path_value}"'
 
@@ -149,7 +152,7 @@ def activate_body(
     add_path: Callable[[List[str]], str],
     variable_renderer: Callable[[str, str], str],
     separator=":",
-    variable_format="${variable_name}",
+    variable_template="${variable_name}",
 ):
     """Render the activate script body for bash and fish.
 
@@ -169,7 +172,7 @@ def activate_body(
                 variable_name,
                 value,
                 separator=separator,
-                variable_format=variable_format,
+                variable_template=variable_template,
             )
             if isinstance(value, List)
             else value
@@ -219,7 +222,7 @@ ACTIVATE_RENDERERS = {
             cmd_add_path,
             cmd_variable,
             separator=";",
-            variable_format="%{variable_name}%",
+            variable_template="%{variable_name}%",
         ),
         comment=cmd_comment,
     ),
