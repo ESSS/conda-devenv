@@ -200,10 +200,6 @@ ACTIVATE_RENDERERS = {
         preamble=dedent(
             """\
             function add_path
-                if contains -- $argv[1] $PATH
-                    return
-                end
-
                 set PATH $argv[1] $PATH
             end"""
         ),
