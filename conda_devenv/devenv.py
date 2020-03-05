@@ -8,6 +8,8 @@ from pathlib import Path
 
 import six
 
+from .gen_scripts import render_activate_script, render_deactivate_script
+
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
@@ -304,148 +306,6 @@ def render_for_conda_env(yaml_dict, header=DEFAULT_HEADER):
     contents = header
     contents += yaml.dump(yaml_dict, default_flow_style=False)
     return contents
-
-
-def render_activate_script(environment, shell):
-    """
-    :param dict environment:
-    :param string shell:
-        Valid values are:
-            - bash
-            - fish
-            - cmd
-    :return: string
-    """
-    script = []
-    if shell == "bash":
-        script = ["#!/bin/bash"]
-    elif shell == "cmd":
-        script = ["@echo off"]
-
-    for variable in sorted(environment):
-        value = environment[variable]
-        if shell == "bash":
-            pathsep = ":"
-
-            if isinstance(value, list):
-                # Lists are supposed to prepend to the existing value
-                value = (
-                    pathsep.join(value)
-                    + pathsep
-                    + "${variable}".format(variable=variable)
-                )
-
-            script.append(
-                "if [ ! -z ${{{variable}+x}} ]; then".format(variable=variable)
-            )
-            script.append(
-                '    export CONDA_DEVENV_BKP_{variable}="${variable}"'.format(
-                    variable=variable
-                )
-            )
-            script.append("fi")
-            script.append(
-                'export {variable}="{value}"'.format(variable=variable, value=value)
-            )
-
-        elif shell == "cmd":
-            pathsep = ";"
-            if isinstance(value, list):
-                # Lists are supposed to prepend to the existing value
-                value = (
-                    pathsep.join(value)
-                    + pathsep
-                    + "%{variable}%".format(variable=variable)
-                )
-
-            script.append(
-                'set "CONDA_DEVENV_BKP_{variable}=%{variable}%"'.format(
-                    variable=variable
-                )
-            )
-            script.append(
-                'set "{variable}={value}"'.format(variable=variable, value=value)
-            )
-
-        elif shell == "fish":
-            quote = '"'
-            if isinstance(value, list):
-                # Lists are supposed to prepend to the existing value
-                if variable == "PATH":
-                    # HACK: Fish handles the PATH variable in a different way
-                    # than other variables. So it needs a specific syntax to add
-                    # values to PATH
-                    pathsep = " "
-                    quote = ""
-                else:
-                    pathsep = ":"
-                value = pathsep.join(value) + pathsep + ("$%s" % variable)
-
-            script.append(
-                "set -gx CONDA_DEVENV_BKP_{variable} ${variable}".format(
-                    variable=variable
-                )
-            )
-            script.append(
-                "set -gx {variable} {quote}{value}{quote}".format(
-                    variable=variable, value=value, quote=quote
-                )
-            )
-
-        else:
-            raise ValueError("Unknown shell: %s" % shell)
-
-    return "\n".join(script)
-
-
-def render_deactivate_script(environment, shell="bash"):
-    script = []
-    if shell == "bash":
-        script = ["#!/bin/bash"]
-    elif shell == "cmd":
-        script = ["@echo off"]
-
-    for variable in sorted(environment):
-        if shell == "bash":
-            script.append(
-                "if [ ! -z ${{CONDA_DEVENV_BKP_{variable}+x}} ]; then".format(
-                    variable=variable
-                )
-            )
-            script.append(
-                '    export {variable}="$CONDA_DEVENV_BKP_{variable}"'.format(
-                    variable=variable
-                )
-            )
-            script.append(
-                "    unset CONDA_DEVENV_BKP_{variable}".format(variable=variable)
-            )
-            script.append("else")
-            script.append("    unset {variable}".format(variable=variable))
-            script.append("fi")
-
-        elif shell == "cmd":
-            script.append(
-                'set "{variable}=%CONDA_DEVENV_BKP_{variable}%"'.format(
-                    variable=variable
-                )
-            )
-            script.append("set CONDA_DEVENV_BKP_{variable}=".format(variable=variable))
-
-        elif shell == "fish":
-            script.append(
-                "set -gx {variable} $CONDA_DEVENV_BKP_{variable}".format(
-                    variable=variable
-                )
-            )
-            script.append(
-                "set -e CONDA_DEVENV_BKP_{variable}".format(variable=variable)
-            )
-
-        else:
-            raise ValueError("Unknown platform")
-
-    return "\n".join(script)
 
 
 def __write_conda_environment_file(args, filename, rendered_contents):
