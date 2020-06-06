@@ -517,8 +517,11 @@ def main(args=None):
         "--quiet", action="store_true", default=False, help="Do not show progress"
     )
     parser.add_argument(
-        "--verbose", "-v", action="count", default=0,
-        help="Use once for info, twice for debug, three times for trace."
+        "--verbose",
+        "-v",
+        action="count",
+        default=0,
+        help="Use once for info, twice for debug, three times for trace.",
     )
     parser.add_argument(
         "--version", action="store_true", default=False, help="Show version and exit"
