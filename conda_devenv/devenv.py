@@ -375,6 +375,8 @@ def __call_conda_env_update(args, output_filename):
         command.extend(["--name", args.name])
     if args.quiet:
         command.extend(["--quiet"])
+    if args.verbose:
+        command.extend(["-" + "v" * args.verbose])
 
     if not args.quiet:
         print("> Executing: %s" % " ".join(command))
@@ -513,6 +515,10 @@ def main(args=None):
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
     parser.add_argument(
         "--quiet", action="store_true", default=False, help="Do not show progress"
+    )
+    parser.add_argument(
+        "--verbose", "-v", action="count", default=0,
+        help="Use once for info, twice for debug, three times for trace."
     )
     parser.add_argument(
         "--version", action="store_true", default=False, help="Show version and exit"
