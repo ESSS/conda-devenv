@@ -2,7 +2,7 @@
 CHANGELOG
 =========
 
-2.0.0 (UNRELEASED)
+2.0.0 (2020-06-08)
 ------------------
 
 * Drop support for Python 2.7, 3.4, and 3.5.
