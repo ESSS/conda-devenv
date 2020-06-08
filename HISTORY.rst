@@ -7,6 +7,7 @@ History
 
 * Drop support for Python 2.7, 3.4, and 3.5.
 * Correctly parse relative includes without jinja root.
+* New ``--verbose`` flag which is passed on to ``conda``.
 
 
 1.1.3 (2019-12-26)

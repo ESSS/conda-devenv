@@ -69,23 +69,28 @@ Ready to contribute? Here's how to set up ``conda-devenv`` for local development
     $ pre-commit install
     $ pip install -e .
 
-4. Create a branch for local development::
-
-    $ git checkout -b name-of-your-bugfix-or-feature
-
-   Now you can make your changes locally.
-
-5. When you're done making changes, check that your changes pass the tests::
+4. Run tests to ensure you are starting from a working state::
 
     $ pytest tests
 
-6. Commit your changes and push your branch to GitHub::
+5. Create a branch for local development::
+
+    $ git checkout -b name-of-your-bugfix-or-feature
+
+
+6. Now make your changes and commit.
+
+7. When you're done making changes, check that your changes still pass the tests::
+
+    $ pytest tests
+
+8. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitHub website.
+9. Submit a pull request through GitHub.
 
 Pull Request Guidelines
 -----------------------

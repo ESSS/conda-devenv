@@ -227,3 +227,29 @@ def test_get_env_directory(mocker, tmpdir):
 
     env_1.remove()
     assert devenv.get_env_directory("my_env") is None
+
+
+@pytest.mark.usefixtures("patch_conda_calls")
+def test_verbose(mocker, tmp_path):
+    argv = []
+
+    def call_conda_mock():
+        argv[:] = sys.argv[:]
+        return None
+
+    devenv._call_conda.side_effect = call_conda_mock
+
+    filename = tmp_path.joinpath("environment.yml")
+    filename.write_text("name: a")
+    devenv_cmdline_args = ["--file", str(filename), "-v", "--verbose"]
+    expected_conda_cmdline_args = [
+        "env",
+        "update",
+        "--file",
+        str(filename),
+        "--prune",
+        "-vv",
+    ]
+    assert devenv.main(devenv_cmdline_args) == 0
+    assert devenv._call_conda.call_count == 1
+    assert argv == expected_conda_cmdline_args
