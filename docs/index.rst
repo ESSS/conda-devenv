@@ -62,7 +62,7 @@ Contents:
    installation
    usage
    contributing
-   history
+   changelog
 
 Indices and tables
 ==================
