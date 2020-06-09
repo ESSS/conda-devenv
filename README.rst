@@ -92,4 +92,5 @@ Please see `CONTRIBUTING <CONTRIBUTING.rst>`_.
 
 License
 -------
+
 Free software: MIT license
