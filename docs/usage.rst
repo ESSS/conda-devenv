@@ -77,7 +77,7 @@ The following variables are available in the Jinja 2 namespace:
 Using environment variables in the devenv file
 ----------------------------------------------
 
-Environment variables that are defined when calling ``conda devenv`` can be read and checked with the
+Environment variables that are defined when calling ``conda devenv`` can be read normally using ``os.environ``, but for convenience and better error messages, you can use the
 ``get_env`` function:
 
 .. code-block:: yaml
