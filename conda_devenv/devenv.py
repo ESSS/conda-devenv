@@ -521,16 +521,11 @@ def parse_env_var_args(env_var_args):
     env_vars = {}
     if env_var_args is not None:
         for arg in env_var_args:
-            split_arg = arg.split("=")
+            split_arg = arg.split("=", 1)
             if len(split_arg) == 1:
                 env_vars[split_arg[0]] = ""
             elif len(split_arg) == 2:
                 env_vars[split_arg[0]] = split_arg[1]
-            else:
-                raise ValueError(
-                    f"Environment variables passed with -e/--env_var must be in the "
-                    f"form VAR_NAME or VAR_NAME=VALUE, {arg} does not fulfill this"
-                )
 
     return env_vars
 
@@ -569,7 +564,7 @@ def main(args=None):
         "--quiet", action="store_true", default=False, help="Do not show progress"
     )
     parser.add_argument(
-        "--env_var",
+        "--env-var",
         "-e",
         action="append",
         help="Define or override environment variables in the form VAR_NAME or "

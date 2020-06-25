@@ -262,9 +262,6 @@ def test_parse_env_var_args():
     assert devenv.parse_env_var_args(None) == {}
     assert devenv.parse_env_var_args(["DEV", "PY=3.6"]) == {"DEV": "", "PY": "3.6"}
 
-    with pytest.raises(ValueError):
-        devenv.parse_env_var_args(["TOO=MANY=EQUAL=SIGNS"])
-
 
 @pytest.mark.usefixtures("patch_conda_calls")
 def test_env_var_cmdline_args(tmpdir):
@@ -285,7 +282,7 @@ def test_env_var_cmdline_args(tmpdir):
     )
     assert (
         devenv.main(
-            ["--file", str(filename), "--quiet", "-e", "DEV", "--env_var", "PY=3.6"]
+            ["--file", str(filename), "--quiet", "-e", "DEV", "--env-var", "PY=3.6"]
         )
         == 0
     )
