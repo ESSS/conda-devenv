@@ -74,6 +74,39 @@ The following variables are available in the Jinja 2 namespace:
      - True if the current file is processed because it was included by another file.
 
 
+Using environment variables in the devenv file
+----------------------------------------------
+
+Environment variables that are defined when calling ``conda devenv`` can be read and checked with the
+``get_env`` function:
+
+.. code-block:: yaml
+
+    dependencies:
+      - python ={{ get_env("PY") }}
+
+This will raise an error if ``PY`` is not defined. Alternatively, it is also possible to set a default value:
+
+.. code-block:: yaml
+
+    dependencies:
+      - python ={{ get_env("PY", default="3.6") }}
+
+You can also provide a list of allowed or supported values:
+
+.. code-block:: yaml
+
+    dependencies:
+      - python ={{ get_env("PY", valid=["3.6", "3.7"]) }}
+
+This will raise an error if ``PY`` is set to a different value.
+
+.. note::
+
+    Environment variables can also be set with the ``-e/--env-var`` command line option,
+    see the `Command-line reference`_ section.
+
+
 Checking minimum conda-devenv version
 -------------------------------------
 
@@ -199,21 +232,33 @@ Options
     $ conda devenv --help
 
     usage: conda-devenv [-h] [--file [FILE]] [--name [NAME]] [--print]
-                        [--no-prune] [--output-file [OUTPUT_FILE]] [--force]
+                        [--print-full] [--no-prune] [--output-file [OUTPUT_FILE]]
+                        [--quiet] [--env-var ENV_VAR] [--verbose] [--version]
 
     Work with multiple conda-environment-like yaml files in dev mode.
 
     optional arguments:
       -h, --help            show this help message and exit
       --file [FILE], -f [FILE]
-                            The environment.devenv.yml file to process.
+                            The environment.devenv.yml file to process. The
+                            default value is 'environment.devenv.yml'.
       --name [NAME], -n [NAME]
                             Name of environment.
-      --print               Only prints the rendered file to stdout and exits.
+      --print               Prints the rendered file as will be sent to conda-env
+                            to stdout and exits.
+      --print-full          Similar to --print, but also includes the
+                            'environment' section.
       --no-prune            Don't pass --prune flag to conda-env.
       --output-file [OUTPUT_FILE]
                             Output filename.
-      --force               Overrides the output file, even if it already exists.
+      --quiet               Do not show progress
+      --env-var ENV_VAR, -e ENV_VAR
+                            Define or override environment variables in the form
+                            VAR_NAME or VAR_NAME=VALUE.
+      --verbose, -v         Use once for info, twice for debug, three times for
+                            trace.
+      --version             Show version and exit
+
 
 
 ``--file``
@@ -235,3 +280,9 @@ Don't pass the ``--prune`` flag when calling ``conda env update``
 ~~~~~~~~~~~~~~~~~
 
 Specifies the ``conda-env`` file which will be created.
+
+``--env-var``
+~~~~~~~~~~~~~~~~~
+
+Define or override environment variables in the form ``VAR_NAME`` or ``VAR_NAME=VALUE``.
+Can be used multiple times for different variables.
