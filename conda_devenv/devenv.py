@@ -40,6 +40,33 @@ def _min_conda_devenv_version(min_version):
     return ""
 
 
+def _get_env(var_name, default=None, valid=None):
+    """ Get env var value or default value and check against allowed values.
+
+    :param str var_name:
+        Name of the environment variable.
+    :param Optional[str] default:
+        Default value for the variable. If not specified, the method raises
+        an error when the variable is not set.
+    :param Optional[List[str]] valid:
+        List of allowed values of the variable.
+    :return: str
+        Value of the environment variable or default
+    """
+    value = os.environ.get(var_name, default)
+
+    if value is None:
+        raise ValueError(f"Environment variable {var_name} is not set.")
+
+    if valid is not None and value not in valid:
+        raise ValueError(
+            f"Allowed values for environment variable {var_name} are {valid}, "
+            f"got {value}"
+        )
+
+    return value
+
+
 def render_jinja(contents, filename, is_included):
     import jinja2
     import sys
@@ -69,6 +96,7 @@ def render_jinja(contents, filename, is_included):
         "win32": iswin and is32bit,
         "win64": iswin and is64bit,
         "min_conda_devenv_version": _min_conda_devenv_version,
+        "get_env": _get_env,
     }
 
     contents = preprocess_selectors(contents)
@@ -483,6 +511,30 @@ def get_env_directory(env_name):
     return None
 
 
+def parse_env_var_args(env_var_args):
+    """
+    :param List[str] env_var_args:
+        List of arguments in the form "VAR_NAME" or "VAR_NAME=VALUE"
+    :return: Dict[str,str]
+        Mapping from "VAR_NAME" to "VALUE" or empty str.
+    """
+    env_vars = {}
+    if env_var_args is not None:
+        for arg in env_var_args:
+            split_arg = arg.split("=")
+            if len(split_arg) == 1:
+                env_vars[split_arg[0]] = ""
+            elif len(split_arg) == 2:
+                env_vars[split_arg[0]] = split_arg[1]
+            else:
+                raise ValueError(
+                    f"Environment variables passed with -e/--env_var must be in the "
+                    f"form VAR_NAME or VAR_NAME=VALUE, {arg} does not fulfill this"
+                )
+
+    return env_vars
+
+
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
@@ -517,6 +569,13 @@ def main(args=None):
         "--quiet", action="store_true", default=False, help="Do not show progress"
     )
     parser.add_argument(
+        "--env_var",
+        "-e",
+        action="append",
+        help="Define or override environment variables in the form VAR_NAME or "
+        "VAR_NAME=VALUE.",
+    )
+    parser.add_argument(
         "--verbose",
         "-v",
         action="count",
@@ -543,6 +602,9 @@ def main(args=None):
 
     is_devenv_input_file = filename.endswith(".devenv.yml")
     if is_devenv_input_file:
+        # update environment variables
+        os.environ.update(parse_env_var_args(args.env_var))
+
         # render conda-devenv file
         conda_yaml_dict, environment = load_yaml_dict(filename)
         rendered_contents = render_for_conda_env(conda_yaml_dict)

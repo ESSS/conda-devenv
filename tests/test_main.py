@@ -253,3 +253,60 @@ def test_verbose(mocker, tmp_path):
     assert devenv.main(devenv_cmdline_args) == 0
     assert devenv._call_conda.call_count == 1
     assert argv == expected_conda_cmdline_args
+
+
+def test_parse_env_var_args():
+    """
+    Test that env var args are parsed correctly.
+    """
+    assert devenv.parse_env_var_args(None) == {}
+    assert devenv.parse_env_var_args(["DEV", "PY=3.6"]) == {"DEV": "", "PY": "3.6"}
+
+    with pytest.raises(ValueError):
+        devenv.parse_env_var_args(["TOO=MANY=EQUAL=SIGNS"])
+
+
+@pytest.mark.usefixtures("patch_conda_calls")
+def test_env_var_cmdline_args(tmpdir):
+    """
+    Test env vars passed via -e/--env_var.
+    """
+    import os
+
+    filename = tmpdir.join("environment.devenv.yml")
+    filename.write(
+        textwrap.dedent(
+            """\
+        name: a
+        dependencies:
+          - python ={{ os.environ["PY"] }}
+    """
+        )
+    )
+    assert (
+        devenv.main(
+            ["--file", str(filename), "--quiet", "-e", "DEV", "--env_var", "PY=3.6"]
+        )
+        == 0
+    )
+    assert os.environ["DEV"] == ""
+    assert os.environ["PY"] == "3.6"
+
+
+@pytest.mark.usefixtures("patch_conda_calls")
+def test_get_env(tmpdir, monkeypatch):
+    """
+    Test get_env jinja function with required env var passed via command line.
+    """
+    filename = tmpdir.join("environment.devenv.yml")
+    filename.write(
+        textwrap.dedent(
+            """\
+        name: a
+        dependencies:
+          - python ={{ get_env("PY", valid=["3.6"]) }}
+    """
+        )
+    )
+    monkeypatch.delenv("PY", raising=False)
+    assert devenv.main(["--file", str(filename), "--quiet", "-e", "PY=3.6"]) == 0
