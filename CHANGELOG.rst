@@ -2,6 +2,12 @@
 CHANGELOG
 =========
 
+2.1.0 (2020-06-26)
+------------------
+
+* New ``get_env`` function to handle environment variables in Jinja contexts so it conveys
+  better error messages in case of missing/invalid environment variables.
+
 2.0.0 (2020-06-08)
 ------------------
 
