@@ -64,7 +64,7 @@ Ready to contribute? Here's how to set up ``conda-devenv`` for local development
 
 3. Create a new conda environment for developing::
 
-    $ conda create -n devenv --file requirements_dev.txt
+    $ conda create -c conda-forge -n devenv --file requirements_dev.txt
     $ source activate devenv
     $ pre-commit install
     $ pip install -e .
@@ -101,6 +101,6 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.7, 3.5 and 3.6. Check
-   https://travis-ci.org/ESSS/conda-devenv/pull_requests
+3. The pull request should work for Python 3.6, 3.7 and 3.8. Check
+   https://github.com/ESSS/conda-devenv/actions?query=event%3Apull_request
    and make sure that the tests pass for all supported Python versions.
