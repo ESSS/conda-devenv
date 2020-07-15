@@ -65,7 +65,7 @@ def list_prepend(
     variable_name: str,
     value: Iterable[str],
     *,
-    separator=":",
+    separator: str = ":",
     variable_template: str = "${variable_name}",
 ) -> str:
     """Render the value of a shell list with prepended extra values.
@@ -151,8 +151,8 @@ def activate_body(
     environment: Environment,
     add_path: Callable[[List[str]], str],
     variable_renderer: Callable[[str, str], str],
-    separator=":",
-    variable_template="${variable_name}",
+    separator: str = ":",
+    variable_template: str = "${variable_name}",
 ):
     """Render the activate script body for bash and fish.
 
