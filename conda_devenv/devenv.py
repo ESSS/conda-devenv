@@ -602,9 +602,9 @@ def main(args=None):
     args = parser.parse_args(args)
 
     if args.version:
-        from ._version import version
+        from conda_devenv import __version__
 
-        print(f"conda-devenv version {version}")
+        print(f"conda-devenv version {__version__}")
         return 0
 
     filename = args.file
