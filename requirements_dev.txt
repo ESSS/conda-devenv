@@ -12,3 +12,4 @@ Sphinx
 tox
 watchdog
 wheel
+setuptools_scm

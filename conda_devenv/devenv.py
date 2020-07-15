@@ -2,9 +2,7 @@ import argparse
 import os
 import re
 import sys
-import shlex
 from pathlib import Path
-from textwrap import dedent
 
 from .gen_scripts import render_activate_script, render_deactivate_script
 
