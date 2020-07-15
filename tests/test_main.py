@@ -1,5 +1,6 @@
 import sys
 import textwrap
+from copy import deepcopy
 
 import pytest
 from conda_devenv import devenv
@@ -24,6 +25,7 @@ def patch_conda_calls(mocker):
 @pytest.mark.parametrize("return_none", [True, False])
 @pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
 @pytest.mark.usefixtures("patch_conda_calls")
+@pytest.mark.parametrize("env_manager", ["conda", "mamba"])
 def test_handle_input_file(
     tmpdir,
     input_name,
@@ -31,6 +33,8 @@ def test_handle_input_file(
     return_none,
     no_prune,
     truncate_call_count,
+    env_manager,
+    monkeypatch,
 ):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
@@ -66,6 +70,11 @@ def test_handle_input_file(
         "--prune",
         "--quiet",
     ]
+    if env_manager == "mamba":
+        expected_conda_cmdline_args = [env_manager] + expected_conda_cmdline_args
+        mock_argv = deepcopy(sys.argv)
+        mock_argv[0] = env_manager
+        monkeypatch.setattr("sys.argv", mock_argv)
     if no_prune:
         devenv_cmdline_args.append("--no-prune")
         expected_conda_cmdline_args.remove("--prune")
@@ -303,12 +312,3 @@ def test_get_env(tmpdir, monkeypatch):
     )
     monkeypatch.delenv("PY", raising=False)
     assert devenv.main(["--file", str(filename), "--quiet", "-e", "PY=3.6"]) == 0
-
-
-def test_mamba_availability(monkeypatch):
-    assert not devenv._is_mamba_installed()
-
-    mock_modules = {"mamba": lambda: None}
-    mock_modules.update(sys.modules)
-    monkeypatch.setattr("sys.modules", mock_modules)
-    assert devenv._is_mamba_installed()
