@@ -37,7 +37,7 @@ def test_handle_input_file(
     """
     argv = []
 
-    def call_conda_mock():
+    def call_conda_mock(env_manager):
         argv[:] = sys.argv[:]
         # conda's env main() function sometimes returns None and other times raises SystemExit
         if return_none:
@@ -233,7 +233,7 @@ def test_get_env_directory(mocker, tmpdir):
 def test_verbose(mocker, tmp_path):
     argv = []
 
-    def call_conda_mock():
+    def call_conda_mock(env_manager=""):
         argv[:] = sys.argv[:]
         return None
 
@@ -307,3 +307,12 @@ def test_get_env(tmpdir, monkeypatch):
     )
     monkeypatch.delenv("PY", raising=False)
     assert devenv.main(["--file", str(filename), "--quiet", "-e", "PY=3.6"]) == 0
+
+
+def test_mamba_availability(monkeypatch):
+    assert not devenv._is_mamba_installed()
+
+    mock_modules = {"mamba": lambda: None}
+    mock_modules.update(sys.modules)
+    monkeypatch.setattr("sys.modules", mock_modules)
+    assert devenv._is_mamba_installed()

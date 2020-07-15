@@ -385,11 +385,21 @@ def truncate_history_file(env_directory):
             history.truncate()
 
 
+def _is_mamba_installed() -> bool:
+    try:
+        import mamba
+    except ModuleNotFoundError:
+        return False
+    return True
+
+
 def __call_conda_env_update(args, output_filename):
-    import sys
+    env_manager = "conda"
+    if not args.disable_mamba and _is_mamba_installed():
+        env_manager = "mamba"
 
     command = [
-        "conda",
+        env_manager,
         "env",
         "update",
         "--file",
@@ -409,24 +419,27 @@ def __call_conda_env_update(args, output_filename):
 
     old_argv = sys.argv[:]
     try:
-        del command[0]
-        sys.argv = command
+        sys.argv = command[1:] if env_manager == "conda" else command
         try:
-            return _call_conda()
+            return _call_conda(env_manager)
         except SystemExit as e:
             return e.code
     finally:
         sys.argv = old_argv
 
 
-def _call_conda():
+def _call_conda(env_manager: str = "conda"):
     """
-    Calls conda-env directly using its internal API. ``sys.argv`` must already be configured at this point.
+    Calls conda-env or mamba directly using its internal API. ``sys.argv``
+    must already be configured at this point.
 
     We have this indirection here so we can mock this function during testing.
+    :param env_manager: Switch to `conda` or `mamba` for a given input
     """
-    from conda_env.cli.main import main
-
+    if env_manager == "mamba":
+        from mamba.mamba import main
+    else:
+        from conda_env.cli.main import main
     return main()
 
 
@@ -558,6 +571,13 @@ def main(args=None):
         "--no-prune", help="Don't pass --prune flag to conda-env.", action="store_true"
     )
     parser.add_argument("--output-file", nargs="?", help="Output filename.")
+    parser.add_argument(
+        "--disable-mamba-detection",
+        action="store_true",
+        default=False,
+        help="Disable mamba detection. It will use just conda to manage the environemnt.",
+        dest="disable_mamba",
+    )
     parser.add_argument(
         "--quiet", action="store_true", default=False, help="Do not show progress"
     )
