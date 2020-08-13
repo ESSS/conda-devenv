@@ -283,6 +283,25 @@ def test_render_jinja_with_preprocessing_selectors(monkeypatch):
     assert actual_win == expected_win
 
 
+def test_jinja_get_env(monkeypatch):
+    template = "{{ get_env('PY', valid=['3.6']) }}"
+    template_with_default = "{{ get_env('PY', default='3.6') }}"
+
+    monkeypatch.setenv("PY", "3.6")
+    assert render_jinja(template, filename="", is_included=False) == "3.6"
+
+    monkeypatch.setenv("PY", "3.7")
+    with pytest.raises(ValueError):
+        render_jinja(template, filename="", is_included=False)
+
+    monkeypatch.delenv("PY")
+    with pytest.raises(ValueError):
+        render_jinja(template, filename="", is_included=False)
+
+    monkeypatch.delenv("PY", raising=False)
+    assert render_jinja(template_with_default, filename="", is_included=False) == "3.6"
+
+
 def test_jinja_invalid_template():
     with pytest.raises(jinja2.exceptions.TemplateSyntaxError):
         render_jinja(

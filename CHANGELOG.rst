@@ -2,12 +2,19 @@
 CHANGELOG
 =========
 
-2.0.1 (2020-08-13)
+2.1.1 (2020-08-13)
 ------------------
 
 * Correctly handle editable installs when using pip dependencies (`#113`_).
 
 .. _`#113`: https://github.com/ESSS/conda-devenv/issues/113
+
+2.1.0 (2020-06-26)
+------------------
+
+* New ``get_env`` function to handle environment variables in Jinja contexts so it conveys
+  better error messages in case of missing/invalid environment variables.
+
 
 2.0.0 (2020-06-08)
 ------------------
