@@ -133,12 +133,15 @@ def test_merge_dependencies_version_specifications_errors():
 
 
 def test_merge_dependencies_version_specifications_pip_dependencies():
-    """Regression test for issue #91 and #92."""
+    """Regression test for issue #91, #92 and #113."""
     merged_dict = {
         "dependencies": [
             "pip",
             {
                 "pip": [
+                    # issue #113
+                    "--editable path/to/first/package",
+                    "--editable path/to/second/package",
                     # issue #92
                     "ConfigAndParse ==0.15.2",
                     # issue #91

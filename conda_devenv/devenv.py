@@ -252,10 +252,11 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
                 )
             new_dict_dependencies.append(dep)
         elif isinstance(dep, str):
-            if pip and ("+" in dep or ":" in dep):
+            if pip and ("+" in dep or ":" in dep or dep.startswith("-")):
                 # Look for dependencies in the pip section that are
-                # managed by version control.  For example:
+                # managed by version control or contain flags.  For example:
                 #   hg+ssh://hg@bitbucket.org/mforbes/mmfutils-fork@0.4.12
+                #   --editable path/to/local/package
                 # Skip processing these and just pass them through
                 package_name = dep
                 package_version = ""
