@@ -146,10 +146,10 @@ It is possible to define environment variables that should be configured in the 
       DB_LOCATION: https://localhost/dev
 
 Environment variables defined in *list form* (like ``PATH`` and ``PYTHONPATH`` above) will **append** to existing
-variables, using the appropriate separator for the platform (``:`` on Linux/OSX and ``;`` on Windows).
+variables in a file using the appropriate separator for the platform (``:`` on Linux/OSX and ``;`` on Windows).
 
 Environment variables defined as a single string (like ``DB_LOCATION`` above) will **overwrite** an existing
-variable with the same name.
+variable with the same name in a file.
 
 ``conda-devenv`` restores the variables of the environment to their original state upon deactivation.
 
@@ -175,6 +175,7 @@ For example:
     environment:
       PYTHONPATH:
         - {{ root }}/source/python
+      DB_LOCATION: https://localhost/dev  # [not is_included]
 
 
 ``/home/user/projects/web-ui/environment.devenv.yml``:
@@ -192,6 +193,7 @@ For example:
         - {{ root }}/source/python
       PATH:
         - {{ root }}/bin
+      DB_LOCATION: https://localhost/dev
 
 In this setup, all the user has to do is executing ``conda devenv``:
 
@@ -200,8 +202,12 @@ In this setup, all the user has to do is executing ``conda devenv``:
     $ cd ~/projects/web-ui
     $ conda devenv
 
-This will create a ``conda`` environment named ``web-ui`` containing all the dependencies and environment variables
+This will create a ``conda`` environment named ``web-ui`` merging all the dependencies and environment variables
 defined in both files.
+
+However, the same environment variable defined as a single string (like DB_LOCATION above) in both files will raise an error
+unless it is not allowed to 'pass through' using the ``not is_included`` expression above as an example.
+In other words, an 'overwrite' situation is not allowed between files.
 
 How it works
 ============
