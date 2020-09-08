@@ -36,6 +36,7 @@ most useful capabilities of ``conda-devenv``.
   You can actually write any Python expression that evaluates to a boolean
   inside the brackets following the YAML comment mark ``#``. For example,
   ``# [linux]`` could be replaced with ``# [sys.platform.startswith('linux')]``.
+  This is heavly inspired by [conda-build's preprocessing selectors](https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#preprocessing-selectors).
 
 The following variables are available in the Jinja 2 namespace:
 
