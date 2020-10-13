@@ -142,6 +142,9 @@ def test_merge_dependencies_version_specifications_pip_dependencies():
                     # issue #113
                     "--editable path/to/first/package",
                     "--editable path/to/second/package",
+                    # issue #118
+                    "-e ./path/to/first/package",
+                    "-e ./path/to/second/package",
                     # issue #92
                     "ConfigAndParse ==0.15.2",
                     # issue #91
