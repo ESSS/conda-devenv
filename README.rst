@@ -2,8 +2,8 @@
 conda-devenv
 ============
 
-.. image:: https://github.com/pytest-dev/pytest-mock/workflows/build/badge.svg
-    :target: https://github.com/pytest-dev/pytest-mock/actions
+.. image:: https://github.com/ESSS/conda-devenv/workflows/main/badge.svg
+    :target: https://github.com/ESSS/conda-devenv/actions
 
 .. image:: https://readthedocs.org/projects/conda-devenv/badge/?version=latest
     :target: https://conda-devenv.readthedocs.io/en/latest/?badge=latest
