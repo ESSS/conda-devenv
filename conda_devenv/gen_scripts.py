@@ -58,7 +58,7 @@ def cmd_comment(line: str) -> str:
 
     line: Text to comment. Must not contain newlines.
     """
-    return f"REM {line}"
+    return f"@REM {line}"
 
 
 def list_prepend(
