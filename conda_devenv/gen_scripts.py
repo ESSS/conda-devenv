@@ -194,7 +194,9 @@ ACTIVATE_RENDERERS = {
             }"""
         ),
         generate_body=lambda env: activate_body(
-            env, bash_and_fish_add_path, bash_variable,
+            env,
+            bash_and_fish_add_path,
+            bash_variable,
         ),
         epilogue="unset -f add_path",
         comment=bash_and_fish_comment,
@@ -207,7 +209,9 @@ ACTIVATE_RENDERERS = {
             end"""
         ),
         generate_body=lambda env: activate_body(
-            env, bash_and_fish_add_path, fish_variable,
+            env,
+            bash_and_fish_add_path,
+            fish_variable,
         ),
         epilogue="functions --erase add_path",
         comment=bash_and_fish_comment,
@@ -351,7 +355,9 @@ DEACTIVATE_RENDERERS = {
             }"""
         ),
         generate_body=lambda env: deactivate_body(
-            env, bash_and_fish_remove_path, bash_unset_variable,
+            env,
+            bash_and_fish_remove_path,
+            bash_unset_variable,
         ),
         comment=bash_and_fish_comment,
         epilogue="unset -f remove_path",
@@ -366,7 +372,9 @@ DEACTIVATE_RENDERERS = {
             end"""
         ),
         generate_body=lambda env: deactivate_body(
-            env, bash_and_fish_remove_path, fish_unset_variable,
+            env,
+            bash_and_fish_remove_path,
+            fish_unset_variable,
         ),
         comment=bash_and_fish_comment,
         epilogue="functions --erase remove_path",
@@ -377,7 +385,9 @@ DEACTIVATE_RENDERERS = {
             @echo off"""
         ),
         generate_body=lambda env: deactivate_body(
-            env, cmd_remove_path, cmd_unset_variable,
+            env,
+            cmd_remove_path,
+            cmd_unset_variable,
         ),
         comment=cmd_comment,
     ),

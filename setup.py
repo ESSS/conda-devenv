@@ -25,8 +25,14 @@ setup(
     long_description=readme + "\n\n" + changelog,
     author="ESSS",
     url="https://github.com/ESSS/conda-devenv",
-    packages=["conda_devenv",],
-    entry_points={"console_scripts": ["conda-devenv = conda_devenv.devenv:main",]},
+    packages=[
+        "conda_devenv",
+    ],
+    entry_points={
+        "console_scripts": [
+            "conda-devenv = conda_devenv.devenv:main",
+        ]
+    },
     use_scm_version={"write_to": "conda_devenv/_version.py"},
     setup_requires=["setuptools_scm"],
     package_dir={"conda_devenv": "conda_devenv"},

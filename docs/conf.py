@@ -55,8 +55,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"conda-devenv"
-copyright = u"2016, ESSS"
+project = "conda-devenv"
+copyright = "2016, ESSS"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -209,8 +209,8 @@ latex_documents = [
     (
         "index",
         "conda_devenv.tex",
-        u"conda-devenv Documentation",
-        u"Edison Gustavo Muenz",
+        "conda-devenv Documentation",
+        "Edison Gustavo Muenz",
         "manual",
     ),
 ]
@@ -244,8 +244,8 @@ man_pages = [
     (
         "index",
         "conda_devenv",
-        u"conda-devenv Documentation",
-        [u"Edison Gustavo Muenz"],
+        "conda-devenv Documentation",
+        ["Edison Gustavo Muenz"],
         1,
     )
 ]
@@ -263,8 +263,8 @@ texinfo_documents = [
     (
         "index",
         "conda_devenv",
-        u"conda-devenv Documentation",
-        u"Edison Gustavo Muenz",
+        "conda-devenv Documentation",
+        "Edison Gustavo Muenz",
         "conda_devenv",
         "One line description of project.",
         "Miscellaneous",

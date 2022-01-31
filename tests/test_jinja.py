@@ -13,7 +13,9 @@ from conda_devenv.devenv import render_jinja
 
 def test_jinja_root():
     assert render_jinja(
-        "{{root}}", filename="path/to/file", is_included=False,
+        "{{root}}",
+        filename="path/to/file",
+        is_included=False,
     ) == os.path.abspath("path/to")
 
 
