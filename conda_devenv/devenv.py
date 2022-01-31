@@ -26,10 +26,10 @@ def preprocess_selectors(contents):
 
 def _min_conda_devenv_version(min_version):
     """Checks that the current conda devenv version is at least the given version"""
-    from distutils.version import LooseVersion
+    from packaging.version import parse
     import conda_devenv
 
-    if LooseVersion(conda_devenv.__version__) < LooseVersion(min_version):
+    if parse(conda_devenv.__version__) < parse(min_version):
         msg = "This file requires at minimum conda-devenv {}, but you have {} installed.\n"
         sys.stderr.write(msg.format(min_version, conda_devenv.__version__))
         sys.stderr.write("Please update conda-devenv.\n")

@@ -9,6 +9,7 @@ with open("CHANGELOG.rst") as changelog_file:
     changelog = changelog_file.read()
 
 requirements = [
+    "packaging",
     "pyyaml",
     "jinja2",
 ]
