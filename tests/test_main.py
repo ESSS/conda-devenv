@@ -1,5 +1,6 @@
 import sys
 import textwrap
+from copy import deepcopy
 
 import pytest
 from conda_devenv import devenv
@@ -24,6 +25,7 @@ def patch_conda_calls(mocker):
 @pytest.mark.parametrize("return_none", [True, False])
 @pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
 @pytest.mark.usefixtures("patch_conda_calls")
+@pytest.mark.parametrize("env_manager", ["conda", "mamba"])
 def test_handle_input_file(
     tmpdir,
     input_name,
@@ -31,13 +33,15 @@ def test_handle_input_file(
     return_none,
     no_prune,
     truncate_call_count,
+    env_manager,
+    monkeypatch,
 ):
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
     """
     argv = []
 
-    def call_conda_mock():
+    def call_conda_mock(env_manager):
         argv[:] = sys.argv[:]
         # conda's env main() function sometimes returns None and other times raises SystemExit
         if return_none:
@@ -66,6 +70,11 @@ def test_handle_input_file(
         "--prune",
         "--quiet",
     ]
+    if env_manager == "mamba":
+        expected_conda_cmdline_args = [env_manager] + expected_conda_cmdline_args
+        mock_argv = deepcopy(sys.argv)
+        mock_argv[0] = env_manager
+        monkeypatch.setattr("sys.argv", mock_argv)
     if no_prune:
         devenv_cmdline_args.append("--no-prune")
         expected_conda_cmdline_args.remove("--prune")
@@ -181,16 +190,12 @@ def test_version(capsys):
     """
     Test --version flag.
     """
-    from conda_devenv._version import version
+    from conda_devenv import __version__ as version
 
     assert devenv.main(["--version"]) == 0
     out, err = capsys.readouterr()
     assert err == ""
     assert version in out
-
-    import conda_devenv
-
-    assert conda_devenv.__version__ == version
 
 
 @pytest.mark.parametrize("explicit_file", [True, False])
@@ -233,7 +238,7 @@ def test_get_env_directory(mocker, tmpdir):
 def test_verbose(mocker, tmp_path):
     argv = []
 
-    def call_conda_mock():
+    def call_conda_mock(env_manager=""):
         argv[:] = sys.argv[:]
         return None
 

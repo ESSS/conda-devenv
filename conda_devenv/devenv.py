@@ -2,9 +2,7 @@ import argparse
 import os
 import re
 import sys
-import shlex
 from pathlib import Path
-from textwrap import dedent
 
 from .gen_scripts import render_activate_script, render_deactivate_script
 
@@ -389,10 +387,10 @@ def truncate_history_file(env_directory):
 
 
 def __call_conda_env_update(args, output_filename):
-    import sys
+    env_manager = sys.argv[0]
 
     command = [
-        "conda",
+        env_manager,
         "env",
         "update",
         "--file",
@@ -412,24 +410,27 @@ def __call_conda_env_update(args, output_filename):
 
     old_argv = sys.argv[:]
     try:
-        del command[0]
-        sys.argv = command
+        sys.argv = command if env_manager == "mamba" else command[1:]
         try:
-            return _call_conda()
+            return _call_conda(env_manager)
         except SystemExit as e:
             return e.code
     finally:
         sys.argv = old_argv
 
 
-def _call_conda():
+def _call_conda(env_manager: str = "conda"):
     """
-    Calls conda-env directly using its internal API. ``sys.argv`` must already be configured at this point.
+    Calls conda-env or mamba directly using its internal API. ``sys.argv``
+    must already be configured at this point.
 
     We have this indirection here so we can mock this function during testing.
+    :param env_manager: Switch to `conda` or `mamba` for a given input
     """
-    from conda_env.cli.main import main
-
+    if env_manager == "mamba":
+        from mamba.mamba import main
+    else:
+        from conda_env.cli.main import main
     return main()
 
 
@@ -585,9 +586,9 @@ def main(args=None):
     args = parser.parse_args(args)
 
     if args.version:
-        from ._version import version
+        from conda_devenv import __version__
 
-        print(f"conda-devenv version {version}")
+        print(f"conda-devenv version {__version__}")
         return 0
 
     filename = args.file
