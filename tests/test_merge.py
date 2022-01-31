@@ -12,35 +12,69 @@ from conda_devenv.devenv import (
 def test_merge_plain():
     a = {
         "name": "a",
-        "dependencies": ["a_dependency",],
-        "environment": {"PATH": ["a_path",]},
+        "dependencies": [
+            "a_dependency",
+        ],
+        "environment": {
+            "PATH": [
+                "a_path",
+            ]
+        },
     }
 
     b = {
         "name": "b",
-        "dependencies": ["b_dependency",],
+        "dependencies": [
+            "b_dependency",
+        ],
         "environment": {"PATH": ["b_path"]},
-        "channels": ["b_channel",],
+        "channels": [
+            "b_channel",
+        ],
     }
 
     merged_dict = merge([a, b])
 
     assert merged_dict == {
-        "channels": ["b_channel",],
-        "dependencies": ["a_dependency", "b_dependency",],
-        "environment": {"PATH": ["a_path", "b_path",]},
+        "channels": [
+            "b_channel",
+        ],
+        "dependencies": [
+            "a_dependency",
+            "b_dependency",
+        ],
+        "environment": {
+            "PATH": [
+                "a_path",
+                "b_path",
+            ]
+        },
     }
 
 
 def test_merge_dependencies_with_pip():
     a = {
         "name": "a",
-        "dependencies": ["a_dependency", {"pip": ["some_from_pip >=0.1",]}],
+        "dependencies": [
+            "a_dependency",
+            {
+                "pip": [
+                    "some_from_pip >=0.1",
+                ]
+            },
+        ],
     }
 
     b = {
         "name": "b",
-        "dependencies": ["b_dependency", {"pip": ["some_from_pip >=0.2",]}],
+        "dependencies": [
+            "b_dependency",
+            {
+                "pip": [
+                    "some_from_pip >=0.2",
+                ]
+            },
+        ],
     }
 
     merged_dict = merge([a, b])
@@ -49,7 +83,11 @@ def test_merge_dependencies_with_pip():
         "dependencies": [
             "a_dependency",
             "b_dependency",
-            {"pip": ["some_from_pip >=0.1,>=0.2",]},
+            {
+                "pip": [
+                    "some_from_pip >=0.1,>=0.2",
+                ]
+            },
         ]
     }
 
@@ -80,16 +118,29 @@ def test_merge_empty_dependencies():
     {% endif %}
     """
     assert merge(
-        [{"name": "a", "dependencies": []}, {"name": "b", "dependencies": None},]
-    ) == {"dependencies": [],}
+        [
+            {"name": "a", "dependencies": []},
+            {"name": "b", "dependencies": None},
+        ]
+    ) == {
+        "dependencies": [],
+    }
 
     assert merge(
-        [{"name": "b", "dependencies": None}, {"name": "a", "dependencies": []},]
-    ) == {"dependencies": [],}
+        [
+            {"name": "b", "dependencies": None},
+            {"name": "a", "dependencies": []},
+        ]
+    ) == {
+        "dependencies": [],
+    }
 
     assert (
         merge(
-            [{"name": "b", "dependencies": None}, {"name": "a", "dependencies": None},]
+            [
+                {"name": "b", "dependencies": None},
+                {"name": "a", "dependencies": None},
+            ]
         )
         == {}
     )
@@ -108,13 +159,18 @@ def test_merge_dependencies_version_specifications_plain():
     merge_dependencies_version_specifications(merged_dict, key_to_merge="dependencies")
 
     assert merged_dict == {
-        "dependencies": ["a_dependency ==1.2.3,<=4", "b_dependency =3",],
+        "dependencies": [
+            "a_dependency ==1.2.3,<=4",
+            "b_dependency =3",
+        ],
     }
 
 
 def test_merge_dependencies_version_specifications_errors():
     merged_dict = {
-        "dependencies": ["==1",],
+        "dependencies": [
+            "==1",
+        ],
     }
     with pytest.raises(
         RuntimeError, match='.*"==1" do not follow the expected format.*'
@@ -124,7 +180,9 @@ def test_merge_dependencies_version_specifications_errors():
         )
 
     merged_dict = {
-        "dependencies": [1,],
+        "dependencies": [
+            1,
+        ],
     }
     with pytest.raises(RuntimeError, match=".*Only strings and dicts are supported.*"):
         merge_dependencies_version_specifications(

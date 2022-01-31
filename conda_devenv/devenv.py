@@ -39,7 +39,7 @@ def _min_conda_devenv_version(min_version):
 
 
 def _get_env(var_name, default=None, valid=None):
-    """ Get env var value or default value and check against allowed values.
+    """Get env var value or default value and check against allowed values.
 
     :param str var_name:
         Name of the environment variable.

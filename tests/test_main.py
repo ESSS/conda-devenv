@@ -20,7 +20,10 @@ def patch_conda_calls(mocker):
 
 @pytest.mark.parametrize(
     "input_name, write_scripts_call_count",
-    [("environment.devenv.yml", 1), ("environment.yml", 0),],
+    [
+        ("environment.devenv.yml", 1),
+        ("environment.yml", 0),
+    ],
 )
 @pytest.mark.parametrize("return_none", [True, False])
 @pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
@@ -224,7 +227,10 @@ def test_get_env_directory(mocker, tmpdir):
     mocker.patch.object(
         devenv,
         "_get_envs_dirs_from_conda",
-        return_value=[str(tmpdir.join("0/envs")), str(tmpdir.join("1/envs")),],
+        return_value=[
+            str(tmpdir.join("0/envs")),
+            str(tmpdir.join("1/envs")),
+        ],
     )
 
     obtained = devenv.get_env_directory("my_env")
