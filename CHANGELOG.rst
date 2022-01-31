@@ -2,12 +2,21 @@
 CHANGELOG
 =========
 
+2.2.0 (2022-01-31)
+------------------
+
+* Add support for mamba (`#110`_).
+
+.. _`#110`: https://github.com/ESSS/conda-devenv/issues/110
+
+
 2.1.1 (2020-08-13)
 ------------------
 
 * Correctly handle editable installs when using pip dependencies (`#113`_).
 
 .. _`#113`: https://github.com/ESSS/conda-devenv/issues/113
+
 
 2.1.0 (2020-06-26)
 ------------------

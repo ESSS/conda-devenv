@@ -79,6 +79,11 @@ To use this file, execute:
     $ echo $STAGE
     DEVELOPMENT
 
+mamba support
+-------------
+
+``conda-devenv`` also supports `mamba <https://mamba.readthedocs.io/en/latest/>`_. It will detect automatically if executed via ``mamba devenv`` and call `mamba` to update the environment.
+
 Documentation
 -------------
 
