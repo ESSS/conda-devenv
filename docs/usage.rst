@@ -265,7 +265,10 @@ Options
       --verbose, -v         Use once for info, twice for debug, three times for
                             trace.
       --version             Show version and exit
-
+      --env-manager ENV_MANAGER, -m ENV_MANAGER
+                            The environment manager to use. Default to 'conda' or
+                            the value of 'CONDA_DEVENV_ENV_MANAGER' environment
+                            variable if set.
 
 
 ``--file``
@@ -289,7 +292,13 @@ Don't pass the ``--prune`` flag when calling ``conda env update``
 Specifies the ``conda-env`` file which will be created.
 
 ``--env-var``
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
 
 Define or override environment variables in the form ``VAR_NAME`` or ``VAR_NAME=VALUE``.
 Can be used multiple times for different variables.
+
+``--env-manager``
+~~~~~~~~~~~~~~~~~
+
+Uses the given environment manager to update the conda environment.
+The command line flag overrides the ``CONDA_DEVENV_ENV_MANAGER`` environment variable.

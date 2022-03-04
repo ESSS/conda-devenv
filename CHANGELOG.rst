@@ -2,6 +2,18 @@
 CHANGELOG
 =========
 
+2.2.1 (unreleased)
+------------------
+
+* Now it is possible to use `mamba`_ with ``conda-devenv`` (`#134`_):
+  - Pass ``--env-manager`` in the command-line.
+  - Set the ``CONDA_DEVENV_ENV_MANAGER=mamba`` environment variable.
+
+.. _`mamba`: https://github.com/mamba-org/mamba
+
+.. _`#134`: https://github.com/ESSS/conda-devenv/pull/134
+
+
 2.2.0 (2022-01-31)
 ------------------
 

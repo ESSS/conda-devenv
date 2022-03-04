@@ -82,7 +82,16 @@ To use this file, execute:
 mamba support
 -------------
 
-``conda-devenv`` also supports `mamba <https://mamba.readthedocs.io/en/latest/>`_. It will detect automatically if executed via ``mamba devenv`` and call `mamba` to update the environment.
+``conda-devenv`` also supports `mamba <https://mamba.readthedocs.io/en/latest/>`_.
+
+As of today ``mamba`` is not auto detected and to use it with ``conda-devenv`` you can:
+
+* Use the ``--env-manager`` (short version ``-e``), like ``mamba devenv -e mamba`` or ``conda devenv -e mamba``.
+
+* Define the environment variable ``CONDA_DEVENV_ENV_MANAGER=mamba``.
+
+* Call directly ``mamba-devenv`` (this normally work just in the conda's base envaronment).
+
 
 Documentation
 -------------

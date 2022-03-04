@@ -31,6 +31,7 @@ setup(
     entry_points={
         "console_scripts": [
             "conda-devenv = conda_devenv.devenv:main",
+            "mamba-devenv = conda_devenv.devenv:mamba_main",
         ]
     },
     use_scm_version={"write_to": "conda_devenv/_version.py"},

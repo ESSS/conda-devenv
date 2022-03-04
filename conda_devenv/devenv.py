@@ -3,6 +3,7 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import List, Optional
 
 from .gen_scripts import render_activate_script, render_deactivate_script
 
@@ -386,9 +387,7 @@ def truncate_history_file(env_directory):
             history.truncate()
 
 
-def __call_conda_env_update(args, output_filename):
-    env_manager = sys.argv[0]
-
+def __call_conda_env_update(args, output_filename, env_manager):
     command = [
         env_manager,
         "env",
@@ -532,9 +531,7 @@ def parse_env_var_args(env_var_args):
     return env_vars
 
 
-def main(args=None):
-    if args is None:
-        args = sys.argv[1:]
+def parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Work with multiple conda-environment-like yaml files in dev mode."
     )
@@ -555,7 +552,7 @@ def main(args=None):
     )
     parser.add_argument(
         "--print-full",
-        help="Similar to --print, but also " "includes the 'environment' section.",
+        help="Similar to --print, but also includes the 'environment' section.",
         action="store_true",
     )
     parser.add_argument(
@@ -582,9 +579,31 @@ def main(args=None):
     parser.add_argument(
         "--version", action="store_true", default=False, help="Show version and exit"
     )
+    parser.add_argument(
+        "--env-manager",
+        "-m",
+        help="The environment manager to use. "
+        "Default to 'conda' or the value of 'CONDA_DEVENV_ENV_MANAGER' environment variable if set.",
+        default=None,
+    )
 
-    args = parser.parse_args(args)
+    argv = sys.argv[1:] if argv is None else argv
+    return parser.parse_args(argv)
 
+
+def main(args: Optional[List[str]] = None) -> int:
+    args_namespace = parse_args(args)
+    return main_with_args_namespace(args_namespace)
+
+
+def mamba_main(args: Optional[List[str]] = None) -> int:
+    args_namespace = parse_args(args)
+    if args_namespace.env_manager is None:
+        args_namespace.env_manager = "mamba"
+    return main_with_args_namespace(args_namespace)
+
+
+def main_with_args_namespace(args: argparse.Namespace) -> int:
     if args.version:
         from conda_devenv import __version__
 
@@ -595,6 +614,23 @@ def main(args=None):
     filename = os.path.abspath(filename)
     if not os.path.isfile(filename):
         print(f'File "{filename}" does not exist.', file=sys.stderr)
+        return 1
+
+    env_manager = args.env_manager
+    if env_manager is None:
+        env_manager_origin = "environment variable"
+        env_manager = os.environ.get("CONDA_DEVENV_ENV_MANAGER", "conda")
+    else:
+        env_manager_origin = "'--env-manager' ('-m') option"
+
+    if env_manager not in ("conda", "mamba"):
+        print(
+            (
+                f'conda-devenv does not know the enviroment manager "{env_manager}" '
+                f"obtained from {env_manager_origin}."
+            ),
+            file=sys.stderr,
+        )
         return 1
 
     is_devenv_input_file = filename.endswith(".devenv.yml")
@@ -633,7 +669,7 @@ def main(args=None):
         truncate_history_file(env_directory)
 
     # Call conda-env update
-    retcode = __call_conda_env_update(args, output_filename)
+    retcode = __call_conda_env_update(args, output_filename, env_manager)
     if retcode:
         return retcode
 
