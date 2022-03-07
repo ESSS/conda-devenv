@@ -28,7 +28,6 @@ def patch_conda_calls(mocker):
 @pytest.mark.parametrize("return_none", [True, False])
 @pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
 @pytest.mark.usefixtures("patch_conda_calls")
-@pytest.mark.parametrize("env_manager", ["conda", "mamba"])
 def test_handle_input_file(
     tmpdir,
     input_name,
@@ -36,7 +35,6 @@ def test_handle_input_file(
     return_none,
     no_prune,
     truncate_call_count,
-    env_manager,
     monkeypatch,
 ):
     """
@@ -73,11 +71,6 @@ def test_handle_input_file(
         "--prune",
         "--quiet",
     ]
-    if env_manager == "mamba":
-        expected_conda_cmdline_args = [env_manager] + expected_conda_cmdline_args
-        mock_argv = deepcopy(sys.argv)
-        mock_argv[0] = env_manager
-        monkeypatch.setattr("sys.argv", mock_argv)
     if no_prune:
         devenv_cmdline_args.append("--no-prune")
         expected_conda_cmdline_args.remove("--prune")
@@ -264,6 +257,51 @@ def test_verbose(mocker, tmp_path):
     assert devenv.main(devenv_cmdline_args) == 0
     assert devenv._call_conda.call_count == 1
     assert argv == expected_conda_cmdline_args
+
+
+@pytest.mark.parametrize("option", ("-m", "--env-manager", "ENV_VAR"))
+def test_unknown_env_manager_option(option, capsys, monkeypatch, tmp_path):
+    env_manager = "foo"
+    if option == "ENV_VAR":
+        monkeypatch.setenv("CONDA_DEVENV_ENV_MANAGER", env_manager)
+        env_manager_args = []
+        config_source = "environment variable"
+    else:
+        monkeypatch.delenv("CONDA_DEVENV_ENV_MANAGER", raising=False)
+        env_manager_args = [option, env_manager]
+        config_source = "'--env-manager' ('-m') option"
+
+    filename = tmp_path.joinpath("environment.yml")
+    filename.write_text("name: a")
+    devenv_cmdline_args = ["--file", str(filename)] + env_manager_args
+
+    assert devenv.main(devenv_cmdline_args) == 1
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert (
+        err.strip()
+        == f'conda-devenv does not know the enviroment manager "foo" obtained from {config_source}.'
+    )
+
+
+@pytest.mark.usefixtures("patch_conda_calls")
+@pytest.mark.parametrize("option", (None, "-m", "--env-manager"))
+@pytest.mark.parametrize("env_manager", ("conda", "mamba"))
+def test_env_manager_option(option, env_manager, mocker, monkeypatch, tmp_path):
+    monkeypatch.delenv("CONDA_DEVENV_ENV_MANAGER", raising=False)
+    if option is None:
+        env_manager_args = []
+        if env_manager != "conda":
+            pytest.skip("Without env-manger option use defaults to conda")
+    else:
+        env_manager_args = [option, env_manager]
+
+    filename = tmp_path.joinpath("environment.yml")
+    filename.write_text("name: a")
+    devenv_cmdline_args = ["--file", str(filename)] + env_manager_args
+
+    assert devenv.main(devenv_cmdline_args) == 0
+    assert devenv._call_conda.call_args == mocker.call(env_manager)
 
 
 def test_parse_env_var_args():
