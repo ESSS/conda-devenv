@@ -2,7 +2,7 @@
 CHANGELOG
 =========
 
-2.3.0 (unreleased)
+2.3.0 (2022-03-07)
 ------------------
 
 * Now it is possible to use `mamba`_ with ``conda-devenv`` (`#134`_):
