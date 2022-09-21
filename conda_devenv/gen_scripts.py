@@ -112,15 +112,11 @@ def cmd_add_path(value: List[str]) -> str:
 
 
 def ps1_add_path(value: List[str]) -> str:
-    """Renders the code to add directories to the path for bash and fish.
+    """Renders the code to add directories to the path for powershell (ps1).
 
     :param value: A list of values to prepend to the path.
     :return: The code to prepend to path.
     """
-    # path_value = list_prepend(
-    #     "PATH", reversed(value), separator=";", variable_template="%{variable_name}%"
-    # )
-    # return f'set "PATH={path_value}"'
     return "\n".join(
         f"Add-Path -Path {shlex.quote(entry)}" for entry in reversed(value)
     )
