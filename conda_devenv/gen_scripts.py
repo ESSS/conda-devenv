@@ -61,6 +61,14 @@ def cmd_comment(line: str) -> str:
     return f"@REM {line}"
 
 
+def ps1_comment(line: str) -> str:
+    """Make a powershell comment.
+
+    line: Text to comment. Must not contain newlines.
+    """
+    return f"# {line}"
+
+
 def list_prepend(
     variable_name: str,
     value: Iterable[str],
@@ -101,6 +109,21 @@ def cmd_add_path(value: List[str]) -> str:
         "PATH", reversed(value), separator=";", variable_template="%{variable_name}%"
     )
     return f'set "PATH={path_value}"'
+
+
+def ps1_add_path(value: List[str]) -> str:
+    """Renders the code to add directories to the path for bash and fish.
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
+    # path_value = list_prepend(
+    #     "PATH", reversed(value), separator=";", variable_template="%{variable_name}%"
+    # )
+    # return f'set "PATH={path_value}"'
+    return "\n".join(
+        f"Add-Path -Path {shlex.quote(entry)}" for entry in reversed(value)
+    )
 
 
 def bash_variable(variable_name: str, value: str):
@@ -144,6 +167,20 @@ def cmd_variable(variable_name: str, value: str):
         f'''\
         set "CONDA_DEVENV_BKP_{variable_name}=%{variable_name}%"
         set "{variable_name}={value}"'''
+    )
+
+
+def ps1_variable(variable_name: str, value: str):
+    """Render the code to backup and set a variable in powershell (ps1).
+
+    :param variable_name: The name of the variable.
+    :param value: The new value to set the variable to.
+    :return: The code to backup and set the variable.
+    """
+    return dedent(
+        f'''\
+        $env:CONDA_DEVENV_BKP_{variable_name}=$env:{variable_name}
+        $env:{variable_name}="{value}"'''
     )
 
 
@@ -230,6 +267,24 @@ ACTIVATE_RENDERERS = {
         ),
         comment=cmd_comment,
     ),
+    "ps1": ScriptRenderer(
+        preamble=dedent(
+            """\
+            function Add-Path {
+                param( $Path )
+                $env:PATH="$Path;$env:PATH"
+            }"""
+        ),
+        generate_body=lambda env: activate_body(
+            env,
+            ps1_add_path,
+            ps1_variable,
+            separator=";",
+            variable_template="$env:{variable_name}",
+        ),
+        comment=ps1_comment,
+        epilogue="Remove-Item -Path Function:\\Add-Path",
+    ),
 }
 
 
@@ -242,6 +297,7 @@ def render_activate_script(environment: Environment, shell: str):
             - bash
             - fish
             - cmd
+            - ps1
     :return string: The activate script for the given shell based on the
                     environment.
     """
@@ -270,6 +326,16 @@ def cmd_remove_path(value: List[str]) -> str:
     """
     # Path here ensures normalization of separators.
     return "\n".join(f"set PATH=%PATH:{Path(entry)};=%" for entry in value)
+
+
+def ps1_remove_path(value: List[str]) -> str:
+    """Renders the code to remove directories from the path in powershell (ps1).
+
+    :param value: A list of values to prepend to the path.
+    :return: The code to prepend to path.
+    """
+    # Path here ensures normalization of separators.
+    return "\n".join(f"Remove-Path -Path {shlex.quote(entry)}" for entry in value)
 
 
 def bash_unset_variable(variable_name: str):
@@ -312,6 +378,19 @@ def cmd_unset_variable(variable_name: str):
         f"""\
         set "{variable_name}=%CONDA_DEVENV_BKP_{variable_name}%"
         set CONDA_DEVENV_BKP_{variable_name}="""
+    )
+
+
+def ps1_unset_variable(variable_name: str):
+    """Render the code to unset a variable and/or restore its backup in powershell (ps1).
+
+    :param variable_name: The name of the variable.
+    :return: The code to restore and/or unset the variable.
+    """
+    return dedent(
+        f"""\
+        $env:{variable_name}=$env:CONDA_DEVENV_BKP_{variable_name}
+        $env:CONDA_DEVENV_BKP_{variable_name}=$null"""
     )
 
 
@@ -391,6 +470,22 @@ DEACTIVATE_RENDERERS = {
         ),
         comment=cmd_comment,
     ),
+    "ps1": ScriptRenderer(
+        preamble=dedent(
+            """\
+            function Remove-Path {
+                param ( $Path )
+                $env:PATH=($env:PATH.split(';') | Where-Object{$_ -ne $Path}) -join ';'
+            }"""
+        ),
+        generate_body=lambda env: deactivate_body(
+            env,
+            ps1_remove_path,
+            ps1_unset_variable,
+        ),
+        comment=ps1_comment,
+        epilogue="Remove-Item -Path Function:\\Remove-Path",
+    ),
 }
 
 
@@ -403,6 +498,7 @@ def render_deactivate_script(environment: Environment, shell="bash"):
             - bash
             - fish
             - cmd
+            - ps1
     :return string: The deactivate script for the given shell based on the
                     environment.
     """
