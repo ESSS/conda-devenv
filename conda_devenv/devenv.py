@@ -453,9 +453,8 @@ def write_activate_deactivate_scripts(
         os.makedirs(deactivate_directory)
 
     if sys.platform == "win32":
-        files = [("devenv-vars.bat", "cmd")]
-        if args.generate_ps1:
-            files += [("devenv-vars.ps1", "ps1")]
+        # Generate scripts for cmd.exe and powershell
+        files = [("devenv-vars.bat", "cmd"), ("devenv-vars.ps1", "ps1")]
     else:
         # Linux and Mac should create a .sh
         files = [("devenv-vars.sh", "bash"), ("devenv-vars.fish", "fish")]
@@ -587,11 +586,6 @@ def parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
         help="The environment manager to use. "
         "Default to 'conda' or the value of 'CONDA_DEVENV_ENV_MANAGER' environment variable if set.",
         default=None,
-    )
-    parser.add_argument(
-        "--generate-ps1",
-        help="Generate powershell (.ps1) activate/deactivate scripts (only relevant for Windows).",
-        action="store_true",
     )
 
     argv = sys.argv[1:] if argv is None else argv
