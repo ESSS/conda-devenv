@@ -453,7 +453,8 @@ def write_activate_deactivate_scripts(
         os.makedirs(deactivate_directory)
 
     if sys.platform == "win32":
-        files = [("devenv-vars.bat", "cmd")]
+        # Generate scripts for cmd.exe and powershell
+        files = [("devenv-vars.bat", "cmd"), ("devenv-vars.ps1", "ps1")]
     else:
         # Linux and Mac should create a .sh
         files = [("devenv-vars.sh", "bash"), ("devenv-vars.fish", "fish")]
