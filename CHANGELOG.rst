@@ -2,6 +2,14 @@
 CHANGELOG
 =========
 
+2.4.0 (2022-09-22)
+------------------
+
+* Add support for powershell (`#150`_).
+
+.. _`#150`: https://github.com/ESSS/conda-devenv/pull/150
+
+
 2.3.0 (2022-03-07)
 ------------------
 
