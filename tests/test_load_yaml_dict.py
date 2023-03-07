@@ -21,6 +21,12 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir):
     assert exception_message_start in str(e.value)
 
 
+def test_load_yaml_dict_empty_environment_key(datadir):
+    filename = str(datadir / "empty_environment.yml")
+    d = load_yaml_dict(filename)
+    assert d == ({"name": "foo"}, {})
+
+
 def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_file_to_exception_message(
     datadir,
 ):

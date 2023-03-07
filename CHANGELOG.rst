@@ -2,6 +2,13 @@
 CHANGELOG
 =========
 
+UNRELEASED
+----------
+
+* Fix bug when an empty ``environment:`` key is declared in the ``environment.devenv.yml``file (`#164`_).
+
+.. _`#164`: https://github.com/ESSS/conda-devenv/pull/164
+
 2.3.0 (2022-03-07)
 ------------------
 
