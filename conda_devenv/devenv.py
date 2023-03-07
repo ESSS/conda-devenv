@@ -307,6 +307,9 @@ def load_yaml_dict(filename):
 
     for filename, yaml_dict in all_yaml_dicts.items():
         environment_key_value = yaml_dict.get("environment", {})
+        if environment_key_value is None:
+            # The yaml has enironment variables for other OSes, but not the current one.
+            environment_key_value = {}
         if not isinstance(environment_key_value, dict):
             raise ValueError(
                 "The 'environment' key is supposed to be a dictionary, but you have the type "
