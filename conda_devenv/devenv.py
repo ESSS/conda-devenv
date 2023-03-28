@@ -84,6 +84,8 @@ def render_jinja(contents, filename, is_included):
         "platform": platform,
         "root": os.path.dirname(os.path.abspath(filename)),
         "sys": sys,
+        "aarch64": "aarch64" == platform.machine(),
+        "arm64": isosx and "arm64" == platform.machine(),
         "x86": "x86" == platform.machine(),
         "x86_64": "x86_64" == platform.machine(),
         "linux": islinux,
