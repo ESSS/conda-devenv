@@ -96,8 +96,12 @@ def test_jinja_arm64(monkeypatch):
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
     assert render_jinja(template, filename="", is_included=False) == "False"
 
+    monkeypatch.setattr(sys, "platform", "darwin")
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
     assert render_jinja(template, filename="", is_included=False) == "True"
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    assert render_jinja(template, filename="", is_included=False) == "False"
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
     assert render_jinja(template, filename="", is_included=False) == "False"
