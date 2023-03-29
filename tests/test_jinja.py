@@ -215,6 +215,10 @@ def test_preprocess_selector_in_line():
     expected = f"{{% if linux %}}{line}{{% endif %}}"
     assert preprocess_selector_in_line(line) == expected
 
+    line = ""
+    expected = line
+    assert preprocess_selector_in_line(line) == expected
+
 
 def test_preprocess_selectors():
     template = textwrap.dedent(
