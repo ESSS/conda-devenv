@@ -2,12 +2,14 @@
 CHANGELOG
 =========
 
-UNRELEASED
+2.4.0
 ----------
 
-* Fix bug when an empty ``environment:`` key is declared in the ``environment.devenv.yml``file (`#164`_).
+* Added ``aarch64`` and ``arm64`` selectors (`#166`_).
+* Fixed bug when an empty ``environment:`` key is declared in the ``environment.devenv.yml``file (`#164`_).
 
 .. _`#164`: https://github.com/ESSS/conda-devenv/pull/164
+.. _`#166`: https://github.com/ESSS/conda-devenv/pull/166
 
 2.3.0 (2022-03-07)
 ------------------
