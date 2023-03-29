@@ -2,8 +2,8 @@
 CHANGELOG
 =========
 
-2.4.0
-----------
+2.4.0 (UNRELEASED)
+------------------
 
 * Added ``aarch64`` and ``arm64`` selectors (`#166`_).
 * Fixed bug when an empty ``environment:`` key is declared in the ``environment.devenv.yml``file (`#164`_).
