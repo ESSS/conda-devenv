@@ -71,6 +71,10 @@ The following variables are available in the Jinja 2 namespace:
      - True if the platform is Windows and the Python architecture is 32-bit.
    * - ``win64``
      - True if the platform is Windows and the Python architecture is 64-bit.
+   * - ``aarch64``
+     - True if the platform is Linux on ARMv8 and the Python architecture is 64-bit.
+   * - ``arm64``
+     - True if the platform is macOS with Apple Silicon and the Python architecture is 64-bit.
    * - ``is_included``
      - True if the current file is processed because it was included by another file.
 

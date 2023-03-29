@@ -74,8 +74,50 @@ def test_jinja_platform(monkeypatch):
     )
 
 
+def test_jinja_aarch64(monkeypatch):
+    template = "{{ aarch64 }}"
+
+    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
+    assert render_jinja(template, filename="", is_included=False) == "True"
+
+    monkeypatch.setattr(platform, "machine", lambda: "arm64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(platform, "machine", lambda: "x86")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+
+def test_jinja_arm64(monkeypatch):
+    template = "{{ arm64 }}"
+
+    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr(platform, "machine", lambda: "arm64")
+    assert render_jinja(template, filename="", is_included=False) == "True"
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(platform, "machine", lambda: "x86")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+
 def test_jinja_x86(monkeypatch):
     template = "{{ x86 }}"
+
+    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(platform, "machine", lambda: "arm64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
     assert render_jinja(template, filename="", is_included=False) == "True"
@@ -86,6 +128,12 @@ def test_jinja_x86(monkeypatch):
 
 def test_jinja_x86_64(monkeypatch):
     template = "{{ x86_64 }}"
+
+    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
+
+    monkeypatch.setattr(platform, "machine", lambda: "arm64")
+    assert render_jinja(template, filename="", is_included=False) == "False"
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
     assert render_jinja(template, filename="", is_included=False) == "False"
