@@ -2,7 +2,7 @@
 CHANGELOG
 =========
 
-2.4.0 (UNRELEASED)
+2.4.0 (2023-03-29)
 ------------------
 
 * Added ``aarch64`` and ``arm64`` selectors (`#166`_).
