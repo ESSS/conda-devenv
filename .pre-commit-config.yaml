@@ -1,6 +1,14 @@
 default_language_version:
     python: python3.7
 repos:
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.1.1
+    hooks:
+      - id: autoflake
+        name: autoflake
+        args: [ "--in-place", "--remove-unused-variables", "--remove-all-unused-imports" ]
+        language: python
+        files: \.py$
   - repo: https://github.com/psf/black
     rev: 23.3.0
     hooks:

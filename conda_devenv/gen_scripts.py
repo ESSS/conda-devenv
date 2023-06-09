@@ -1,3 +1,5 @@
+# mypy: disallow-untyped-defs
+from __future__ import annotations
 import shlex
 from pathlib import Path
 from textwrap import dedent
@@ -90,7 +92,7 @@ def list_prepend(
     )
 
 
-def bash_and_fish_add_path(value: List[str]) -> str:
+def bash_and_fish_add_path(value: list[str]) -> str:
     """Renders the code to add directories to the path for bash and fish.
 
     :param value: A list of values to prepend to the path.
@@ -99,7 +101,7 @@ def bash_and_fish_add_path(value: List[str]) -> str:
     return "\n".join(f"add_path {shlex.quote(entry)}" for entry in reversed(value))
 
 
-def cmd_add_path(value: List[str]) -> str:
+def cmd_add_path(value: list[str]) -> str:
     """Renders the code to add directories to the path for bash and fish.
 
     :param value: A list of values to prepend to the path.
@@ -111,7 +113,7 @@ def cmd_add_path(value: List[str]) -> str:
     return f'set "PATH={path_value}"'
 
 
-def ps1_add_path(value: List[str]) -> str:
+def ps1_add_path(value: list[str]) -> str:
     """Renders the code to add directories to the path for powershell (ps1).
 
     :param value: A list of values to prepend to the path.
@@ -122,7 +124,7 @@ def ps1_add_path(value: List[str]) -> str:
     )
 
 
-def bash_variable(variable_name: str, value: str):
+def bash_variable(variable_name: str, value: str) -> str:
     """Render the code to backup and set a variable in bash.
 
     :param variable_name: The name of the variable.
@@ -138,7 +140,7 @@ def bash_variable(variable_name: str, value: str):
     )
 
 
-def fish_variable(variable_name: str, value: str):
+def fish_variable(variable_name: str, value: str) -> str:
     """Render the code to backup and set a variable in fish.
 
     :param variable_name: The name of the variable.
@@ -152,7 +154,7 @@ def fish_variable(variable_name: str, value: str):
     )
 
 
-def cmd_variable(variable_name: str, value: str):
+def cmd_variable(variable_name: str, value: str) -> str:
     """Render the code to backup and set a variable in cmd.
 
     :param variable_name: The name of the variable.
@@ -166,7 +168,7 @@ def cmd_variable(variable_name: str, value: str):
     )
 
 
-def ps1_variable(variable_name: str, value: str):
+def ps1_variable(variable_name: str, value: str) -> str:
     """Render the code to backup and set a variable in powershell (ps1).
 
     :param variable_name: The name of the variable.
@@ -182,11 +184,11 @@ def ps1_variable(variable_name: str, value: str):
 
 def activate_body(
     environment: Environment,
-    add_path: Callable[[List[str]], str],
+    add_path: Callable[[list[str]], str],
     variable_renderer: Callable[[str, str], str],
     separator: str = ":",
     variable_template: str = "${variable_name}",
-):
+) -> str:
     """Render the activate script body for bash and fish.
 
     :param environment: The environment to base the script on.
@@ -284,7 +286,7 @@ ACTIVATE_RENDERERS = {
 }
 
 
-def render_activate_script(environment: Environment, shell: str):
+def render_activate_script(environment: Environment, shell: str) -> str:
     """Render the activating script for a given environment and a given shell.
 
     :param environment: The environment to base the script on.
@@ -305,7 +307,7 @@ def render_activate_script(environment: Environment, shell: str):
     return renderer.render(environment)
 
 
-def bash_and_fish_remove_path(value: List[str]) -> str:
+def bash_and_fish_remove_path(value: list[str]) -> str:
     """Renders the code to remove directories from the path in bash and fish.
 
     :param value: A list of values to prepend to the path.
@@ -314,7 +316,7 @@ def bash_and_fish_remove_path(value: List[str]) -> str:
     return "\n".join(f"remove_path {shlex.quote(entry)}" for entry in value)
 
 
-def cmd_remove_path(value: List[str]) -> str:
+def cmd_remove_path(value: list[str]) -> str:
     """Renders the code to remove directories from the path in cmd.
 
     :param value: A list of values to prepend to the path.
@@ -324,7 +326,7 @@ def cmd_remove_path(value: List[str]) -> str:
     return "\n".join(f"set PATH=%PATH:{Path(entry)};=%" for entry in value)
 
 
-def ps1_remove_path(value: List[str]) -> str:
+def ps1_remove_path(value: list[str]) -> str:
     """Renders the code to remove directories from the path in powershell (ps1).
 
     :param value: A list of values to prepend to the path.
@@ -334,7 +336,7 @@ def ps1_remove_path(value: List[str]) -> str:
     return "\n".join(f"Remove-Path -Path {shlex.quote(entry)}" for entry in value)
 
 
-def bash_unset_variable(variable_name: str):
+def bash_unset_variable(variable_name: str) -> str:
     """Render the code to unset a variable and/or restore its backup in bash.
 
     :param variable_name: The name of the variable.
@@ -351,7 +353,7 @@ def bash_unset_variable(variable_name: str):
     )
 
 
-def fish_unset_variable(variable_name: str):
+def fish_unset_variable(variable_name: str) -> str:
     """Render the code to unset a variable and/or restore its backup in bash.
 
     :param variable_name: The name of the variable.
@@ -364,7 +366,7 @@ def fish_unset_variable(variable_name: str):
     )
 
 
-def cmd_unset_variable(variable_name: str):
+def cmd_unset_variable(variable_name: str) -> str:
     """Render the code to unset a variable and/or restore its backup in cmd.
 
     :param variable_name: The name of the variable.
@@ -377,7 +379,7 @@ def cmd_unset_variable(variable_name: str):
     )
 
 
-def ps1_unset_variable(variable_name: str):
+def ps1_unset_variable(variable_name: str) -> str:
     """Render the code to unset a variable and/or restore its backup in powershell (ps1).
 
     :param variable_name: The name of the variable.
@@ -392,9 +394,9 @@ def ps1_unset_variable(variable_name: str):
 
 def deactivate_body(
     environment: Environment,
-    remove_path: Callable[[List[str]], str],
+    remove_path: Callable[[list[str]], str],
     variable_unset_renderer: Callable[[str], str],
-):
+) -> str:
     """Render the deactivate script body.
 
     :param environment: The environment to base the script on.
@@ -485,7 +487,7 @@ DEACTIVATE_RENDERERS = {
 }
 
 
-def render_deactivate_script(environment: Environment, shell="bash"):
+def render_deactivate_script(environment: Environment, shell: str = "bash") -> str:
     """Render the deactivating script for a given environment and a given shell.
 
     :param environment: The environment to base the script on.

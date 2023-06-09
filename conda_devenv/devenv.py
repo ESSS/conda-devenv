@@ -1,17 +1,27 @@
+# mypy: disallow-untyped-defs
+from __future__ import annotations
 import argparse
 import os
 import re
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import (
+    Sequence,
+    Any,
+    Dict,
+    Iterable,
+    Mapping,
+)
+from typing_extensions import Literal
 
-from .gen_scripts import render_activate_script, render_deactivate_script
-
+from .gen_scripts import render_activate_script, render_deactivate_script, Environment
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
+YAMLData = Dict[str, Any]
 
-def preprocess_selector_in_line(line):
+
+def preprocess_selector_in_line(line: str) -> str:
     x = _selector_pattern.search(line)
     if x is None:
         return line
@@ -19,13 +29,12 @@ def preprocess_selector_in_line(line):
     return f"{{% if {expr} %}}{line}{{% endif %}}"
 
 
-def preprocess_selectors(contents):
-    contents = contents.split("\n")
-    lines = [preprocess_selector_in_line(line) for line in contents]
+def preprocess_selectors(contents: str) -> str:
+    lines = [preprocess_selector_in_line(line) for line in contents.split("\n")]
     return "\n".join(lines)
 
 
-def _min_conda_devenv_version(min_version):
+def _min_conda_devenv_version(min_version: str) -> str:
     """Checks that the current conda devenv version is at least the given version"""
     from packaging.version import parse
     import conda_devenv
@@ -39,17 +48,19 @@ def _min_conda_devenv_version(min_version):
     return ""
 
 
-def _get_env(var_name, default=None, valid=None):
+def _get_env(
+    var_name: str, default: str | None = None, valid: Sequence[str] | None = None
+) -> str:
     """Get env var value or default value and check against allowed values.
 
-    :param str var_name:
+    :param var_name:
         Name of the environment variable.
-    :param Optional[str] default:
+    :param default:
         Default value for the variable. If not specified, the method raises
         an error when the variable is not set.
-    :param Optional[List[str]] valid:
+    :param valid:
         List of allowed values of the variable.
-    :return: str
+    :return:
         Value of the environment variable or default
     """
     value = os.environ.get(var_name, default)
@@ -66,7 +77,7 @@ def _get_env(var_name, default=None, valid=None):
     return value
 
 
-def render_jinja(contents, filename, is_included):
+def render_jinja(contents: str, filename: Path, is_included: bool) -> str:
     import jinja2
     import sys
     import platform
@@ -105,7 +116,7 @@ def render_jinja(contents, filename, is_included):
     return jinja2.Template(contents).render(**jinja_dict)
 
 
-def handle_includes(root_filename, root_yaml):
+def handle_includes(root_filename: Path, root_yaml: YAMLData) -> dict[Path, YAMLData]:
     # This is a depth-first search
     import yaml
     import collections
@@ -161,13 +172,12 @@ def handle_includes(root_filename, root_yaml):
     return visited
 
 
-def separate_strings_from_dicts(elements):
+def separate_strings_from_dicts(
+    elements: Sequence[str | dict],
+) -> tuple[Sequence[str], Sequence[dict]]:
     """
-    Receive a list of strings and dicts an returns 2 lists, one solely with string and the other
+    Receive a list of strings and dicts and returns 2 lists, one solely with string and the other
     with dicts.
-
-    :param List[Union[str, Dict[str, str]]] elements:
-    :rtype: Tuple[List[str], List[Dict[str, str]]]
     """
     all_strs = []
     all_dicts = []
@@ -181,8 +191,10 @@ def separate_strings_from_dicts(elements):
     return all_strs, all_dicts
 
 
-def merge(dicts, keys_to_skip=("name",)):
-    final_dict = {}
+def merge(
+    dicts: Iterable[YAMLData], keys_to_skip: Sequence[str] = ("name",)
+) -> YAMLData:
+    final_dict: YAMLData = {}
 
     for d in dicts:
         if not isinstance(d, dict):
@@ -203,12 +215,9 @@ def merge(dicts, keys_to_skip=("name",)):
                         final_dict[key]
                     )
                     new_strings, new_dicts = separate_strings_from_dicts(value)
-                    s = set()
-                    s.update(target_strings)
-                    s.update(new_strings)
-
-                    merged_list = sorted(list(s))
-                    merged_dict = merge(target_dicts + new_dicts)
+                    s: set[str] = {*target_strings, *new_strings}
+                    merged_list: list[str | YAMLData] = list(sorted(s))
+                    merged_dict = merge(list(target_dicts) + list(new_dicts))
                     if len(merged_dict) > 0:
                         merged_list.append(merged_dict)
                     final_dict[key] = merged_list
@@ -228,7 +237,9 @@ def merge(dicts, keys_to_skip=("name",)):
     return final_dict
 
 
-def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False):
+def merge_dependencies_version_specifications(
+    yaml_dict: YAMLData, key_to_merge: str, pip: bool = False
+) -> None:
     import collections
     import re
 
@@ -243,7 +254,7 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
         r"\s*(?P<version>.*)$"
     )
 
-    new_dependencies = {}
+    new_dependencies: dict[str, collections.OrderedDict] = {}
     new_dict_dependencies = []
     for dep in value_to_merge:
         if isinstance(dep, dict):
@@ -296,8 +307,8 @@ def merge_dependencies_version_specifications(yaml_dict, key_to_merge, pip=False
     yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
 
 
-def load_yaml_dict(filename):
-    with open(filename, "r") as f:
+def load_yaml_dict(filename: Path) -> tuple[YAMLData, dict]:
+    with open(filename) as f:
         contents = f.read()
     rendered_contents = render_jinja(contents, filename, is_included=False)
 
@@ -332,7 +343,7 @@ def load_yaml_dict(filename):
 DEFAULT_HEADER = "# generated by conda-devenv, do not modify and do not commit to VCS\n"
 
 
-def render_for_conda_env(yaml_dict, header=DEFAULT_HEADER):
+def render_for_conda_env(yaml_dict: YAMLData, header: str = DEFAULT_HEADER) -> str:
     import yaml
 
     contents = header
@@ -340,7 +351,9 @@ def render_for_conda_env(yaml_dict, header=DEFAULT_HEADER):
     return contents
 
 
-def __write_conda_environment_file(args, filename, rendered_contents):
+def __write_conda_environment_file(
+    args: argparse.Namespace, filename: Path, rendered_contents: str
+) -> Path:
     if args.output_file:
         output_filename = args.output_file
     else:
@@ -362,7 +375,7 @@ def __write_conda_environment_file(args, filename, rendered_contents):
     return output_filename
 
 
-def truncate_history_file(env_directory):
+def truncate_history_file(env_directory: Path | None) -> None:
     """
     Since conda version 4.4 the "--prune" option does not prune the environment to match just the
     supplied specs but take in account the previous environment history we truncate the history
@@ -377,14 +390,14 @@ def truncate_history_file(env_directory):
     update the "conda-env" arguments.
     """
     if env_directory is None:
-        return  # Environment does not exists, no history to truncate
+        return  # Environment does not exist, no history to truncate
 
     from os.path import isfile, join
     from time import time
     from shutil import copyfile
 
     history_filename = join(env_directory, "conda-meta", "history")
-    history_backup_filename = "{}.{}".format(history_filename, time())
+    history_backup_filename = f"{history_filename}.{time()}"
     if isfile(history_filename):
         copyfile(history_filename, history_backup_filename)
 
@@ -392,13 +405,17 @@ def truncate_history_file(env_directory):
             history.truncate()
 
 
-def __call_conda_env_update(args, output_filename, env_manager):
+def __call_conda_env_update(
+    args: argparse.Namespace,
+    output_filename: Path,
+    env_manager: Literal["conda", "mamba"],
+) -> str | int | None:
     command = [
         env_manager,
         "env",
         "update",
         "--file",
-        output_filename,
+        str(output_filename),
     ]
     if not args.no_prune:
         command.append("--prune")
@@ -423,7 +440,7 @@ def __call_conda_env_update(args, output_filename, env_manager):
         sys.argv = old_argv
 
 
-def _call_conda(env_manager: str = "conda"):
+def _call_conda(env_manager: Literal["conda", "mamba"] = "conda") -> int:
     """
     Calls conda-env or mamba directly using its internal API. ``sys.argv``
     must already be configured at this point.
@@ -439,8 +456,11 @@ def _call_conda(env_manager: str = "conda"):
 
 
 def write_activate_deactivate_scripts(
-    args, conda_yaml_dict, environment, env_directory
-):
+    args: argparse.Namespace,
+    conda_yaml_dict: YAMLData,
+    environment: Environment,
+    env_directory: Path | None,
+) -> None:
     if env_directory is None:
         env_name = args.name or conda_yaml_dict["name"]
         env_directory = get_env_directory(env_name)
@@ -474,14 +494,18 @@ def write_activate_deactivate_scripts(
             f.write(deactivate_script)
 
 
-def get_env_name(args, output_filename, conda_yaml_dict=None):
+def get_env_name(
+    args: argparse.Namespace,
+    output_filename: Path,
+    conda_yaml_dict: YAMLData | None = None,
+) -> str:
     """
-    :param argparse.Namespace args:
+    :param args:
         When the user supplies the name option in the command line this namespace have a "name"
         defined with a not `None` value and this value is returned.
-    :param str output_filename:
+    :param output_filename:
         No jinja rendering is performed on this file if it is used.
-    :param Optional[Dict[str,Any]] conda_yaml_dict:
+    :param conda_yaml_dict:
         If supplied and not `None` then `output_filename` is ignored.
     """
     if args.name:
@@ -490,22 +514,21 @@ def get_env_name(args, output_filename, conda_yaml_dict=None):
     if conda_yaml_dict is None:
         import yaml
 
-        with open(output_filename, "r") as stream:
+        with open(output_filename) as stream:
             conda_yaml_dict = yaml.safe_load(stream)
 
     return conda_yaml_dict["name"]
 
 
-def _get_envs_dirs_from_conda():
+def _get_envs_dirs_from_conda() -> Sequence[Path]:
     from conda.base.context import context
 
-    return context.envs_dirs
+    return [Path(x) for x in context.envs_dirs]
 
 
-def get_env_directory(env_name):
+def get_env_directory(env_name: str) -> Path | None:
     """
-    :rtype: Optional[str]
-    :return: The environment path if the enviromment exists.
+    The environment path if the enviromment exists.
     """
     envs_dirs = _get_envs_dirs_from_conda()
 
@@ -513,12 +536,12 @@ def get_env_directory(env_name):
         env = os.path.join(directory, env_name)
         conda_meta_dir = os.path.join(env, "conda-meta")
         if os.path.isdir(conda_meta_dir):
-            return os.path.normpath(env)
+            return Path(os.path.normpath(env))
 
     return None
 
 
-def parse_env_var_args(env_var_args):
+def parse_env_var_args(env_var_args: Sequence[str] | None) -> Mapping[str, str]:
     """
     :param List[str] env_var_args:
         List of arguments in the form "VAR_NAME" or "VAR_NAME=VALUE"
@@ -537,7 +560,7 @@ def parse_env_var_args(env_var_args):
     return env_vars
 
 
-def parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
+def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Work with multiple conda-environment-like yaml files in dev mode."
     )
@@ -597,19 +620,19 @@ def parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(args: Optional[List[str]] = None) -> int:
+def main(args: list[str] | None = None) -> int | str | None:
     args_namespace = parse_args(args)
     return main_with_args_namespace(args_namespace)
 
 
-def mamba_main(args: Optional[List[str]] = None) -> int:
+def mamba_main(args: list[str] | None = None) -> int | str | None:
     args_namespace = parse_args(args)
     if args_namespace.env_manager is None:
         args_namespace.env_manager = "mamba"
     return main_with_args_namespace(args_namespace)
 
 
-def main_with_args_namespace(args: argparse.Namespace) -> int:
+def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     if args.version:
         from conda_devenv import __version__
 
@@ -639,6 +662,7 @@ def main_with_args_namespace(args: argparse.Namespace) -> int:
         )
         return 1
 
+    conda_yaml_dict: YAMLData | None
     is_devenv_input_file = filename.endswith(".devenv.yml")
     if is_devenv_input_file:
         # update environment variables
@@ -659,7 +683,8 @@ def main_with_args_namespace(args: argparse.Namespace) -> int:
             args, filename, rendered_contents
         )
     else:
-        conda_yaml_dict = environment = None
+        conda_yaml_dict = None
+        environment = {}
         # Just call conda-env directly in plain environment.yml files
         output_filename = filename
         if args.print:
@@ -681,7 +706,7 @@ def main_with_args_namespace(args: argparse.Namespace) -> int:
 
     if is_devenv_input_file:
         write_activate_deactivate_scripts(
-            args, conda_yaml_dict, environment, env_directory
+            args, conda_yaml_dict or {}, environment, env_directory
         )
     return 0
 
