@@ -12,6 +12,7 @@ requirements = [
     "packaging",
     "pyyaml",
     "jinja2",
+    "colorama",
 ]
 
 test_requirements = [

@@ -95,3 +95,4 @@ ENV/
 
 conda_devenv/_version.py
 .pytest_cache
+.dmypy.json

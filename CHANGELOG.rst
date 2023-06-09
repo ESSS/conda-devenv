@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+UNRELEASED
+----------
+
+* Added full type annotations. Some of the parameters were changed from ``str`` to ``Path`` to make the API more clearer.
+
 2.4.0 (2023-03-29)
 ------------------
 
