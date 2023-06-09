@@ -160,13 +160,23 @@ def test_min_version_failure(tmp_path: Path, capsys) -> None:
     """
         )
     )
-    with pytest.raises(SystemExit) as e:
-        devenv.main(["--file", str(filename)])
-    assert e.value.code == 1
+    assert devenv.main(["--file", str(filename)]) == 2
     out, err = capsys.readouterr()
     assert out == ""
-    msg = "This file requires at minimum conda-devenv 999.9, but you have {ver} installed."
-    assert msg.format(ver=conda_devenv.__version__) in err
+    msg = f"This file requires at minimum conda-devenv 999.9, but you have {conda_devenv.__version__} installed."
+    assert msg in err
+
+
+def test_no_name(tmp_path: Path, capsys) -> None:
+    """
+    Check the "min_conda_devenv_version()" fails with the expected message.
+    """
+    filename = tmp_path / "environment.devenv.yml"
+    filename.write_text("foo: something")
+    assert devenv.main(["--file", str(filename)]) == 2
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert "ERROR: file environment.devenv.yml has no 'name' key defined.\n" in err
 
 
 def test_min_version_ok(tmp_path: Path, capsys) -> None:
@@ -208,16 +218,16 @@ def test_error_message_environment_file_not_found(
     monkeypatch.chdir(tmp_path)
     args = ["--file", "invalid.devenv.yml"] if explicit_file else []
     expected_name = "invalid.devenv.yml" if explicit_file else "environment.devenv.yml"
-    assert devenv.main(args) == 1
+    assert devenv.main(args) == 2
     out, err = capsys.readouterr()
     assert out == ""
-    assert err == 'File "{}" does not exist.\n'.format(str(tmp_path / expected_name))
+    assert f'file "{str(tmp_path / expected_name)}" does not exist.\n' in err
 
 
 def test_get_env_directory(mocker, tmp_path: Path) -> None:
     env_0 = tmp_path / "0/envs/my_env"
     env_0.mkdir(parents=True)
-    conda_meta_env_0 = tmp_path / "0/envs/my_env/conta-meta"
+    conda_meta_env_0 = tmp_path / "0/envs/my_env/invalid"
     conda_meta_env_0.mkdir(parents=True)
 
     env_1 = tmp_path / "1/envs/my_env"
