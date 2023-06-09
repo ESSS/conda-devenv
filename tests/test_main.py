@@ -1,7 +1,10 @@
+from __future__ import annotations
+import shutil
 import sys
 import textwrap
 from pathlib import Path
 from typing import List, cast
+from unittest.mock import MagicMock
 
 import pytest
 from conda_devenv import devenv
@@ -30,18 +33,18 @@ def patch_conda_calls(mocker):
 @pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
 @pytest.mark.usefixtures("patch_conda_calls")
 def test_handle_input_file(
-    tmpdir,
+    tmp_path,
     input_name,
     write_scripts_call_count,
     return_none,
     no_prune,
     truncate_call_count,
     monkeypatch,
-):
+) -> None:
     """
     Test how conda-devenv handles input files: devenv.yml and pure .yml files.
     """
-    argv = []
+    argv: list[str] = []
 
     def call_conda_mock(env_manager):
         argv[:] = sys.argv[:]
@@ -51,10 +54,10 @@ def test_handle_input_file(
         else:
             sys.exit(0)
 
-    devenv._call_conda.side_effect = call_conda_mock
+    cast(MagicMock, devenv._call_conda).side_effect = call_conda_mock
 
-    filename = tmpdir.join(input_name)
-    filename.write(
+    filename = tmp_path / input_name
+    filename.write_text(
         textwrap.dedent(
             """\
         name: a
@@ -68,7 +71,7 @@ def test_handle_input_file(
         "env",
         "update",
         "--file",
-        tmpdir.join("environment.yml"),
+        str(tmp_path / "environment.yml"),
         "--prune",
         "--quiet",
     ]
@@ -77,22 +80,25 @@ def test_handle_input_file(
         expected_conda_cmdline_args.remove("--prune")
 
     assert devenv.main(devenv_cmdline_args) == 0
-    assert devenv._call_conda.call_count == 1
+    assert cast(MagicMock, devenv._call_conda).call_count == 1
     assert argv == expected_conda_cmdline_args
     assert (
-        devenv.write_activate_deactivate_scripts.call_count == write_scripts_call_count
+        cast(MagicMock, devenv.write_activate_deactivate_scripts).call_count
+        == write_scripts_call_count
     )
-    assert devenv.truncate_history_file.call_count == truncate_call_count
+    assert (
+        cast(MagicMock, devenv.truncate_history_file).call_count == truncate_call_count
+    )
 
 
 @pytest.mark.parametrize("input_name", ["environment.devenv.yml", "environment.yml"])
 @pytest.mark.usefixtures("patch_conda_calls")
-def test_print(tmpdir, input_name, capsys) -> None:
+def test_print(tmp_path: Path, input_name, capsys) -> None:
     """
     Test --print option for different types of inputs.
     """
-    filename = tmpdir.join(input_name)
-    filename.write(
+    filename = tmp_path / input_name
+    filename.write_text(
         textwrap.dedent(
             """\
         name: a
@@ -111,12 +117,12 @@ def test_print(tmpdir, input_name, capsys) -> None:
 
 
 @pytest.mark.usefixtures("patch_conda_calls")
-def test_print_full(tmpdir, capsys) -> None:
+def test_print_full(tmp_path: Path, capsys) -> None:
     """
     Test --print option for different types of inputs.
     """
-    filename = tmpdir.join("environment.devenv.yml")
-    filename.write(
+    filename = tmp_path / "environment.devenv.yml"
+    filename.write_text(
         textwrap.dedent(
             """\
         name: a
@@ -139,14 +145,14 @@ def test_print_full(tmpdir, capsys) -> None:
     assert "PYTHONPATH:" in out
 
 
-def test_min_version_failure(tmpdir, capsys) -> None:
+def test_min_version_failure(tmp_path: Path, capsys) -> None:
     """
     Check the "min_conda_devenv_version()" fails with the expected message.
     """
     import conda_devenv
 
-    filename = tmpdir.join("environment.devenv.yml")
-    filename.write(
+    filename = tmp_path / "environment.devenv.yml"
+    filename.write_text(
         textwrap.dedent(
             """\
         {{ min_conda_devenv_version("999.9") }}
@@ -163,14 +169,14 @@ def test_min_version_failure(tmpdir, capsys) -> None:
     assert msg.format(ver=conda_devenv.__version__) in err
 
 
-def test_min_version_ok(tmpdir, capsys) -> None:
+def test_min_version_ok(tmp_path: Path, capsys) -> None:
     """
     Check the "min_conda_devenv_version()" does not fail with current version.
     """
     import conda_devenv
 
-    filename = tmpdir.join("environment.devenv.yml")
-    filename.write(
+    filename = tmp_path / "environment.devenv.yml"
+    filename.write_text(
         textwrap.dedent(
             """\
         {{{{ min_conda_devenv_version("{}") }}}}
@@ -197,38 +203,42 @@ def test_version(capsys) -> None:
 
 @pytest.mark.parametrize("explicit_file", [True, False])
 def test_error_message_environment_file_not_found(
-    capsys, tmpdir, explicit_file, monkeypatch
-):
-    monkeypatch.chdir(str(tmpdir))
+    capsys, tmp_path: Path, explicit_file, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
     args = ["--file", "invalid.devenv.yml"] if explicit_file else []
     expected_name = "invalid.devenv.yml" if explicit_file else "environment.devenv.yml"
     assert devenv.main(args) == 1
     out, err = capsys.readouterr()
     assert out == ""
-    assert err == 'File "{}" does not exist.\n'.format(str(tmpdir / expected_name))
+    assert err == 'File "{}" does not exist.\n'.format(str(tmp_path / expected_name))
 
 
-def test_get_env_directory(mocker, tmpdir) -> None:
-    env_0 = tmpdir.join("0/envs/my_env").ensure(dir=1)
-    conda_meta_env_0 = tmpdir.join("0/envs/my_env/conta-meta").ensure(dir=1)
+def test_get_env_directory(mocker, tmp_path: Path) -> None:
+    env_0 = tmp_path / "0/envs/my_env"
+    env_0.mkdir(parents=True)
+    conda_meta_env_0 = tmp_path / "0/envs/my_env/conta-meta"
+    conda_meta_env_0.mkdir(parents=True)
 
-    env_1 = tmpdir.join("1/envs/my_env").ensure(dir=1)
-    conda_meta_env_1 = tmpdir.join("1/envs/my_env/conda-meta").ensure(dir=1)
+    env_1 = tmp_path / "1/envs/my_env"
+    env_1.mkdir(parents=True)
+    conda_meta_env_1 = tmp_path / "1/envs/my_env/conda-meta"
+    conda_meta_env_1.mkdir(parents=True)
 
     mocker.patch("subprocess.check_output", side_effect=AssertionError())
     mocker.patch.object(
         devenv,
         "_get_envs_dirs_from_conda",
         return_value=[
-            str(tmpdir.join("0/envs")),
-            str(tmpdir.join("1/envs")),
+            str(tmp_path / "0/envs"),
+            str(tmp_path / "1/envs"),
         ],
     )
 
     obtained = devenv.get_env_directory("my_env")
     assert obtained == Path(env_1)
 
-    env_1.remove()
+    shutil.rmtree(env_1)
     assert devenv.get_env_directory("my_env") is None
 
 
@@ -240,7 +250,7 @@ def test_verbose(mocker, tmp_path) -> None:
         argv[:] = sys.argv[:]
         return None
 
-    cast(mocker.MagicMock, devenv._call_conda).side_effect = call_conda_mock
+    cast(MagicMock, devenv._call_conda).side_effect = call_conda_mock
 
     filename = tmp_path.joinpath("environment.yml")
     filename.write_text("name: a")
@@ -254,7 +264,7 @@ def test_verbose(mocker, tmp_path) -> None:
         "-vv",
     ]
     assert devenv.main(devenv_cmdline_args) == 0
-    assert cast(mocker.MagicMock, devenv._call_conda).call_count == 1
+    assert cast(MagicMock, devenv._call_conda).call_count == 1
     assert argv == expected_conda_cmdline_args
 
 
@@ -300,9 +310,7 @@ def test_env_manager_option(option, env_manager, mocker, monkeypatch, tmp_path) 
     devenv_cmdline_args = ["--file", str(filename)] + env_manager_args
 
     assert devenv.main(devenv_cmdline_args) == 0
-    assert cast(mocker.MagicMock, devenv._call_conda).call_args == mocker.call(
-        env_manager
-    )
+    assert cast(MagicMock, devenv._call_conda).call_args == mocker.call(env_manager)
 
 
 def test_parse_env_var_args() -> None:
@@ -314,14 +322,14 @@ def test_parse_env_var_args() -> None:
 
 
 @pytest.mark.usefixtures("patch_conda_calls")
-def test_env_var_cmdline_args(tmpdir) -> None:
+def test_env_var_cmdline_args(tmp_path: Path) -> None:
     """
     Test env vars passed via -e/--env_var.
     """
     import os
 
-    filename = tmpdir.join("environment.devenv.yml")
-    filename.write(
+    filename = tmp_path / "environment.devenv.yml"
+    filename.write_text(
         textwrap.dedent(
             """\
         name: a
@@ -341,12 +349,12 @@ def test_env_var_cmdline_args(tmpdir) -> None:
 
 
 @pytest.mark.usefixtures("patch_conda_calls")
-def test_get_env(tmpdir, monkeypatch) -> None:
+def test_get_env(tmp_path: Path, monkeypatch) -> None:
     """
     Test get_env jinja function with required env var passed via command line.
     """
-    filename = tmpdir.join("environment.devenv.yml")
-    filename.write(
+    filename = tmp_path / "environment.devenv.yml"
+    filename.write_text(
         textwrap.dedent(
             """\
         name: a
