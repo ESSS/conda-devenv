@@ -580,7 +580,8 @@ def parse_env_var_args(env_var_args: Sequence[str] | None) -> Mapping[str, str]:
 
 def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Work with multiple conda-environment-like yaml files in dev mode."
+        prog="devenv",
+        description="Work with multiple conda-environment-like yaml files in dev mode.",
     )
     parser.add_argument(
         "--file",

@@ -93,6 +93,6 @@ ENV/
 .idea
 
 
-conda_devenv/_version.py
+src/conda_devenv/_version.py
 .pytest_cache
 .dmypy.json
