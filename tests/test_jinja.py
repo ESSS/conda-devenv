@@ -2,6 +2,7 @@ import os
 import platform
 import sys
 import textwrap
+from pathlib import Path
 
 import jinja2
 import pytest
@@ -11,15 +12,15 @@ from conda_devenv.devenv import preprocess_selectors
 from conda_devenv.devenv import render_jinja
 
 
-def test_jinja_root():
+def test_jinja_root() -> None:
     assert render_jinja(
         "{{root}}",
-        filename="path/to/file",
+        filename=Path("path/to/file"),
         is_included=False,
     ) == os.path.abspath("path/to")
 
 
-def test_jinja_os(monkeypatch):
+def test_jinja_os(monkeypatch) -> None:
     template = textwrap.dedent(
         """\
         {% if os.environ['ENV_VARIABLE'] == '1' -%}
@@ -31,19 +32,24 @@ def test_jinja_os(monkeypatch):
     ).strip()
 
     assert (
-        render_jinja(template, filename="", is_included=False) == "variable is not set"
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        == "variable is not set"
     )
 
     monkeypatch.setenv("ENV_VARIABLE", "1")
-    assert render_jinja(template, filename="", is_included=False) == "variable is set"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        == "variable is set"
+    )
 
     monkeypatch.setenv("ENV_VARIABLE", "2")
     assert (
-        render_jinja(template, filename="", is_included=False) == "variable is not set"
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        == "variable is not set"
     )
 
 
-def test_jinja_sys(monkeypatch):
+def test_jinja_sys(monkeypatch) -> None:
     template = textwrap.dedent(
         """\
         {% if sys.platform.startswith('linux') -%}
@@ -57,192 +63,247 @@ def test_jinja_sys(monkeypatch):
     ).strip()
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename="", is_included=False) == "linux!"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "linux!"
+    )
 
     monkeypatch.setattr(sys, "platform", "windows")
-    assert render_jinja(template, filename="", is_included=False) == "windows!"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        == "windows!"
+    )
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename="", is_included=False) == "others!"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "others!"
+    )
 
 
-def test_jinja_platform(monkeypatch):
+def test_jinja_platform(monkeypatch) -> None:
     template = "{{ platform.python_revision() }}"
     assert (
-        render_jinja(template, filename="", is_included=False)
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
         == platform.python_revision()
     )
 
 
-def test_jinja_aarch64(monkeypatch):
+def test_jinja_aarch64(monkeypatch) -> None:
     template = "{{ aarch64 }}"
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_arm64(monkeypatch):
+def test_jinja_arm64(monkeypatch) -> None:
     template = "{{ arm64 }}"
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(sys, "platform", "darwin")
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(sys, "platform", "win32")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_x86(monkeypatch):
+def test_jinja_x86(monkeypatch) -> None:
     template = "{{ x86 }}"
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_x86_64(monkeypatch):
+def test_jinja_x86_64(monkeypatch) -> None:
     template = "{{ x86_64 }}"
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
 
-def test_jinja_linux(monkeypatch):
+def test_jinja_linux(monkeypatch) -> None:
     template = "{{ linux }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(sys, "platform", "win")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_linux32(monkeypatch):
+def test_jinja_linux32(monkeypatch) -> None:
     template = "{{ linux32 }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_linux64(monkeypatch):
+def test_jinja_linux64(monkeypatch) -> None:
     template = "{{ linux64 }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
 
-def test_jinja_osx(monkeypatch):
+def test_jinja_osx(monkeypatch) -> None:
     template = "{{ osx }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(sys, "platform", "win")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
 
-def test_jinja_unix(monkeypatch):
+def test_jinja_unix(monkeypatch) -> None:
     template = "{{ unix }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(sys, "platform", "win")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
 
-def test_jinja_win(monkeypatch):
+def test_jinja_win(monkeypatch) -> None:
     template = "{{ win }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(sys, "platform", "win")
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_win32(monkeypatch):
+def test_jinja_win32(monkeypatch) -> None:
     template = "{{ win32 }}"
 
     monkeypatch.setattr(sys, "platform", "win")
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
 
-def test_jinja_win64(monkeypatch):
+def test_jinja_win64(monkeypatch) -> None:
     template = "{{ win64 }}"
 
     monkeypatch.setattr(sys, "platform", "win")
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "False"
+    assert (
+        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+    )
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert render_jinja(template, filename="", is_included=False) == "True"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
 
 
-def test_preprocess_selector_in_line():
+def test_preprocess_selector_in_line() -> None:
     line = "  - ccache    # [linux or osx]"
     expected = f"{{% if linux or osx %}}{line}{{% endif %}}"
     assert preprocess_selector_in_line(line) == expected
@@ -268,7 +329,7 @@ def test_preprocess_selector_in_line():
     assert preprocess_selector_in_line(line) == expected
 
 
-def test_preprocess_selectors():
+def test_preprocess_selectors() -> None:
     template = textwrap.dedent(
         """\
         name: lib
@@ -292,7 +353,7 @@ def test_preprocess_selectors():
     assert preprocess_selectors(template) == expected
 
 
-def test_render_jinja_with_preprocessing_selectors(monkeypatch):
+def test_render_jinja_with_preprocessing_selectors(monkeypatch) -> None:
     template = textwrap.dedent(
         """\
         {% set name = 'mylib' %}
@@ -324,39 +385,48 @@ def test_render_jinja_with_preprocessing_selectors(monkeypatch):
     ).strip()
 
     monkeypatch.setattr(sys, "platform", "linux")
-    actual_linux = render_jinja(template, filename="", is_included=False).strip()
+    actual_linux = render_jinja(
+        template, filename=Path("foo.yml"), is_included=False
+    ).strip()
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    actual_osx = render_jinja(template, filename="", is_included=False).strip()
+    actual_osx = render_jinja(
+        template, filename=Path("foo.yml"), is_included=False
+    ).strip()
 
     monkeypatch.setattr(sys, "platform", "win")
-    actual_win = render_jinja(template, filename="", is_included=False).strip()
+    actual_win = render_jinja(
+        template, filename=Path("foo.yml"), is_included=False
+    ).strip()
 
     assert actual_linux == expected_unix
     assert actual_osx == expected_unix
     assert actual_win == expected_win
 
 
-def test_jinja_get_env(monkeypatch):
+def test_jinja_get_env(monkeypatch) -> None:
     template = "{{ get_env('PY', valid=['3.6']) }}"
     template_with_default = "{{ get_env('PY', default='3.6') }}"
 
     monkeypatch.setenv("PY", "3.6")
-    assert render_jinja(template, filename="", is_included=False) == "3.6"
+    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "3.6"
 
     monkeypatch.setenv("PY", "3.7")
     with pytest.raises(ValueError):
-        render_jinja(template, filename="", is_included=False)
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
 
     monkeypatch.delenv("PY")
     with pytest.raises(ValueError):
-        render_jinja(template, filename="", is_included=False)
+        render_jinja(template, filename=Path("foo.yml"), is_included=False)
 
     monkeypatch.delenv("PY", raising=False)
-    assert render_jinja(template_with_default, filename="", is_included=False) == "3.6"
+    assert (
+        render_jinja(template_with_default, filename=Path("foo.yml"), is_included=False)
+        == "3.6"
+    )
 
 
-def test_jinja_invalid_template():
+def test_jinja_invalid_template() -> None:
     with pytest.raises(jinja2.exceptions.TemplateSyntaxError):
         render_jinja(
             textwrap.dedent(
@@ -365,6 +435,6 @@ def test_jinja_invalid_template():
                 {% %}
             """
             ),
-            filename="",
+            filename=Path("foo.yml"),
             is_included=False,
         )

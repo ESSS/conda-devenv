@@ -21,7 +21,7 @@ def obtain_yaml_dicts(root_yaml_filename):
     return dicts
 
 
-def test_include(datadir):
+def test_include(datadir) -> None:
     dicts = obtain_yaml_dicts(str(datadir / "c.yml"))
     assert len(dicts) == 3
 
@@ -57,7 +57,7 @@ def test_include(datadir):
     }
 
 
-def test_include_non_dag(datadir):
+def test_include_non_dag(datadir) -> None:
     dicts = obtain_yaml_dicts(str(datadir / "b_non_dag.yml"))
 
     assert dicts["a"] == {
@@ -75,21 +75,21 @@ def test_include_non_dag(datadir):
     }
 
 
-def test_include_non_existent_file(datadir):
+def test_include_non_existent_file(datadir) -> None:
     with pytest.raises(ValueError) as e:
         obtain_yaml_dicts(str(datadir / "includes_non_existent_file.yml"))
     assert "includes_non_existent_file.yml" in str(e.value)
     assert "some_non_existent_file.yml" in str(e.value)
 
 
-def test_include_file_with_relative_includes(datadir):
+def test_include_file_with_relative_includes(datadir) -> None:
     dicts = obtain_yaml_dicts(str(datadir / "proj1/relative_include.yml"))
 
     assert len(dicts) == 3
     assert sorted(dicts.keys()) == ["proj1", "proj2", "set_variable"]
 
 
-def test_include_relative_to_env_filename(datadir, monkeypatch):
+def test_include_relative_to_env_filename(datadir, monkeypatch) -> None:
     monkeypatch.chdir(datadir / "proj1")
     dicts = obtain_yaml_dicts(str(datadir / "relative_includes.yml"))
     assert len(dicts) == 4
@@ -101,7 +101,7 @@ def test_include_relative_to_env_filename(datadir, monkeypatch):
     ]
 
 
-def test_include_empty_file(datadir):
+def test_include_empty_file(datadir) -> None:
     with pytest.raises(ValueError):
         obtain_yaml_dicts(str(datadir / "includes_empty_file.yml"))
 

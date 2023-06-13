@@ -3,14 +3,14 @@ import pytest
 from conda_devenv.devenv import load_yaml_dict
 
 
-def test_load_yaml_dict(datadir):
-    conda_yaml_dict, environment = load_yaml_dict(str(datadir / "c.yml"))
+def test_load_yaml_dict(datadir) -> None:
+    conda_yaml_dict, environment = load_yaml_dict(datadir / "c.yml")
     assert set(environment.keys()) == {"PATH"}
     assert set(environment["PATH"]) == {"b_path", "a_path"}
 
 
-def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir):
-    filename = str(datadir / "a_wrong_definition_at_environment.yml")
+def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir) -> None:
+    filename = datadir / "a_wrong_definition_at_environment.yml"
     with pytest.raises(ValueError) as e:
         load_yaml_dict(filename)
 
@@ -21,8 +21,8 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir):
     assert exception_message_start in str(e.value)
 
 
-def test_load_yaml_dict_empty_environment_key(datadir):
-    filename = str(datadir / "empty_environment.yml")
+def test_load_yaml_dict_empty_environment_key(datadir) -> None:
+    filename = datadir / "empty_environment.yml"
     d = load_yaml_dict(filename)
     assert d == ({"name": "foo"}, {})
 
@@ -31,7 +31,7 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_
     datadir,
 ):
     with pytest.raises(ValueError) as e:
-        load_yaml_dict(str(datadir / "b_includes_wrong_definition_at_environment.yml"))
+        load_yaml_dict(datadir / "b_includes_wrong_definition_at_environment.yml")
 
     exception_message_start = (
         "The 'environment' key is supposed to be a dictionary, but you have the type "
@@ -43,7 +43,7 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_
 
 
 @pytest.mark.parametrize("cmd_line_name", [True, False])
-def test_get_env_name(mocker, tmpdir, cmd_line_name):
+def test_get_env_name(mocker, tmpdir, cmd_line_name) -> None:
     import textwrap
 
     filename = tmpdir.join("env.yml")
@@ -65,14 +65,14 @@ def test_get_env_name(mocker, tmpdir, cmd_line_name):
 
     from conda_devenv.devenv import get_env_name
 
-    name = get_env_name(args, str(filename), None)
+    name = get_env_name(args, filename, None)
     if cmd_line_name:
         assert name == "foo"
     else:
         assert name == "bar"
 
 
-def test_is_included_var(datadir):
+def test_is_included_var(datadir) -> None:
     import textwrap
 
     a_env_file = datadir / "a.devenv.yml"
@@ -106,7 +106,7 @@ def test_is_included_var(datadir):
         )
     )
 
-    conda_env, os_env = load_yaml_dict(str(a_env_file))
+    conda_env, os_env = load_yaml_dict(a_env_file)
     assert conda_env == {"name": "a"}
     assert os_env == {
         "IS_A_INCLUDED": False,

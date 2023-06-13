@@ -1,4 +1,7 @@
-def test_truncate_history_file_backups_file(mocker, tmpdir):
+from pathlib import Path
+
+
+def test_truncate_history_file_backups_file(mocker, tmp_path: Path) -> None:
     import textwrap
 
     history = textwrap.dedent(
@@ -10,24 +13,24 @@ def test_truncate_history_file_backups_file(mocker, tmpdir):
         +mirror-conda-forge::pathtools-0.1.2-py36_0
     """
     )
-    history_file = tmpdir.join("conda-meta", "history")
-    history_file.ensure()
-    history_file.write(history)
+    history_file = tmp_path.joinpath("conda-meta", "history")
+    history_file.parent.mkdir(parents=True)
+    history_file.write_text(history)
     mocker.patch("time.time", return_value=123)
 
     from conda_devenv.devenv import truncate_history_file
 
-    truncate_history_file(str(tmpdir))
+    truncate_history_file(tmp_path)
 
-    backup = tmpdir.join("conda-meta", "history.123")
-    assert backup.read() == history
-    assert history_file.read() == ""
+    backup = tmp_path.joinpath("conda-meta", "history.123")
+    assert backup.read_text() == history
+    assert history_file.read_text() == ""
 
 
-def test_truncate_history_file_ingores_missing(mocker, tmpdir):
-    conda_meta_dir = tmpdir.join("conda-meta")
-    conda_meta_dir.ensure(dir=True)  # Just meta folder no history.
+def test_truncate_history_file_ignores_missing(mocker, tmp_path: Path) -> None:
+    conda_meta_dir = tmp_path.joinpath("conda-meta")
+    conda_meta_dir.mkdir()  # Just meta folder no history.
     from conda_devenv.devenv import truncate_history_file
 
-    truncate_history_file(str(tmpdir))
+    truncate_history_file(tmp_path)
     # Truncate should not raise.

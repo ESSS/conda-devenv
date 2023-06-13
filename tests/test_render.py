@@ -1,7 +1,7 @@
 from conda_devenv.devenv import render_for_conda_env
 
 
-def test_render_for_conda_env_has_comment_at_top():
+def test_render_for_conda_env_has_comment_at_top() -> None:
     a = {"name": "a"}
     assert (
         render_for_conda_env(a).splitlines()[0]
