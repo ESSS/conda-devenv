@@ -1,7 +1,10 @@
 from __future__ import annotations
 import argparse
+import json
 import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import (
@@ -428,62 +431,52 @@ def __call_conda_env_update(
     output_filename: Path,
     env_manager: Literal["conda", "mamba"],
 ) -> str | int | None:
-    command = [
-        env_manager,
+    cmdline_args = [
         "env",
         "update",
         "--file",
         str(output_filename),
     ]
     if not args.no_prune:
-        command.append("--prune")
+        cmdline_args.append("--prune")
     if args.name:
-        command.extend(["--name", args.name])
+        cmdline_args.extend(["--name", args.name])
     if args.quiet:
-        command.extend(["--quiet"])
+        cmdline_args.extend(["--quiet"])
     if args.verbose:
-        command.extend(["-" + "v" * args.verbose])
+        cmdline_args.extend(["-" + "v" * args.verbose])
 
     if not args.quiet:
-        print("> Executing: %s" % " ".join(command))
+        full_cmdline = [str(env_manager)] + cmdline_args
+        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
 
-    old_argv = sys.argv[:]
-    try:
-        sys.argv = command if env_manager == "mamba" else command[1:]
-        try:
-            return _call_conda(env_manager)
-        except SystemExit as e:
-            return e.code
-    finally:
-        sys.argv = old_argv
+    return _call_conda(env_manager, cmdline_args)
 
 
-def _call_conda(env_manager: Literal["conda", "mamba"] = "conda") -> int:
+def _call_conda(env_manager: Literal["conda", "mamba"], args: Sequence[str]) -> int:
     """
-    Calls conda-env or mamba directly using its internal API. ``sys.argv``
-    must already be configured at this point.
+    Calls conda-env or mamba directly via subprocess.check_call.
 
-    We have this indirection here so we can mock this function during testing.
-    :param env_manager: Switch to `conda` or `mamba` for a given input
+    We have this indirection here to mock this function during testing.
     """
-    if env_manager == "mamba":
-        from mamba.mamba import main
-    else:
-        from conda_env.cli.main import main
-    return main()
+    # We need shell=True on Windows because conda and mamba are .bat files.
+    return subprocess.check_call(
+        [str(env_manager)] + list(args), shell=sys.platform.startswith("win")
+    )
 
 
 def write_activate_deactivate_scripts(
     args: argparse.Namespace,
     conda_yaml_dict: YAMLData,
+    env_manager: Literal["conda", "mamba"],
     environment: Environment,
     env_directory: Path | None,
 ) -> None:
     if env_directory is None:
         env_name = args.name or get_env_name_from_yaml_data(conda_yaml_dict)
-        env_directory = get_env_directory(env_name)
+        env_directory = get_env_directory(env_manager, env_name)
         if env_directory is None:
-            raise ValueError("Couldn't find directory of environment '%s'" % env_name)
+            raise UsageError(f"Couldn't find directory of environment '{env_name}'")
 
     from os.path import join
 
@@ -538,17 +531,24 @@ def get_env_name(
     return get_env_name_from_yaml_data(conda_yaml_dict)
 
 
-def _get_envs_dirs_from_conda() -> Sequence[Path]:
-    from conda.base.context import context
+def _get_envs_dirs_from_conda(env_manager: Literal["conda", "mamba"]) -> Sequence[Path]:
+    # We need shell=True on Windows because conda and mamba are .bat files.
+    output = subprocess.check_output(
+        [str(env_manager), "info", "--json"],
+        text=True,
+        shell=sys.platform.startswith("win"),
+    )
+    info = json.loads(output)
+    return [Path(x) for x in info["envs_dirs"]]
 
-    return [Path(x) for x in context.envs_dirs]
 
-
-def get_env_directory(env_name: str) -> Path | None:
+def get_env_directory(
+    env_manager: Literal["conda", "mamba"], env_name: str
+) -> Path | None:
     """
-    The environment path if the enviromment exists.
+    The environment path if the environment exists.
     """
-    envs_dirs = _get_envs_dirs_from_conda()
+    envs_dirs = _get_envs_dirs_from_conda(env_manager)
 
     for directory in envs_dirs:
         env = os.path.join(directory, env_name)
@@ -561,9 +561,9 @@ def get_env_directory(env_name: str) -> Path | None:
 
 def parse_env_var_args(env_var_args: Sequence[str] | None) -> Mapping[str, str]:
     """
-    :param List[str] env_var_args:
+    :param env_var_args:
         List of arguments in the form "VAR_NAME" or "VAR_NAME=VALUE"
-    :return: Dict[str,str]
+    :return:
         Mapping from "VAR_NAME" to "VALUE" or empty str.
     """
     env_vars = {}
@@ -652,7 +652,11 @@ def mamba_main(args: list[str] | None = None) -> int | str | None:
     args_namespace = parse_args(args)
     if args_namespace.env_manager is None:
         args_namespace.env_manager = "mamba"
-    return main_with_args_namespace(args_namespace)
+    try:
+        return main_with_args_namespace(args_namespace)
+    except UsageError as e:
+        print(f"{Fore.RED}ERROR: {e}{Fore.RESET}", file=sys.stderr)
+        return 2
 
 
 def resolve_env_manager(args: argparse.Namespace) -> Literal["conda", "mamba"]:
@@ -673,6 +677,11 @@ def resolve_env_manager(args: argparse.Namespace) -> Literal["conda", "mamba"]:
                 f'conda-devenv does not know the environment manager "{env_manager}" '
                 f"obtained from {env_manager_origin}."
             ),
+        )
+
+    if shutil.which(env_manager) is None:
+        raise UsageError(
+            f'Could not find "{env_manager}" on PATH, obtained from {env_manager_origin}.'
         )
     return env_manager
 
@@ -722,7 +731,7 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
             return 0
 
     env_name = get_env_name(args, output_filename, conda_yaml_dict)
-    env_directory = get_env_directory(env_name)
+    env_directory = get_env_directory(env_manager, env_name)
 
     if not args.no_prune:
         # Truncate the history file
@@ -735,7 +744,11 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
 
     if is_devenv_input_file:
         write_activate_deactivate_scripts(
-            args, conda_yaml_dict or {}, environment, env_directory
+            args,
+            env_manager=env_manager,
+            conda_yaml_dict=conda_yaml_dict or {},
+            environment=environment,
+            env_directory=env_directory,
         )
     return 0
 

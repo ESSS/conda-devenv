@@ -1,9 +1,11 @@
 from __future__ import annotations
+
+import json
 import shutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import List, cast
+from typing import List, cast, Sequence
 from unittest.mock import MagicMock
 
 import pytest
@@ -20,6 +22,7 @@ def patch_conda_calls(mocker):
     mocker.patch.object(devenv, "truncate_history_file", autospec=True)
     mocker.patch.object(devenv, "_call_conda", autospec=True, return_value=0)
     mocker.patch.object(devenv, "write_activate_deactivate_scripts", autospec=True)
+    mocker.patch("shutil.which", return_value=f"path/to/conda")
 
 
 @pytest.mark.parametrize(
@@ -29,14 +32,12 @@ def patch_conda_calls(mocker):
         ("environment.yml", 0),
     ],
 )
-@pytest.mark.parametrize("return_none", [True, False])
 @pytest.mark.parametrize("no_prune, truncate_call_count", [(True, 0), (False, 1)])
 @pytest.mark.usefixtures("patch_conda_calls")
 def test_handle_input_file(
     tmp_path,
     input_name,
     write_scripts_call_count,
-    return_none,
     no_prune,
     truncate_call_count,
     monkeypatch,
@@ -46,13 +47,9 @@ def test_handle_input_file(
     """
     argv: list[str] = []
 
-    def call_conda_mock(env_manager):
-        argv[:] = sys.argv[:]
-        # conda's env main() function sometimes returns None and other times raises SystemExit
-        if return_none:
-            return None
-        else:
-            sys.exit(0)
+    def call_conda_mock(env_manager: str, args: Sequence[str]) -> int:
+        argv[:] = list(args)
+        return 0
 
     cast(MagicMock, devenv._call_conda).side_effect = call_conda_mock
 
@@ -145,7 +142,7 @@ def test_print_full(tmp_path: Path, capsys) -> None:
     assert "PYTHONPATH:" in out
 
 
-def test_min_version_failure(tmp_path: Path, capsys) -> None:
+def test_min_version_failure(tmp_path: Path, capsys, mocker) -> None:
     """
     Check the "min_conda_devenv_version()" fails with the expected message.
     """
@@ -160,6 +157,7 @@ def test_min_version_failure(tmp_path: Path, capsys) -> None:
     """
         )
     )
+    mocker.patch("shutil.which", return_value="/path/to/conda")
     assert devenv.main(["--file", str(filename)]) == 2
     out, err = capsys.readouterr()
     assert out == ""
@@ -171,6 +169,7 @@ def test_no_name(tmp_path: Path, capsys) -> None:
     """
     Check the "min_conda_devenv_version()" fails with the expected message.
     """
+    mocker.patch("shutil.which", return_value="/path/to/conda")
     filename = tmp_path / "environment.devenv.yml"
     filename.write_text("foo: something")
     assert devenv.main(["--file", str(filename)]) == 2
@@ -179,12 +178,13 @@ def test_no_name(tmp_path: Path, capsys) -> None:
     assert "ERROR: file environment.devenv.yml has no 'name' key defined." in err
 
 
-def test_min_version_ok(tmp_path: Path, capsys) -> None:
+def test_min_version_ok(tmp_path: Path, capsys, mocker) -> None:
     """
     Check the "min_conda_devenv_version()" does not fail with current version.
     """
     import conda_devenv
 
+    mocker.patch("shutil.which", return_value="/path/to/conda")
     filename = tmp_path / "environment.devenv.yml"
     filename.write_text(
         textwrap.dedent(
@@ -235,30 +235,33 @@ def test_get_env_directory(mocker, tmp_path: Path) -> None:
     conda_meta_env_1 = tmp_path / "1/envs/my_env/conda-meta"
     conda_meta_env_1.mkdir(parents=True)
 
-    mocker.patch("subprocess.check_output", side_effect=AssertionError())
-    mocker.patch.object(
-        devenv,
-        "_get_envs_dirs_from_conda",
-        return_value=[
+    conda_info_json = {
+        "envs_dirs": [
             str(tmp_path / "0/envs"),
             str(tmp_path / "1/envs"),
-        ],
+        ]
+    }
+    check_output_mock = mocker.patch(
+        "subprocess.check_output", return_value=json.dumps(conda_info_json)
     )
 
-    obtained = devenv.get_env_directory("my_env")
+    obtained = devenv.get_env_directory("mamba", "my_env")
     assert obtained == Path(env_1)
+    assert check_output_mock.call_args == mocker.call(
+        ["mamba", "info", "--json"], text=True, shell=sys.platform.startswith("win")
+    )
 
     shutil.rmtree(env_1)
-    assert devenv.get_env_directory("my_env") is None
+    assert devenv.get_env_directory("mamba", "my_env") is None
 
 
 @pytest.mark.usefixtures("patch_conda_calls")
 def test_verbose(mocker, tmp_path) -> None:
     argv: List[str] = []
 
-    def call_conda_mock(env_manager=""):
-        argv[:] = sys.argv[:]
-        return None
+    def call_conda_mock(env_manager: str, args: Sequence[str]) -> int:
+        argv[:] = list(args)
+        return 0
 
     cast(MagicMock, devenv._call_conda).side_effect = call_conda_mock
 
@@ -311,7 +314,7 @@ def test_env_manager_option(option, env_manager, mocker, monkeypatch, tmp_path) 
     if option is None:
         env_manager_args = []
         if env_manager != "conda":
-            pytest.skip("Without env-manger option use defaults to conda")
+            pytest.skip("Without env-manager option use defaults to conda")
     else:
         env_manager_args = [option, env_manager]
 
@@ -320,7 +323,9 @@ def test_env_manager_option(option, env_manager, mocker, monkeypatch, tmp_path) 
     devenv_cmdline_args = ["--file", str(filename)] + env_manager_args
 
     assert devenv.main(devenv_cmdline_args) == 0
-    assert cast(MagicMock, devenv._call_conda).call_args == mocker.call(env_manager)
+    assert cast(MagicMock, devenv._call_conda).call_args == mocker.call(
+        env_manager, ["env", "update", "--file", str(filename), "--prune"]
+    )
 
 
 def test_parse_env_var_args() -> None:
