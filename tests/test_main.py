@@ -176,7 +176,7 @@ def test_no_name(tmp_path: Path, capsys) -> None:
     assert devenv.main(["--file", str(filename)]) == 2
     out, err = capsys.readouterr()
     assert out == ""
-    assert "ERROR: file environment.devenv.yml has no 'name' key defined.\n" in err
+    assert "ERROR: file environment.devenv.yml has no 'name' key defined." in err
 
 
 def test_min_version_ok(tmp_path: Path, capsys) -> None:
@@ -221,7 +221,7 @@ def test_error_message_environment_file_not_found(
     assert devenv.main(args) == 2
     out, err = capsys.readouterr()
     assert out == ""
-    assert f'file "{str(tmp_path / expected_name)}" does not exist.\n' in err
+    assert f'file "{str(tmp_path / expected_name)}" does not exist.' in err
 
 
 def test_get_env_directory(mocker, tmp_path: Path) -> None:
@@ -294,12 +294,12 @@ def test_unknown_env_manager_option(option, capsys, monkeypatch, tmp_path) -> No
     filename.write_text("name: a")
     devenv_cmdline_args = ["--file", str(filename)] + env_manager_args
 
-    assert devenv.main(devenv_cmdline_args) == 1
+    assert devenv.main(devenv_cmdline_args) == 2
     out, err = capsys.readouterr()
     assert out == ""
     assert (
-        err.strip()
-        == f'conda-devenv does not know the enviroment manager "foo" obtained from {config_source}.'
+        f'conda-devenv does not know the environment manager "foo" obtained from {config_source}.'
+        in err.strip()
     )
 
 

@@ -644,7 +644,7 @@ def main(args: list[str] | None = None) -> int | str | None:
     try:
         return main_with_args_namespace(args_namespace)
     except UsageError as e:
-        print(f"{Fore.RED}ERROR: {e}", file=sys.stderr)
+        print(f"{Fore.RED}ERROR: {e}{Fore.RESET}", file=sys.stderr)
         return 2
 
 
@@ -653,6 +653,28 @@ def mamba_main(args: list[str] | None = None) -> int | str | None:
     if args_namespace.env_manager is None:
         args_namespace.env_manager = "mamba"
     return main_with_args_namespace(args_namespace)
+
+
+def resolve_env_manager(args: argparse.Namespace) -> Literal["conda", "mamba"]:
+    """
+    Resolve which environment manager to use, consulting the command-line and
+    the appropriate environment variable.
+    """
+    env_manager = args.env_manager
+    if env_manager is None:
+        env_manager_origin = "environment variable"
+        env_manager = os.environ.get("CONDA_DEVENV_ENV_MANAGER", "conda")
+    else:
+        env_manager_origin = "'--env-manager' ('-m') option"
+
+    if env_manager not in ("conda", "mamba"):
+        raise UsageError(
+            (
+                f'conda-devenv does not know the environment manager "{env_manager}" '
+                f"obtained from {env_manager_origin}."
+            ),
+        )
+    return env_manager
 
 
 def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
@@ -667,22 +689,7 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     if not os.path.isfile(filename):
         raise UsageError(f'file "{filename}" does not exist.')
 
-    env_manager = args.env_manager
-    if env_manager is None:
-        env_manager_origin = "environment variable"
-        env_manager = os.environ.get("CONDA_DEVENV_ENV_MANAGER", "conda")
-    else:
-        env_manager_origin = "'--env-manager' ('-m') option"
-
-    if env_manager not in ("conda", "mamba"):
-        print(
-            (
-                f'conda-devenv does not know the enviroment manager "{env_manager}" '
-                f"obtained from {env_manager_origin}."
-            ),
-            file=sys.stderr,
-        )
-        return 1
+    env_manager = resolve_env_manager(args)
 
     conda_yaml_dict: YAMLData | None
     is_devenv_input_file = filename.endswith(".devenv.yml")
