@@ -2,11 +2,9 @@ import copy
 
 import pytest
 
-from conda_devenv.devenv import (
-    merge,
-    merge_dependencies_version_specifications,
-    separate_strings_from_dicts,
-)
+from conda_devenv.devenv import merge
+from conda_devenv.devenv import merge_dependencies_version_specifications
+from conda_devenv.devenv import separate_strings_from_dicts
 
 
 def test_merge_plain():

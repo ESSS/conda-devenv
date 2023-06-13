@@ -4,13 +4,13 @@ import json
 import shutil
 import sys
 import textwrap
+from collections.abc import Sequence
 from pathlib import Path
 from typing import cast
-
-from collections.abc import Sequence
 from unittest.mock import MagicMock
 
 import pytest
+
 from conda_devenv import devenv
 
 

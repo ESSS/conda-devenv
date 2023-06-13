@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import shlex
+from collections.abc import Callable
+from collections.abc import Iterable
 from pathlib import Path
 from textwrap import dedent
-
-from typing import Union, NamedTuple
-from collections.abc import Callable, Iterable
+from typing import NamedTuple
+from typing import Union
 
 
 DEVENV_COMMENT = (

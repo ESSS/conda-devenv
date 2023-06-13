@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -6,16 +7,20 @@ import re
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable
+from collections.abc import Mapping
+from collections.abc import Sequence
 from pathlib import Path
 from typing import (
     Any,
 )
-from collections.abc import Sequence, Iterable, Mapping
-
-from colorama import Fore
 from typing import Literal
 
-from .gen_scripts import render_activate_script, render_deactivate_script, Environment
+from colorama import Fore
+
+from .gen_scripts import Environment
+from .gen_scripts import render_activate_script
+from .gen_scripts import render_deactivate_script
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 

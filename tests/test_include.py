@@ -1,8 +1,8 @@
 import pytest
-
 import yaml
 
-from conda_devenv.devenv import handle_includes, render_jinja
+from conda_devenv.devenv import handle_includes
+from conda_devenv.devenv import render_jinja
 
 
 def obtain_yaml_dicts(root_yaml_filename):

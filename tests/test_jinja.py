@@ -1,10 +1,10 @@
 import os
+import platform
+import sys
 import textwrap
 
 import jinja2
-import platform
 import pytest
-import sys
 
 from conda_devenv.devenv import preprocess_selector_in_line
 from conda_devenv.devenv import preprocess_selectors

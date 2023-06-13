@@ -1,9 +1,9 @@
 import textwrap
 
-
 import pytest
 
-from conda_devenv.gen_scripts import render_activate_script, render_deactivate_script
+from conda_devenv.gen_scripts import render_activate_script
+from conda_devenv.gen_scripts import render_deactivate_script
 
 
 @pytest.fixture
