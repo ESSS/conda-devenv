@@ -3,7 +3,8 @@ import shlex
 from pathlib import Path
 from textwrap import dedent
 
-from typing import Callable, Dict, Iterable, List, Union, NamedTuple
+from typing import Union, NamedTuple
+from collections.abc import Callable, Iterable
 
 
 DEVENV_COMMENT = (
@@ -11,8 +12,8 @@ DEVENV_COMMENT = (
 )
 
 
-Value = Union[str, List[str]]
-Environment = Dict[str, Value]
+Value = Union[str, list[str]]
+Environment = dict[str, Value]
 
 
 class ScriptRenderer(NamedTuple):
@@ -198,7 +199,7 @@ def activate_body(
 
     def make_variable(variable_name: str, value: Value) -> str:
         if variable_name == "PATH":
-            assert isinstance(value, List)
+            assert isinstance(value, list)
             return add_path(value)
 
         value = (
@@ -208,7 +209,7 @@ def activate_body(
                 separator=separator,
                 variable_template=variable_template,
             )
-            if isinstance(value, List)
+            if isinstance(value, list)
             else value
         )
 
@@ -408,7 +409,7 @@ def deactivate_body(
 
     def unset_variable(variable_name: str, value: Value) -> str:
         if variable_name == "PATH":
-            assert isinstance(value, List)
+            assert isinstance(value, list)
             return remove_path(value)
 
         return variable_unset_renderer(variable_name)

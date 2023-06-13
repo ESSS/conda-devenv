@@ -5,7 +5,9 @@ import shutil
 import sys
 import textwrap
 from pathlib import Path
-from typing import List, cast, Sequence
+from typing import cast
+
+from collections.abc import Sequence
 from unittest.mock import MagicMock
 
 import pytest
@@ -165,13 +167,14 @@ def test_min_version_failure(tmp_path: Path, capsys, mocker) -> None:
     assert msg in err
 
 
-def test_no_name(tmp_path: Path, capsys) -> None:
+def test_no_name(tmp_path: Path, capsys, mocker) -> None:
     """
     Check the "min_conda_devenv_version()" fails with the expected message.
     """
     mocker.patch("shutil.which", return_value="/path/to/conda")
     filename = tmp_path / "environment.devenv.yml"
     filename.write_text("foo: something")
+    mocker.patch("shutil.which", return_value="/path/to/conda")
     assert devenv.main(["--file", str(filename)]) == 2
     out, err = capsys.readouterr()
     assert out == ""
@@ -257,7 +260,7 @@ def test_get_env_directory(mocker, tmp_path: Path) -> None:
 
 @pytest.mark.usefixtures("patch_conda_calls")
 def test_verbose(mocker, tmp_path) -> None:
-    argv: List[str] = []
+    argv: list[str] = []
 
     def call_conda_mock(env_manager: str, args: Sequence[str]) -> int:
         argv[:] = list(args)

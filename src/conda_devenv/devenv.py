@@ -8,21 +8,18 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import (
-    Sequence,
     Any,
-    Dict,
-    Iterable,
-    Mapping,
 )
+from collections.abc import Sequence, Iterable, Mapping
 
 from colorama import Fore
-from typing_extensions import Literal
+from typing import Literal
 
 from .gen_scripts import render_activate_script, render_deactivate_script, Environment
 
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
-YAMLData = Dict[str, Any]
+YAMLData = dict[str, Any]
 
 
 class UsageError(Exception):

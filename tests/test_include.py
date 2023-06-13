@@ -6,7 +6,7 @@ from conda_devenv.devenv import handle_includes, render_jinja
 
 
 def obtain_yaml_dicts(root_yaml_filename):
-    with open(root_yaml_filename, "r") as f:
+    with open(root_yaml_filename) as f:
         contents = f.read()
     contents = render_jinja(contents, filename=root_yaml_filename, is_included=False)
     root_yaml = yaml.safe_load(contents)
