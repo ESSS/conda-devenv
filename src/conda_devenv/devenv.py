@@ -11,6 +11,8 @@ from collections.abc import Iterable
 from collections.abc import Mapping
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import Enum
+from functools import cached_property
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -54,6 +56,63 @@ class ProcessedEnvironment:
                 environment_contents={},
                 rendered_yaml=p.read_text(),
             )
+
+
+class CondaPlatform(Enum):
+    """Enumerates the known platforms in conda convention."""
+
+    Win32 = "win-32"
+    Win64 = "win-64"
+    Linux32 = "linux-32"
+    Linux64 = "linux-64"
+    Osx32 = "osx-32"
+    Osx64 = "osx-64"
+
+    @classmethod
+    def current(cls) -> Self:
+        import sys
+        import platform
+
+        if sys.platform.startswith("win"):
+            name = "win"
+        elif sys.platform.startswith("linux"):
+            name = "linux"
+        elif sys.platform.startswith("darwin"):
+            name = "osx"
+        else:
+            name = ""
+
+        bits = "32" if platform.architecture()[0] == "32bit" else "64"
+        return cls(f"{name}-{bits}")
+
+    @cached_property
+    def name(self) -> str:
+        return self.value.split("-")[0]
+
+    @cached_property
+    def bits(self) -> int:
+        return int(self.value.split("-")[1])
+
+    @cached_property
+    def selectors(self) -> Mapping[str, bool]:
+        """
+        Returns platform-specific selectors that can be used for rendering
+        environment.devenv.yml files.
+        """
+        name = self.name
+        bits = self.bits
+        return {
+            "linux": name == "linux",
+            "linux32": name == "linux" and bits == 32,
+            "linux64": name == "linux" and bits == 64,
+            "osx": name == "osx",
+            "osx32": name == "osx" and bits == 32,
+            "osx64": name == "osx" and bits == 64,
+            "unix": name in ("linux", "osx"),
+            "win": name == "win",
+            "win32": name == "win" and bits == 32,
+            "win64": name == "win" and bits == 64,
+        }
 
 
 class UsageError(Exception):
@@ -120,17 +179,19 @@ def _get_env(
     return value
 
 
-def render_jinja(contents: str, filename: Path, is_included: bool) -> str:
+def render_jinja(
+    contents: str,
+    filename: Path,
+    *,
+    is_included: bool,
+    conda_platform: CondaPlatform | None = None,
+) -> str:
     import jinja2
     import sys
     import platform
 
-    iswin = sys.platform.startswith("win")
-    islinux = sys.platform.startswith("linux")
-    isosx = sys.platform.startswith("darwin")
-
-    is32bit = "32bit" == platform.architecture()[0]
-    is64bit = not is32bit
+    if conda_platform is None:
+        conda_platform = CondaPlatform.current()
 
     jinja_dict = {
         "is_included": is_included,
@@ -139,23 +200,15 @@ def render_jinja(contents: str, filename: Path, is_included: bool) -> str:
         "root": os.path.dirname(os.path.abspath(filename)),
         "sys": sys,
         "aarch64": "aarch64" == platform.machine(),
-        "arm64": isosx and "arm64" == platform.machine(),
+        "arm64": conda_platform.name == "osx" and "arm64" == platform.machine(),
         "x86": "x86" == platform.machine(),
         "x86_64": "x86_64" == platform.machine(),
-        "linux": islinux,
-        "linux32": islinux and is32bit,
-        "linux64": islinux and is64bit,
-        "osx": isosx,
-        "unix": islinux or isosx,
-        "win": iswin,
-        "win32": iswin and is32bit,
-        "win64": iswin and is64bit,
         "min_conda_devenv_version": _min_conda_devenv_version,
         "get_env": _get_env,
+        **conda_platform.selectors,
     }
 
     contents = preprocess_selectors(contents)
-
     return jinja2.Template(contents).render(**jinja_dict)
 
 

@@ -7,6 +7,7 @@ from pathlib import Path
 import jinja2
 import pytest
 
+from conda_devenv.devenv import CondaPlatform
 from conda_devenv.devenv import preprocess_selector_in_line
 from conda_devenv.devenv import preprocess_selectors
 from conda_devenv.devenv import render_jinja
@@ -353,7 +354,8 @@ def test_preprocess_selectors() -> None:
     assert preprocess_selectors(template) == expected
 
 
-def test_render_jinja_with_preprocessing_selectors(monkeypatch) -> None:
+@pytest.mark.parametrize("mode", ["patch-sys", "use-conda-platform"])
+def test_render_jinja_with_preprocessing_selectors(monkeypatch, mode: str) -> None:
     template = textwrap.dedent(
         """\
         {% set name = 'mylib' %}
@@ -362,7 +364,7 @@ def test_render_jinja_with_preprocessing_selectors(monkeypatch) -> None:
           - cmake
           - ccache    # [unix]
           - clcache   # [win] Windows has clcache instead of ccache
-    """
+        """
     ).strip()
 
     expected_unix = textwrap.dedent(
@@ -371,7 +373,7 @@ def test_render_jinja_with_preprocessing_selectors(monkeypatch) -> None:
         dependencies:
           - cmake
           - ccache    # [unix]
-    """
+        """
     ).strip()
 
     expected_win = textwrap.dedent(
@@ -381,27 +383,25 @@ def test_render_jinja_with_preprocessing_selectors(monkeypatch) -> None:
           - cmake
 
           - clcache   # [win] Windows has clcache instead of ccache
-    """
+        """
     ).strip()
 
-    monkeypatch.setattr(sys, "platform", "linux")
-    actual_linux = render_jinja(
-        template, filename=Path("foo.yml"), is_included=False
-    ).strip()
+    def render_as_platform(platform: str, conda_platform: CondaPlatform | None) -> str:
+        if mode == "patch-sys":
+            monkeypatch.setattr(sys, "platform", platform)
+            conda_platform = None
+        else:
+            assert mode == "use-conda-platform"
+        return render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=conda_platform,
+        ).strip()
 
-    monkeypatch.setattr(sys, "platform", "darwin")
-    actual_osx = render_jinja(
-        template, filename=Path("foo.yml"), is_included=False
-    ).strip()
-
-    monkeypatch.setattr(sys, "platform", "win")
-    actual_win = render_jinja(
-        template, filename=Path("foo.yml"), is_included=False
-    ).strip()
-
-    assert actual_linux == expected_unix
-    assert actual_osx == expected_unix
-    assert actual_win == expected_win
+    assert render_as_platform("linux", CondaPlatform.Linux64) == expected_unix
+    assert render_as_platform("darwin", CondaPlatform.Osx64) == expected_unix
+    assert render_as_platform("win32", CondaPlatform.Win64) == expected_win
 
 
 def test_jinja_get_env(monkeypatch) -> None:
