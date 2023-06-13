@@ -224,7 +224,7 @@ def test_error_message_environment_file_not_found(
     assert devenv.main(args) == 2
     out, err = capsys.readouterr()
     assert out == ""
-    assert f'file "{str(tmp_path / expected_name)}" does not exist.' in err
+    assert f'file "{str(expected_name)}" does not exist.' in err
 
 
 def test_get_env_directory(mocker, tmp_path: Path) -> None:

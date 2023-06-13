@@ -10,13 +10,14 @@ import sys
 from collections.abc import Iterable
 from collections.abc import Mapping
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import (
-    Any,
-)
+from typing import Any
 from typing import Literal
 
+import yaml
 from colorama import Fore
+from typing_extensions import Self
 
 from .gen_scripts import Environment
 from .gen_scripts import render_activate_script
@@ -25,6 +26,34 @@ from .gen_scripts import render_deactivate_script
 _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 
 YAMLData = dict[str, Any]
+
+
+@dataclass(frozen=True)
+class ProcessedEnvironment:
+    """
+    Result of processing a .devenv.yml or a plain .yml file.
+    """
+
+    conda_yaml_dict: YAMLData | None
+    environment_contents: dict
+    rendered_yaml: str
+
+    @classmethod
+    def from_file(cls, p: Path) -> Self:
+        if is_devenv_file(p):
+            conda_yaml_dict, environment_contents = load_yaml_dict(p)
+            rendered_yaml = render_for_conda_env(conda_yaml_dict)
+            return cls(
+                conda_yaml_dict=conda_yaml_dict,
+                environment_contents=environment_contents,
+                rendered_yaml=rendered_yaml,
+            )
+        else:
+            return cls(
+                conda_yaml_dict=None,
+                environment_contents={},
+                rendered_yaml=p.read_text(),
+            )
 
 
 class UsageError(Exception):
@@ -432,7 +461,7 @@ def __call_conda_env_update(
     args: argparse.Namespace,
     output_filename: Path,
     env_manager: Literal["conda", "mamba"],
-) -> str | int | None:
+) -> int:
     cmdline_args = [
         "env",
         "update",
@@ -525,8 +554,6 @@ def get_env_name(
         return args.name
 
     if conda_yaml_dict is None:
-        import yaml
-
         with open(output_filename) as stream:
             conda_yaml_dict = yaml.safe_load(stream)
 
@@ -695,61 +722,67 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
         print(f"conda-devenv version {__version__}")
         return 0
 
-    filename = args.file
-    filename = os.path.abspath(filename)
-    if not os.path.isfile(filename):
-        raise UsageError(f'file "{filename}" does not exist.')
-
+    os.environ.update(parse_env_var_args(args.env_var))
     env_manager = resolve_env_manager(args)
 
-    conda_yaml_dict: YAMLData | None
-    is_devenv_input_file = filename.endswith(".devenv.yml")
-    if is_devenv_input_file:
-        # update environment variables
-        os.environ.update(parse_env_var_args(args.env_var))
+    if args.print or args.print_full:
+        render = ProcessedEnvironment.from_file(resolve_source_file(args))
+        print(render.rendered_yaml)
+        if args.print_full and render.environment_contents:
+            print(
+                render_for_conda_env(
+                    {"environment": render.environment_contents}, header=""
+                )
+            )
+        return 0
 
-        # render conda-devenv file
-        conda_yaml_dict, environment = load_yaml_dict(filename)
-        rendered_contents = render_for_conda_env(conda_yaml_dict)
+    return create_update_env(env_manager, args)
 
-        if args.print or args.print_full:
-            print(rendered_contents)
-            if args.print_full:
-                print(render_for_conda_env({"environment": environment}, header=""))
-            return 0
 
-        # Write to the output file
+def resolve_source_file(args: argparse.Namespace) -> Path:
+    """Get and verify that the argument passed on the command-line is correct."""
+    filename = Path(args.file)
+    if not filename.is_file():
+        raise UsageError(f'file "{filename}" does not exist.')
+    return filename
+
+
+def is_devenv_file(p: Path) -> bool:
+    """Return True if the given file appears to be a devenv.yml file."""
+    return p.suffixes == [".devenv", ".yml"]
+
+
+def create_update_env(
+    env_manager: Literal["conda", "mamba"], args: argparse.Namespace
+) -> int:
+    filename = resolve_source_file(args)
+    render = ProcessedEnvironment.from_file(filename)
+    if is_devenv_file(filename):
+        # Write the processed contents into the equivalent environment.yml file.
         output_filename = __write_conda_environment_file(
-            args, filename, rendered_contents
+            args, filename, render.rendered_yaml
         )
     else:
-        conda_yaml_dict = None
-        environment = {}
-        # Just call conda-env directly in plain environment.yml files
+        # Just call conda-env directly in plain environment.yml files.
         output_filename = filename
-        if args.print:
-            with open(filename) as f:
-                print(f.read())
-            return 0
 
-    env_name = get_env_name(args, output_filename, conda_yaml_dict)
+    # Hack around --prune not working correctly (at least in conda; mamba seems to work correctly).
+    env_name = get_env_name(args, output_filename, render.conda_yaml_dict)
     env_directory = get_env_directory(env_manager, env_name)
-
     if not args.no_prune:
         # Truncate the history file
         truncate_history_file(env_directory)
 
     # Call conda-env update
-    retcode = __call_conda_env_update(args, output_filename, env_manager)
-    if retcode:
-        return retcode
+    if return_code := __call_conda_env_update(args, output_filename, env_manager):
+        return return_code
 
-    if is_devenv_input_file:
+    if is_devenv_file(filename):
         write_activate_deactivate_scripts(
             args,
             env_manager=env_manager,
-            conda_yaml_dict=conda_yaml_dict or {},
-            environment=environment,
+            conda_yaml_dict=render.conda_yaml_dict or {},
+            environment=render.environment_contents,
             env_directory=env_directory,
         )
     return 0
