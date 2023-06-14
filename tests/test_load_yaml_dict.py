@@ -115,7 +115,7 @@ def test_is_included_var(datadir) -> None:
     }
 
 
-def test_root_overrides_channels(tmp_path) -> None:
+def test_downstream_overrides_channels(tmp_path) -> None:
     a_fn = tmp_path / "a.devenv.yml"
     a_fn.write_text(
         textwrap.dedent(
@@ -148,7 +148,7 @@ def test_root_overrides_channels(tmp_path) -> None:
     }
 
 
-def test_root_overrides_platforms(tmp_path) -> None:
+def test_downstream_overrides_platforms(tmp_path) -> None:
     a_fn = tmp_path / "a.devenv.yml"
     a_fn.write_text(
         textwrap.dedent(

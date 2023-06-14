@@ -14,19 +14,6 @@ import pytest
 from conda_devenv import devenv
 
 
-@pytest.fixture
-def patch_conda_calls(mocker):
-    """
-    Patches all necessary functions so that we can do integration testing without actually calling
-    conda.
-    """
-    mocker.patch.object(devenv, "get_env_directory", autospec=True)
-    mocker.patch.object(devenv, "truncate_history_file", autospec=True)
-    mocker.patch.object(devenv, "_call_conda", autospec=True, return_value=0)
-    mocker.patch.object(devenv, "write_activate_deactivate_scripts", autospec=True)
-    mocker.patch("shutil.which", return_value=f"path/to/conda")
-
-
 @pytest.mark.parametrize(
     "input_name, write_scripts_call_count",
     [
@@ -216,9 +203,10 @@ def test_version(capsys) -> None:
 
 @pytest.mark.parametrize("explicit_file", [True, False])
 def test_error_message_environment_file_not_found(
-    capsys, tmp_path: Path, explicit_file, monkeypatch
+    capsys, tmp_path: Path, explicit_file, monkeypatch, mocker
 ) -> None:
     monkeypatch.chdir(tmp_path)
+    mocker.patch("shutil.which", return_value="/path/to/conda")
     args = ["--file", "invalid.devenv.yml"] if explicit_file else []
     expected_name = "invalid.devenv.yml" if explicit_file else "environment.devenv.yml"
     assert devenv.main(args) == 2

@@ -39,10 +39,10 @@ class ProcessedEnvironment:
     is_devenv_file: bool
 
     @classmethod
-    def from_file(cls, p: Path) -> Self:
-        is_devenv_file = p.suffixes == [".devenv", ".yml"]
+    def from_file(cls, p: Path, *, conda_platform: CondaPlatform | None = None) -> Self:
+        is_devenv_file = p.suffixes[-2:] == [".devenv", ".yml"]
 
-        conda_yaml_dict = load_yaml_dict(p)
+        conda_yaml_dict = load_yaml_dict(p, conda_platform=conda_platform)
         if is_devenv_file:
             rendered_yaml = render_for_conda_env(conda_yaml_dict)
         else:
@@ -118,6 +118,16 @@ class UsageError(Exception):
     """
 
 
+class LockFileNotFoundError(Exception):
+    """
+    Raised when we attempt to create/update an env using a lock file, but it does not exist.
+    """
+
+    def __init__(self, lock_file: Path) -> None:
+        super().__init__(f"Required lock file {lock_file} not found")
+        self.lock_file = lock_file
+
+
 def preprocess_selector_in_line(line: str) -> str:
     x = _selector_pattern.search(line)
     if x is None:
@@ -190,17 +200,17 @@ def render_jinja(
         conda_platform = CondaPlatform.current()
 
     jinja_dict = {
+        "aarch64": "aarch64" == platform.machine(),
+        "arm64": conda_platform.name == "osx" and "arm64" == platform.machine(),
+        "get_env": _get_env,
         "is_included": is_included,
+        "min_conda_devenv_version": _min_conda_devenv_version,
         "os": os,
         "platform": platform,
         "root": os.path.dirname(os.path.abspath(filename)),
         "sys": sys,
-        "aarch64": "aarch64" == platform.machine(),
-        "arm64": conda_platform.name == "osx" and "arm64" == platform.machine(),
         "x86": "x86" == platform.machine(),
         "x86_64": "x86_64" == platform.machine(),
-        "min_conda_devenv_version": _min_conda_devenv_version,
-        "get_env": _get_env,
         **conda_platform.selectors,
     }
 
@@ -399,13 +409,18 @@ def merge_dependencies_version_specifications(
     yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
 
 
-def load_yaml_dict(filename: Path) -> YAMLData:
+def load_yaml_dict(
+    filename: Path, *, conda_platform: CondaPlatform | None = None
+) -> YAMLData:
     """
-    Loads the given devenv.yml file, recursively processing it.
+    Loads the given devenv.yml file, recursively processing it, using the selectors for the given
+    platform -- when not given, use the current platform.
     """
     with open(filename) as f:
         contents = f.read()
-    rendered_contents = render_jinja(contents, filename, is_included=False)
+    rendered_contents = render_jinja(
+        contents, filename, is_included=False, conda_platform=conda_platform
+    )
 
     import yaml
 
@@ -551,6 +566,10 @@ def _call_conda(env_manager: Literal["conda", "mamba"], args: Sequence[str]) -> 
     )
 
 
+def _get_target_env_name(args: argparse.Namespace, conda_yaml_dict: YAMLData) -> str:
+    return args.name or get_env_name_from_yaml_data(conda_yaml_dict)
+
+
 def write_activate_deactivate_scripts(
     args: argparse.Namespace,
     conda_yaml_dict: YAMLData,
@@ -558,10 +577,13 @@ def write_activate_deactivate_scripts(
     env_directory: Path | None,
 ) -> None:
     if env_directory is None:
-        env_name = args.name or get_env_name_from_yaml_data(conda_yaml_dict)
+        env_name = _get_target_env_name(args, conda_yaml_dict)
         env_directory = get_env_directory(env_manager, env_name)
         if env_directory is None:
-            raise UsageError(f"Couldn't find directory of environment '{env_name}'")
+            raise UsageError(
+                f"Could not find directory of environment '{env_name}' "
+                "when trying to write activate scripts (should have been created by now)."
+            )
 
     from os.path import join
 
@@ -712,6 +734,32 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         default=None,
     )
 
+    group = parser.add_argument_group(
+        title="Locking",
+        description="Options related to creating and using lockfiles. Requires conda-lock installed.",
+    )
+    group.add_argument(
+        "--lock",
+        default=False,
+        action="store_true",
+        help="Create one or more lock files for the environment.devenv.yml file, or other file given by '--file'.",
+    )
+
+    group.add_argument(
+        "--use-locks",
+        choices=["auto", "yes", "no"],
+        default="auto",
+        help="How to use lock files: 'auto' will use them if available, 'yes' "
+        "will try to use and fail if not available, 'no' skip lockfiles always.",
+    )
+    group.add_argument(
+        "--update-locks",
+        metavar="PACKAGE",
+        action="append",
+        help="Update the given package in all lock files, while still obeying the pins in the devenv.yml file. "
+        "Can be passed multiple times. Pass '' (empty) to update all packages.",
+    )
+
     argv = sys.argv[1:] if argv is None else argv
     return parser.parse_args(argv)
 
@@ -763,6 +811,14 @@ def resolve_env_manager(args: argparse.Namespace) -> Literal["conda", "mamba"]:
     return env_manager
 
 
+def resolve_source_file(args: argparse.Namespace) -> Path:
+    """Get and verify that the argument passed on the command-line is correct."""
+    filename = Path(args.file)
+    if not filename.is_file():
+        raise UsageError(f'file "{filename}" does not exist.')
+    return filename
+
+
 def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     if args.version:
         from conda_devenv import __version__
@@ -776,7 +832,21 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     if args.print or args.print_full:
         return print_rendered_environment(args)
 
-    return create_update_env(env_manager, args)
+    if args.lock or args.update_locks:
+        return create_update_lock_file(env_manager, args)
+
+    elif args.use_locks in ("auto", "yes"):
+        try:
+            return create_update_env_using_lock_file(env_manager, args)
+        except LockFileNotFoundError as e:
+            if args.use_locks == "yes":
+                raise UsageError(
+                    f"lock file {e.lock_file} not found and --use-locks=yes, aborting."
+                )
+            return create_update_env(env_manager, args)
+
+    else:
+        return create_update_env(env_manager, args)
 
 
 def print_rendered_environment(args: argparse.Namespace) -> int:
@@ -798,14 +868,6 @@ def print_rendered_environment(args: argparse.Namespace) -> int:
             )
         )
     return 0
-
-
-def resolve_source_file(args: argparse.Namespace) -> Path:
-    """Get and verify that the argument passed on the command-line is correct."""
-    filename = Path(args.file)
-    if not filename.is_file():
-        raise UsageError(f'file "{filename}" does not exist.')
-    return filename
 
 
 def create_update_env(
@@ -840,6 +902,126 @@ def create_update_env(
             conda_yaml_dict=processed.conda_yaml_dict,
             env_directory=env_directory,
         )
+    return 0
+
+
+def _get_lock_paths(
+    source: Path, env_name: str, conda_platform: CondaPlatform
+) -> tuple[Path, Path]:
+    base_lock_file = (
+        source.parent / f".{env_name}.{conda_platform.value}.lock_environment.yml"
+    )
+    target_lock_file = (
+        source.parent / f".{env_name}.{conda_platform.value}.conda-lock.yml"
+    )
+    return base_lock_file, target_lock_file
+
+
+def create_update_lock_file(
+    env_manager: Literal["conda", "mamba"], args: argparse.Namespace
+) -> int:
+    def get_required_key(name: str) -> Sequence[str]:
+        try:
+            return processed_env.conda_yaml_dict[name]
+        except KeyError:
+            raise UsageError(
+                f"Locking requires key '{name}' defined in the starting devenv.yml file"
+            )
+
+    filename = resolve_source_file(args)
+    processed_env = ProcessedEnvironment.from_file(filename)
+    if not processed_env.is_devenv_file:
+        raise UsageError("Locking requires a .devenv.yml file")
+    platforms = get_required_key("platforms")
+    _ = get_required_key("channels")
+
+    env_name = _get_target_env_name(args, processed_env.conda_yaml_dict)
+    for platform in platforms:
+        conda_platform = CondaPlatform(platform)
+        plat_render = ProcessedEnvironment.from_file(
+            filename, conda_platform=conda_platform
+        )
+        base_lock_file, target_lock_file = _get_lock_paths(
+            filename, env_name, conda_platform
+        )
+        header = f"# Generated by conda-devenv locking support for env {env_name} platform {platform}\n"
+        base_lock_file.write_text(header + plat_render.rendered_yaml)
+
+        if not args.quiet:
+            verb = "Creating" if not base_lock_file.is_file() else "Updating"
+            print(
+                f"{Fore.BLUE}{verb} lock files for "
+                f"{Fore.MAGENTA}{env_name}{Fore.BLUE} platform "
+                f"{Fore.GREEN}{platform}{Fore.RESET}"
+            )
+
+        update_args = []
+        if args.update_locks:
+            for name in args.update_locks:
+                update_args += ["--update", name]
+
+        cmdline_args = [
+            "lock",
+            "--file",
+            str(base_lock_file),
+            "--platform",
+            platform,
+            "--lockfile",
+            str(target_lock_file),
+            *update_args,
+        ]
+        if not args.quiet:
+            full_cmdline = [str(env_manager), *cmdline_args]
+            print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+
+        if return_code := _call_conda(env_manager, cmdline_args):
+            return return_code
+
+    return 0
+
+
+def create_update_env_using_lock_file(
+    env_manager: Literal["conda", "mamba"], args: argparse.Namespace
+) -> int:
+    filename = resolve_source_file(args)
+    processed_env = ProcessedEnvironment.from_file(filename)
+
+    conda_platform = CondaPlatform.current()
+    _, target_lock_file = _get_lock_paths(
+        filename,
+        get_env_name_from_yaml_data(processed_env.conda_yaml_dict),
+        conda_platform,
+    )
+    if not target_lock_file.is_file():
+        raise LockFileNotFoundError(target_lock_file)
+
+    env_name = _get_target_env_name(args, processed_env.conda_yaml_dict)
+    cmdline_args = ["lock", "install", "--name", env_name, str(target_lock_file)]
+    env_directory = get_env_directory(env_manager, env_name)
+    if not args.quiet:
+        verb = (
+            "Updating"
+            if env_directory is not None and env_directory.is_dir()
+            else "Creating"
+        )
+        print(
+            f"{Fore.BLUE}{verb} env "
+            f"{Fore.MAGENTA}{env_name}{Fore.BLUE} platform "
+            f"{Fore.GREEN}{conda_platform.value}{Fore.BLUE} using lockfile{Fore.RESET}"
+        )
+
+        full_cmdline = [str(env_manager), *cmdline_args]
+        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+
+    if return_code := _call_conda(env_manager, cmdline_args):
+        return return_code
+
+    write_activate_deactivate_scripts(
+        args,
+        env_manager=env_manager,
+        conda_yaml_dict=processed_env.conda_yaml_dict or {},
+        env_directory=env_directory,
+    )
     return 0
 
 

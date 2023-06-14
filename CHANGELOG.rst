@@ -5,6 +5,7 @@ CHANGELOG
 UNRELEASED
 ----------
 
+* New workflow to work with lock files, using `conda-lock <https://github.com/conda/conda-lock>`__. Consult the `docs <https://conda-devenv.readthedocs.io/en/latest/usage.html#locking>`__.
 * Added full type annotations. Some of the parameters were changed from ``str`` to ``Path`` to make the API more clearer.
 * Python 3.7, 3.8, and 3.9 are no longer supported. Note that ``conda-devenv`` installed in a Python 3.10+ conda root
   can still be used to work with environments in those versions.
