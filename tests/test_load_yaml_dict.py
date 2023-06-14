@@ -4,7 +4,8 @@ from conda_devenv.devenv import load_yaml_dict
 
 
 def test_load_yaml_dict(datadir) -> None:
-    conda_yaml_dict, environment = load_yaml_dict(datadir / "c.yml")
+    conda_yaml_dict = load_yaml_dict(datadir / "c.yml")
+    environment = conda_yaml_dict["environment"]
     assert set(environment.keys()) == {"PATH"}
     assert set(environment["PATH"]) == {"b_path", "a_path"}
 
@@ -24,7 +25,7 @@ def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir) -> Non
 def test_load_yaml_dict_empty_environment_key(datadir) -> None:
     filename = datadir / "empty_environment.yml"
     d = load_yaml_dict(filename)
-    assert d == ({"name": "foo"}, {})
+    assert d == {"name": "foo", "environment": {}}
 
 
 def test_load_yaml_dict_with_wrong_definition_at_environment_key_will_add_wrong_file_to_exception_message(
@@ -106,10 +107,12 @@ def test_is_included_var(datadir) -> None:
         )
     )
 
-    conda_env, os_env = load_yaml_dict(a_env_file)
-    assert conda_env == {"name": "a"}
-    assert os_env == {
-        "IS_A_INCLUDED": False,
-        "IS_B_INCLUDED": True,
-        "VARIABLE": "value_a",
+    conda_env = load_yaml_dict(a_env_file)
+    assert conda_env == {
+        "name": "a",
+        "environment": {
+            "IS_A_INCLUDED": False,
+            "IS_B_INCLUDED": True,
+            "VARIABLE": "value_a",
+        },
     }

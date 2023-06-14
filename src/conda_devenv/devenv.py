@@ -21,7 +21,6 @@ import yaml
 from colorama import Fore
 from typing_extensions import Self
 
-from .gen_scripts import Environment
 from .gen_scripts import render_activate_script
 from .gen_scripts import render_deactivate_script
 
@@ -37,23 +36,20 @@ class ProcessedEnvironment:
     """
 
     conda_yaml_dict: YAMLData | None
-    environment_contents: dict
     rendered_yaml: str
 
     @classmethod
     def from_file(cls, p: Path) -> Self:
         if is_devenv_file(p):
-            conda_yaml_dict, environment_contents = load_yaml_dict(p)
+            conda_yaml_dict = load_yaml_dict(p)
             rendered_yaml = render_for_conda_env(conda_yaml_dict)
             return cls(
                 conda_yaml_dict=conda_yaml_dict,
-                environment_contents=environment_contents,
                 rendered_yaml=rendered_yaml,
             )
         else:
             return cls(
                 conda_yaml_dict=None,
-                environment_contents={},
                 rendered_yaml=p.read_text(),
             )
 
@@ -403,7 +399,7 @@ def merge_dependencies_version_specifications(
     yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
 
 
-def load_yaml_dict(filename: Path) -> tuple[YAMLData, dict]:
+def load_yaml_dict(filename: Path) -> YAMLData:
     with open(filename) as f:
         contents = f.read()
     rendered_contents = render_jinja(contents, filename, is_included=False)
@@ -433,8 +429,10 @@ def load_yaml_dict(filename: Path) -> tuple[YAMLData, dict]:
     if "name" in root_yaml:
         merged_dict["name"] = root_yaml["name"]
 
-    environment = merged_dict.pop("environment", {})
-    return merged_dict, environment
+    if "environment" not in merged_dict:
+        merged_dict["environment"] = {}
+
+    return merged_dict
 
 
 def get_env_name_from_yaml_data(yaml_data: YAMLData) -> str:
@@ -553,7 +551,6 @@ def write_activate_deactivate_scripts(
     args: argparse.Namespace,
     conda_yaml_dict: YAMLData,
     env_manager: Literal["conda", "mamba"],
-    environment: Environment,
     env_directory: Path | None,
 ) -> None:
     if env_directory is None:
@@ -579,6 +576,7 @@ def write_activate_deactivate_scripts(
         # Linux and Mac should create a .sh
         files = [("devenv-vars.sh", "bash"), ("devenv-vars.fish", "fish")]
 
+    environment = conda_yaml_dict.get("environment", {})
     for filename, shell in files:
         activate_script = render_activate_script(environment, shell)
         deactivate_script = render_deactivate_script(environment, shell)
@@ -781,10 +779,14 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     if args.print or args.print_full:
         render = ProcessedEnvironment.from_file(resolve_source_file(args))
         print(render.rendered_yaml)
-        if args.print_full and render.environment_contents:
+        if (
+            args.print_full
+            and render.conda_yaml_dict
+            and "environment" in render.conda_yaml_dict
+        ):
             print(
                 render_for_conda_env(
-                    {"environment": render.environment_contents}, header=""
+                    {"environment": render.conda_yaml_dict["environment"]}, header=""
                 )
             )
         return 0
@@ -835,7 +837,6 @@ def create_update_env(
             args,
             env_manager=env_manager,
             conda_yaml_dict=render.conda_yaml_dict or {},
-            environment=render.environment_contents,
             env_directory=env_directory,
         )
     return 0
