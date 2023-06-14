@@ -1,3 +1,5 @@
+import textwrap
+
 import pytest
 
 from conda_devenv.devenv import load_yaml_dict
@@ -74,36 +76,30 @@ def test_get_env_name(mocker, tmpdir, cmd_line_name) -> None:
 
 
 def test_is_included_var(datadir) -> None:
-    import textwrap
-
     a_env_file = datadir / "a.devenv.yml"
     a_env_file.write_text(
-        str(
-            textwrap.dedent(
-                """\
-        name: a
-        includes:
-          - {{root}}/b.devenv.yml
-        environment:
-          VARIABLE: value_a
-          IS_A_INCLUDED: {{is_included}}
-    """
-            )
+        textwrap.dedent(
+            """
+            name: a
+            includes:
+              - {{root}}/b.devenv.yml
+            environment:
+              VARIABLE: value_a
+              IS_A_INCLUDED: {{is_included}}
+            """
         )
     )
     b_env_file = datadir / "b.devenv.yml"
     b_env_file.write_text(
-        str(
-            textwrap.dedent(
-                """\
-        name: b
-        environment:
-          {% if not is_included %}
-          VARIABLE: value_b
-          {% endif %}
-          IS_B_INCLUDED: {{is_included}}
-    """
-            )
+        textwrap.dedent(
+            """
+            name: b
+            environment:
+              {% if not is_included %}
+              VARIABLE: value_b
+              {% endif %}
+              IS_B_INCLUDED: {{is_included}}
+            """
         )
     )
 
@@ -115,4 +111,71 @@ def test_is_included_var(datadir) -> None:
             "IS_B_INCLUDED": True,
             "VARIABLE": "value_a",
         },
+    }
+
+
+def test_root_overrides_channels(tmp_path) -> None:
+    a_fn = tmp_path / "a.devenv.yml"
+    a_fn.write_text(
+        textwrap.dedent(
+            """
+            name: a
+            channels:
+            - a_channel
+            """
+        )
+    )
+
+    b_fn = tmp_path / "b.devenv.yml"
+    b_fn.write_text(
+        textwrap.dedent(
+            """
+            name: b
+            includes:
+              - {{ root }}/a.devenv.yml
+            channels:
+            - b1_channel
+            - b2_channel
+            """
+        )
+    )
+
+    assert load_yaml_dict(b_fn) == {
+        "name": "b",
+        "channels": ["b1_channel", "b2_channel"],
+        "environment": {},
+    }
+
+
+def test_root_overrides_platforms(tmp_path) -> None:
+    a_fn = tmp_path / "a.devenv.yml"
+    a_fn.write_text(
+        textwrap.dedent(
+            """
+            name: a
+            platforms:
+            - linux-64
+            - win-64
+            """
+        )
+    )
+
+    b_fn = tmp_path / "b.devenv.yml"
+    b_fn.write_text(
+        textwrap.dedent(
+            """
+            name: b
+            includes:
+              - {{ root }}/a.devenv.yml
+            platforms:
+            - win-64
+            - osx-64
+            """
+        )
+    )
+
+    assert load_yaml_dict(b_fn) == {
+        "name": "b",
+        "platforms": ["win-64", "osx-64"],
+        "environment": {},
     }

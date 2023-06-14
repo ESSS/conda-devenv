@@ -400,6 +400,9 @@ def merge_dependencies_version_specifications(
 
 
 def load_yaml_dict(filename: Path) -> YAMLData:
+    """
+    Loads the given devenv.yml file, recursively processing it.
+    """
     with open(filename) as f:
         contents = f.read()
     rendered_contents = render_jinja(contents, filename, is_included=False)
@@ -425,9 +428,10 @@ def load_yaml_dict(filename: Path) -> YAMLData:
 
     merged_dict = merge(all_yaml_dicts.values())
 
-    # Force the "name" because we want to keep the name of the root yaml
-    if "name" in root_yaml:
-        merged_dict["name"] = root_yaml["name"]
+    # Force these keys to always be set by the starting/root devenv file, when defined.
+    force_root_keys = ("name", "channels", "platforms")
+    forced_keys = {k: root_yaml[k] for k in force_root_keys if k in root_yaml}
+    merged_dict.update(forced_keys)
 
     if "environment" not in merged_dict:
         merged_dict["environment"] = {}
