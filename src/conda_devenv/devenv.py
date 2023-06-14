@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any
 from typing import Literal
 
-import yaml
 from colorama import Fore
 from typing_extensions import Self
 
@@ -35,23 +34,24 @@ class ProcessedEnvironment:
     Result of processing a .devenv.yml or a plain .yml file.
     """
 
-    conda_yaml_dict: YAMLData | None
+    conda_yaml_dict: YAMLData
     rendered_yaml: str
+    is_devenv_file: bool
 
     @classmethod
     def from_file(cls, p: Path) -> Self:
-        if is_devenv_file(p):
-            conda_yaml_dict = load_yaml_dict(p)
+        is_devenv_file = p.suffixes == [".devenv", ".yml"]
+
+        conda_yaml_dict = load_yaml_dict(p)
+        if is_devenv_file:
             rendered_yaml = render_for_conda_env(conda_yaml_dict)
-            return cls(
-                conda_yaml_dict=conda_yaml_dict,
-                rendered_yaml=rendered_yaml,
-            )
         else:
-            return cls(
-                conda_yaml_dict=None,
-                rendered_yaml=p.read_text(),
-            )
+            rendered_yaml = p.read_text(encoding="UTF-8")
+        return cls(
+            conda_yaml_dict=conda_yaml_dict,
+            rendered_yaml=rendered_yaml,
+            is_devenv_file=is_devenv_file,
+        )
 
 
 class CondaPlatform(Enum):
@@ -593,24 +593,17 @@ def write_activate_deactivate_scripts(
 
 def get_env_name(
     args: argparse.Namespace,
-    output_filename: Path,
-    conda_yaml_dict: YAMLData | None = None,
+    conda_yaml_dict: YAMLData,
 ) -> str:
     """
     :param args:
         When the user supplies the name option in the command line this namespace have a "name"
         defined with a not `None` value and this value is returned.
-    :param output_filename:
-        No jinja rendering is performed on this file if it is used.
     :param conda_yaml_dict:
         If supplied and not `None` then `output_filename` is ignored.
     """
     if args.name:
         return args.name
-
-    if conda_yaml_dict is None:
-        with open(output_filename) as stream:
-            conda_yaml_dict = yaml.safe_load(stream)
 
     return get_env_name_from_yaml_data(conda_yaml_dict)
 
@@ -806,27 +799,22 @@ def resolve_source_file(args: argparse.Namespace) -> Path:
     return filename
 
 
-def is_devenv_file(p: Path) -> bool:
-    """Return True if the given file appears to be a devenv.yml file."""
-    return p.suffixes == [".devenv", ".yml"]
-
-
 def create_update_env(
     env_manager: Literal["conda", "mamba"], args: argparse.Namespace
 ) -> int:
     filename = resolve_source_file(args)
-    render = ProcessedEnvironment.from_file(filename)
-    if is_devenv_file(filename):
+    processed = ProcessedEnvironment.from_file(filename)
+    if processed.is_devenv_file:
         # Write the processed contents into the equivalent environment.yml file.
         output_filename = __write_conda_environment_file(
-            args, filename, render.rendered_yaml
+            args, filename, processed.rendered_yaml
         )
     else:
         # Just call conda-env directly in plain environment.yml files.
         output_filename = filename
 
     # Hack around --prune not working correctly (at least in conda; mamba seems to work correctly).
-    env_name = get_env_name(args, output_filename, render.conda_yaml_dict)
+    env_name = get_env_name(args, processed.conda_yaml_dict)
     env_directory = get_env_directory(env_manager, env_name)
     if not args.no_prune:
         # Truncate the history file
@@ -836,11 +824,11 @@ def create_update_env(
     if return_code := __call_conda_env_update(args, output_filename, env_manager):
         return return_code
 
-    if is_devenv_file(filename):
+    if processed.is_devenv_file:
         write_activate_deactivate_scripts(
             args,
             env_manager=env_manager,
-            conda_yaml_dict=render.conda_yaml_dict or {},
+            conda_yaml_dict=processed.conda_yaml_dict,
             env_directory=env_directory,
         )
     return 0

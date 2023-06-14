@@ -1,6 +1,7 @@
 import textwrap
 
 import pytest
+import yaml
 
 from conda_devenv.devenv import load_yaml_dict
 
@@ -68,7 +69,7 @@ def test_get_env_name(mocker, tmpdir, cmd_line_name) -> None:
 
     from conda_devenv.devenv import get_env_name
 
-    name = get_env_name(args, filename, None)
+    name = get_env_name(args, yaml.safe_load(filename.read()))
     if cmd_line_name:
         assert name == "foo"
     else:
