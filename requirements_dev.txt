@@ -1,15 +1,5 @@
-bumpversion
-coverage
-cryptography
-flake8
-pip
 pre-commit
-pytest >= 3
 pytest-datadir >= 1.0
 pytest-mock
-PyYAML
-Sphinx
+pytest-regressions
 tox
-watchdog
-wheel
-setuptools_scm

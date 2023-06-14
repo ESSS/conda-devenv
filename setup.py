@@ -15,10 +15,6 @@ requirements = [
     "typing_extensions",
 ]
 
-test_requirements = [
-    "pytest",
-    "pytest-datadir",
-]
 
 setup(
     name="conda-devenv",
@@ -52,5 +48,4 @@ setup(
         "Programming Language :: Python :: 3.11",
     ],
     test_suite="tests",
-    tests_require=test_requirements,
 )
