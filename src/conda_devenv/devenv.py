@@ -774,21 +774,30 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     env_manager = resolve_env_manager(args)
 
     if args.print or args.print_full:
-        render = ProcessedEnvironment.from_file(resolve_source_file(args))
-        print(render.rendered_yaml)
-        if (
-            args.print_full
-            and render.conda_yaml_dict
-            and "environment" in render.conda_yaml_dict
-        ):
-            print(
-                render_for_conda_env(
-                    {"environment": render.conda_yaml_dict["environment"]}, header=""
-                )
-            )
-        return 0
+        return print_rendered_environment(args)
 
     return create_update_env(env_manager, args)
+
+
+def print_rendered_environment(args: argparse.Namespace) -> int:
+    """
+    If print_full is True, includes the 'environment' section (for environment
+    variable definition), which is usually left out of the processed environment.yml
+    file.
+    """
+    render = ProcessedEnvironment.from_file(resolve_source_file(args))
+    print(render.rendered_yaml)
+    if (
+        args.print_full
+        and render.conda_yaml_dict
+        and "environment" in render.conda_yaml_dict
+    ):
+        print(
+            render_for_conda_env(
+                {"environment": render.conda_yaml_dict["environment"]}, header=""
+            )
+        )
+    return 0
 
 
 def resolve_source_file(args: argparse.Namespace) -> Path:
