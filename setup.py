@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from setuptools import setup
 
 with open("README.rst") as readme_file:
@@ -35,10 +34,9 @@ setup(
             "mamba-devenv = conda_devenv.devenv:mamba_main",
         ]
     },
-    use_scm_version={"write_to": "conda_devenv/_version.py"},
+    use_scm_version={"write_to": "src/conda_devenv/_version.py"},
     setup_requires=["setuptools_scm"],
-    package_dir={"conda_devenv": "conda_devenv"},
-    include_package_data=True,
+    package_dir={"": "src"},
     install_requires=requirements,
     license="MIT",
     zip_safe=False,
@@ -49,10 +47,8 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
     test_suite="tests",
     tests_require=test_requirements,

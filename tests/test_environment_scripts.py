@@ -1,9 +1,9 @@
 import textwrap
 
-
 import pytest
 
-from conda_devenv.gen_scripts import render_activate_script, render_deactivate_script
+from conda_devenv.gen_scripts import render_activate_script
+from conda_devenv.gen_scripts import render_deactivate_script
 
 
 @pytest.fixture
@@ -17,7 +17,9 @@ def multiple_values():
     return {"PATH": paths, "LD_LIBRARY_PATH": paths}
 
 
-def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_values):
+def test_render_activate_and_deactivate_scripts_bash(
+    single_values, multiple_values
+) -> None:
     # activate
     assert (
         render_activate_script(single_values, "bash")
@@ -103,7 +105,9 @@ def test_render_activate_and_deactivate_scripts_bash(single_values, multiple_val
     )
 
 
-def test_render_activate_and_deactivate_scripts_cmd(single_values, multiple_values):
+def test_render_activate_and_deactivate_scripts_cmd(
+    single_values, multiple_values
+) -> None:
     # activate
     assert (
         render_activate_script(single_values, "cmd")
@@ -156,7 +160,9 @@ def test_render_activate_and_deactivate_scripts_cmd(single_values, multiple_valu
     )
 
 
-def test_render_activate_and_deactivate_scripts_ps1(single_values, multiple_values):
+def test_render_activate_and_deactivate_scripts_ps1(
+    single_values, multiple_values
+) -> None:
     # activate
     assert (
         render_activate_script(single_values, "ps1")
@@ -226,7 +232,9 @@ def test_render_activate_and_deactivate_scripts_ps1(single_values, multiple_valu
     )
 
 
-def test_render_activate_and_deactivate_scripts_fish(single_values, multiple_values):
+def test_render_activate_and_deactivate_scripts_fish(
+    single_values, multiple_values
+) -> None:
     # activate
     assert (
         render_activate_script(single_values, "fish")

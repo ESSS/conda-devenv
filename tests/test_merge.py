@@ -2,14 +2,12 @@ import copy
 
 import pytest
 
-from conda_devenv.devenv import (
-    merge,
-    merge_dependencies_version_specifications,
-    separate_strings_from_dicts,
-)
+from conda_devenv.devenv import merge
+from conda_devenv.devenv import merge_dependencies_version_specifications
+from conda_devenv.devenv import separate_strings_from_dicts
 
 
-def test_merge_plain():
+def test_merge_plain() -> None:
     a = {
         "name": "a",
         "dependencies": [
@@ -52,7 +50,7 @@ def test_merge_plain():
     }
 
 
-def test_merge_dependencies_with_pip():
+def test_merge_dependencies_with_pip() -> None:
     a = {
         "name": "a",
         "dependencies": [
@@ -92,7 +90,7 @@ def test_merge_dependencies_with_pip():
     }
 
 
-def test_separate_strings_from_dicts():
+def test_separate_strings_from_dicts() -> None:
     assert separate_strings_from_dicts(["a", {"1": "2"}, "b", {"3": "4"}]) == (
         ["a", "b"],
         [{"1": "2"}, {"3": "4"}],
@@ -104,10 +102,11 @@ def test_separate_strings_from_dicts():
     )
 
     with pytest.raises(RuntimeError, match="Only strings and dicts are supported"):
-        separate_strings_from_dicts([1])
+        # Ignore type check error as we are actually checking the runtime type-check.
+        separate_strings_from_dicts([1])  # type:ignore[list-item]
 
 
-def test_merge_empty_dependencies():
+def test_merge_empty_dependencies() -> None:
     """
     This happens when an environment file is declared like this:
 
@@ -146,7 +145,7 @@ def test_merge_empty_dependencies():
     )
 
 
-def test_merge_dependencies_version_specifications_plain():
+def test_merge_dependencies_version_specifications_plain() -> None:
     merged_dict = {
         "dependencies": [
             "a_dependency==1.2.3",
@@ -166,7 +165,7 @@ def test_merge_dependencies_version_specifications_plain():
     }
 
 
-def test_merge_dependencies_version_specifications_errors():
+def test_merge_dependencies_version_specifications_errors() -> None:
     merged_dict = {
         "dependencies": [
             "==1",
@@ -179,18 +178,18 @@ def test_merge_dependencies_version_specifications_errors():
             merged_dict, key_to_merge="dependencies"
         )
 
-    merged_dict = {
+    merged_dict2 = {
         "dependencies": [
             1,
         ],
     }
     with pytest.raises(RuntimeError, match=".*Only strings and dicts are supported.*"):
         merge_dependencies_version_specifications(
-            merged_dict, key_to_merge="dependencies"
+            merged_dict2, key_to_merge="dependencies"
         )
 
 
-def test_merge_dependencies_version_specifications_pip_dependencies():
+def test_merge_dependencies_version_specifications_pip_dependencies() -> None:
     """Regression test for issue #91, #92 and #113."""
     merged_dict = {
         "dependencies": [
@@ -217,7 +216,7 @@ def test_merge_dependencies_version_specifications_pip_dependencies():
     assert merged_dict_ == merged_dict
 
 
-def test_merge_error_can_not_merge():
+def test_merge_error_can_not_merge() -> None:
     with pytest.raises(
         ValueError, match=".*because it will override the previous value.*"
     ):

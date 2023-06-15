@@ -6,6 +6,8 @@ UNRELEASED
 ----------
 
 * Added full type annotations. Some of the parameters were changed from ``str`` to ``Path`` to make the API more clearer.
+* Python 3.7, 3.8, and 3.9 are no longer supported. Note that ``conda-devenv`` installed in a Python 3.10+ conda root
+  can still be used to work with environments in those versions.
 
 2.4.0 (2023-03-29)
 ------------------
