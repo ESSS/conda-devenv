@@ -72,9 +72,6 @@ def test_handle_input_file(
         cast(MagicMock, devenv.write_activate_deactivate_scripts).call_count
         == write_scripts_call_count
     )
-    assert (
-        cast(MagicMock, devenv.truncate_history_file).call_count == truncate_call_count
-    )
 
 
 @pytest.mark.parametrize("input_name", ["environment.devenv.yml", "environment.yml"])

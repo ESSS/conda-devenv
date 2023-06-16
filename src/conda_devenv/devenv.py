@@ -497,36 +497,6 @@ def __write_conda_environment_file(
     return output_filename
 
 
-def truncate_history_file(env_directory: Path | None) -> None:
-    """
-    Since conda version 4.4 the "--prune" option does not prune the environment to match just the
-    supplied specs but take in account the previous environment history we truncate the history
-    file so only the package and version specs from the environment description file are used.
-
-    This is based on the comments:
-    - https://github.com/conda/conda/issues/6809#issuecomment-367877250
-    - https://github.com/conda/conda/issues/7279#issuecomment-389359679
-
-    If the behavior of the "--prune" option changes again or something in the lines
-    "--ignore-history" or "--prune-hard" ar implemented we should revisit this function and
-    update the "conda-env" arguments.
-    """
-    if env_directory is None:
-        return  # Environment does not exist, no history to truncate
-
-    from os.path import isfile, join
-    from time import time
-    from shutil import copyfile
-
-    history_filename = join(env_directory, "conda-meta", "history")
-    history_backup_filename = f"{history_filename}.{time()}"
-    if isfile(history_filename):
-        copyfile(history_filename, history_backup_filename)
-
-        with open(history_filename, "w") as history:
-            history.truncate()
-
-
 def __call_conda_env_update(
     args: argparse.Namespace,
     output_filename: Path,
@@ -884,18 +854,14 @@ def create_update_env(
         # Just call conda-env directly in plain environment.yml files.
         output_filename = filename
 
-    # Hack around --prune not working correctly (at least in conda; mamba seems to work correctly).
-    env_name = get_env_name(args, processed.conda_yaml_dict)
-    env_directory = get_env_directory(env_manager, env_name)
-    if not args.no_prune:
-        # Truncate the history file
-        truncate_history_file(env_directory)
-
     # Call conda-env update
     if return_code := __call_conda_env_update(args, output_filename, env_manager):
         return return_code
 
     if processed.is_devenv_file:
+        env_name = get_env_name(args, processed.conda_yaml_dict)
+        env_directory = get_env_directory(env_manager, env_name)
+
         write_activate_deactivate_scripts(
             args,
             env_manager=env_manager,
