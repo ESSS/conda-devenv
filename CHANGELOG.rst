@@ -2,8 +2,8 @@
 CHANGELOG
 =========
 
-UNRELEASED
-----------
+3.0.0 (2023-06-19)
+------------------
 
 * New workflow to work with lock files, using `conda-lock <https://github.com/conda/conda-lock>`__. Consult the `docs <https://conda-devenv.readthedocs.io/en/latest/usage.html#locking>`__.
 * Added full type annotations. Some of the parameters were changed from ``str`` to ``Path`` to make the API more clearer.
