@@ -10,15 +10,16 @@ import sys
 from collections.abc import Iterable
 from collections.abc import Mapping
 from collections.abc import Sequence
+from dataclasses import dataclass
+from enum import Enum
+from functools import cached_property
 from pathlib import Path
-from typing import (
-    Any,
-)
+from typing import Any
 from typing import Literal
 
 from colorama import Fore
+from typing_extensions import Self
 
-from .gen_scripts import Environment
 from .gen_scripts import render_activate_script
 from .gen_scripts import render_deactivate_script
 
@@ -27,11 +28,104 @@ _selector_pattern = re.compile(r".*?#\s*\[(.*)\].*")
 YAMLData = dict[str, Any]
 
 
+@dataclass(frozen=True)
+class ProcessedEnvironment:
+    """
+    Result of processing a .devenv.yml or a plain .yml file.
+    """
+
+    conda_yaml_dict: YAMLData
+    rendered_yaml: str
+    is_devenv_file: bool
+
+    @classmethod
+    def from_file(cls, p: Path, *, conda_platform: CondaPlatform | None = None) -> Self:
+        is_devenv_file = p.suffixes[-2:] == [".devenv", ".yml"]
+
+        conda_yaml_dict = load_yaml_dict(p, conda_platform=conda_platform)
+        if is_devenv_file:
+            rendered_yaml = render_for_conda_env(conda_yaml_dict)
+        else:
+            rendered_yaml = p.read_text(encoding="UTF-8")
+        return cls(
+            conda_yaml_dict=conda_yaml_dict,
+            rendered_yaml=rendered_yaml,
+            is_devenv_file=is_devenv_file,
+        )
+
+
+class CondaPlatform(Enum):
+    """Enumerates the known platforms in conda convention."""
+
+    Win32 = "win-32"
+    Win64 = "win-64"
+    Linux32 = "linux-32"
+    Linux64 = "linux-64"
+    Osx32 = "osx-32"
+    Osx64 = "osx-64"
+
+    @classmethod
+    def current(cls) -> Self:
+        import sys
+        import platform
+
+        if sys.platform.startswith("win"):
+            name = "win"
+        elif sys.platform.startswith("linux"):
+            name = "linux"
+        elif sys.platform.startswith("darwin"):
+            name = "osx"
+        else:
+            name = ""
+
+        bits = "32" if platform.architecture()[0] == "32bit" else "64"
+        return cls(f"{name}-{bits}")
+
+    @cached_property
+    def name(self) -> str:
+        return self.value.split("-")[0]
+
+    @cached_property
+    def bits(self) -> int:
+        return int(self.value.split("-")[1])
+
+    @cached_property
+    def selectors(self) -> Mapping[str, bool]:
+        """
+        Returns platform-specific selectors that can be used for rendering
+        environment.devenv.yml files.
+        """
+        name = self.name
+        bits = self.bits
+        return {
+            "linux": name == "linux",
+            "linux32": name == "linux" and bits == 32,
+            "linux64": name == "linux" and bits == 64,
+            "osx": name == "osx",
+            "osx32": name == "osx" and bits == 32,
+            "osx64": name == "osx" and bits == 64,
+            "unix": name in ("linux", "osx"),
+            "win": name == "win",
+            "win32": name == "win" and bits == 32,
+            "win64": name == "win" and bits == 64,
+        }
+
+
 class UsageError(Exception):
     """
     Raised when a usage error occurs. In this case, we capture the exception
     and show to the user instead of blowing with a traceback.
     """
+
+
+class LockFileNotFoundError(Exception):
+    """
+    Raised when we attempt to create/update an env using a lock file, but it does not exist.
+    """
+
+    def __init__(self, lock_file: Path) -> None:
+        super().__init__(f"Required lock file {lock_file} not found")
+        self.lock_file = lock_file
 
 
 def preprocess_selector_in_line(line: str) -> str:
@@ -91,42 +185,36 @@ def _get_env(
     return value
 
 
-def render_jinja(contents: str, filename: Path, is_included: bool) -> str:
+def render_jinja(
+    contents: str,
+    filename: Path,
+    *,
+    is_included: bool,
+    conda_platform: CondaPlatform | None = None,
+) -> str:
     import jinja2
     import sys
     import platform
 
-    iswin = sys.platform.startswith("win")
-    islinux = sys.platform.startswith("linux")
-    isosx = sys.platform.startswith("darwin")
-
-    is32bit = "32bit" == platform.architecture()[0]
-    is64bit = not is32bit
+    if conda_platform is None:
+        conda_platform = CondaPlatform.current()
 
     jinja_dict = {
+        "aarch64": "aarch64" == platform.machine(),
+        "arm64": conda_platform.name == "osx" and "arm64" == platform.machine(),
+        "get_env": _get_env,
         "is_included": is_included,
+        "min_conda_devenv_version": _min_conda_devenv_version,
         "os": os,
         "platform": platform,
         "root": os.path.dirname(os.path.abspath(filename)),
         "sys": sys,
-        "aarch64": "aarch64" == platform.machine(),
-        "arm64": isosx and "arm64" == platform.machine(),
         "x86": "x86" == platform.machine(),
         "x86_64": "x86_64" == platform.machine(),
-        "linux": islinux,
-        "linux32": islinux and is32bit,
-        "linux64": islinux and is64bit,
-        "osx": isosx,
-        "unix": islinux or isosx,
-        "win": iswin,
-        "win32": iswin and is32bit,
-        "win64": iswin and is64bit,
-        "min_conda_devenv_version": _min_conda_devenv_version,
-        "get_env": _get_env,
+        **conda_platform.selectors,
     }
 
     contents = preprocess_selectors(contents)
-
     return jinja2.Template(contents).render(**jinja_dict)
 
 
@@ -321,10 +409,18 @@ def merge_dependencies_version_specifications(
     yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
 
 
-def load_yaml_dict(filename: Path) -> tuple[YAMLData, dict]:
+def load_yaml_dict(
+    filename: Path, *, conda_platform: CondaPlatform | None = None
+) -> YAMLData:
+    """
+    Loads the given devenv.yml file, recursively processing it, using the selectors for the given
+    platform -- when not given, use the current platform.
+    """
     with open(filename) as f:
         contents = f.read()
-    rendered_contents = render_jinja(contents, filename, is_included=False)
+    rendered_contents = render_jinja(
+        contents, filename, is_included=False, conda_platform=conda_platform
+    )
 
     import yaml
 
@@ -347,12 +443,15 @@ def load_yaml_dict(filename: Path) -> tuple[YAMLData, dict]:
 
     merged_dict = merge(all_yaml_dicts.values())
 
-    # Force the "name" because we want to keep the name of the root yaml
-    if "name" in root_yaml:
-        merged_dict["name"] = root_yaml["name"]
+    # Force these keys to always be set by the starting/root devenv file, when defined.
+    force_root_keys = ("name", "channels", "platforms")
+    forced_keys = {k: root_yaml[k] for k in force_root_keys if k in root_yaml}
+    merged_dict.update(forced_keys)
 
-    environment = merged_dict.pop("environment", {})
-    return merged_dict, environment
+    if "environment" not in merged_dict:
+        merged_dict["environment"] = {}
+
+    return merged_dict
 
 
 def get_env_name_from_yaml_data(yaml_data: YAMLData) -> str:
@@ -398,41 +497,11 @@ def __write_conda_environment_file(
     return output_filename
 
 
-def truncate_history_file(env_directory: Path | None) -> None:
-    """
-    Since conda version 4.4 the "--prune" option does not prune the environment to match just the
-    supplied specs but take in account the previous environment history we truncate the history
-    file so only the package and version specs from the environment description file are used.
-
-    This is based on the comments:
-    - https://github.com/conda/conda/issues/6809#issuecomment-367877250
-    - https://github.com/conda/conda/issues/7279#issuecomment-389359679
-
-    If the behavior of the "--prune" option changes again or something in the lines
-    "--ignore-history" or "--prune-hard" ar implemented we should revisit this function and
-    update the "conda-env" arguments.
-    """
-    if env_directory is None:
-        return  # Environment does not exist, no history to truncate
-
-    from os.path import isfile, join
-    from time import time
-    from shutil import copyfile
-
-    history_filename = join(env_directory, "conda-meta", "history")
-    history_backup_filename = f"{history_filename}.{time()}"
-    if isfile(history_filename):
-        copyfile(history_filename, history_backup_filename)
-
-        with open(history_filename, "w") as history:
-            history.truncate()
-
-
 def __call_conda_env_update(
     args: argparse.Namespace,
     output_filename: Path,
     env_manager: Literal["conda", "mamba"],
-) -> str | int | None:
+) -> int:
     cmdline_args = [
         "env",
         "update",
@@ -467,18 +536,24 @@ def _call_conda(env_manager: Literal["conda", "mamba"], args: Sequence[str]) -> 
     )
 
 
+def _get_target_env_name(args: argparse.Namespace, conda_yaml_dict: YAMLData) -> str:
+    return args.name or get_env_name_from_yaml_data(conda_yaml_dict)
+
+
 def write_activate_deactivate_scripts(
     args: argparse.Namespace,
     conda_yaml_dict: YAMLData,
     env_manager: Literal["conda", "mamba"],
-    environment: Environment,
     env_directory: Path | None,
 ) -> None:
     if env_directory is None:
-        env_name = args.name or get_env_name_from_yaml_data(conda_yaml_dict)
+        env_name = _get_target_env_name(args, conda_yaml_dict)
         env_directory = get_env_directory(env_manager, env_name)
         if env_directory is None:
-            raise UsageError(f"Couldn't find directory of environment '{env_name}'")
+            raise UsageError(
+                f"Could not find directory of environment '{env_name}' "
+                "when trying to write activate scripts (should have been created by now)."
+            )
 
     from os.path import join
 
@@ -497,6 +572,7 @@ def write_activate_deactivate_scripts(
         # Linux and Mac should create a .sh
         files = [("devenv-vars.sh", "bash"), ("devenv-vars.fish", "fish")]
 
+    environment = conda_yaml_dict.get("environment", {})
     for filename, shell in files:
         activate_script = render_activate_script(environment, shell)
         deactivate_script = render_deactivate_script(environment, shell)
@@ -509,26 +585,17 @@ def write_activate_deactivate_scripts(
 
 def get_env_name(
     args: argparse.Namespace,
-    output_filename: Path,
-    conda_yaml_dict: YAMLData | None = None,
+    conda_yaml_dict: YAMLData,
 ) -> str:
     """
     :param args:
         When the user supplies the name option in the command line this namespace have a "name"
         defined with a not `None` value and this value is returned.
-    :param output_filename:
-        No jinja rendering is performed on this file if it is used.
     :param conda_yaml_dict:
         If supplied and not `None` then `output_filename` is ignored.
     """
     if args.name:
         return args.name
-
-    if conda_yaml_dict is None:
-        import yaml
-
-        with open(output_filename) as stream:
-            conda_yaml_dict = yaml.safe_load(stream)
 
     return get_env_name_from_yaml_data(conda_yaml_dict)
 
@@ -637,6 +704,32 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         default=None,
     )
 
+    group = parser.add_argument_group(
+        title="Locking",
+        description="Options related to creating and using lockfiles. Requires conda-lock installed.",
+    )
+    group.add_argument(
+        "--lock",
+        default=False,
+        action="store_true",
+        help="Create one or more lock files for the environment.devenv.yml file, or other file given by '--file'.",
+    )
+
+    group.add_argument(
+        "--use-locks",
+        choices=["auto", "yes", "no"],
+        default="auto",
+        help="How to use lock files: 'auto' will use them if available, 'yes' "
+        "will try to use and fail if not available, 'no' skip lockfiles always.",
+    )
+    group.add_argument(
+        "--update-locks",
+        metavar="PACKAGE",
+        action="append",
+        help="Update the given package in all lock files, while still obeying the pins in the devenv.yml file. "
+        "Can be passed multiple times. Pass '' (empty) to update all packages.",
+    )
+
     argv = sys.argv[1:] if argv is None else argv
     return parser.parse_args(argv)
 
@@ -688,6 +781,14 @@ def resolve_env_manager(args: argparse.Namespace) -> Literal["conda", "mamba"]:
     return env_manager
 
 
+def resolve_source_file(args: argparse.Namespace) -> Path:
+    """Get and verify that the argument passed on the command-line is correct."""
+    filename = Path(args.file)
+    if not filename.is_file():
+        raise UsageError(f'file "{filename}" does not exist.')
+    return filename
+
+
 def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
     if args.version:
         from conda_devenv import __version__
@@ -695,63 +796,198 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
         print(f"conda-devenv version {__version__}")
         return 0
 
-    filename = args.file
-    filename = os.path.abspath(filename)
-    if not os.path.isfile(filename):
-        raise UsageError(f'file "{filename}" does not exist.')
-
+    os.environ.update(parse_env_var_args(args.env_var))
     env_manager = resolve_env_manager(args)
 
-    conda_yaml_dict: YAMLData | None
-    is_devenv_input_file = filename.endswith(".devenv.yml")
-    if is_devenv_input_file:
-        # update environment variables
-        os.environ.update(parse_env_var_args(args.env_var))
+    if args.print or args.print_full:
+        return print_rendered_environment(args)
 
-        # render conda-devenv file
-        conda_yaml_dict, environment = load_yaml_dict(filename)
-        rendered_contents = render_for_conda_env(conda_yaml_dict)
+    if args.lock or args.update_locks:
+        return create_update_lock_file(env_manager, args)
 
-        if args.print or args.print_full:
-            print(rendered_contents)
-            if args.print_full:
-                print(render_for_conda_env({"environment": environment}, header=""))
-            return 0
+    elif args.use_locks in ("auto", "yes"):
+        try:
+            return create_update_env_using_lock_file(env_manager, args)
+        except LockFileNotFoundError as e:
+            if args.use_locks == "yes":
+                raise UsageError(
+                    f"lock file {e.lock_file} not found and --use-locks=yes, aborting."
+                )
+            return create_update_env(env_manager, args)
 
-        # Write to the output file
+    else:
+        return create_update_env(env_manager, args)
+
+
+def print_rendered_environment(args: argparse.Namespace) -> int:
+    """
+    If print_full is True, includes the 'environment' section (for environment
+    variable definition), which is usually left out of the processed environment.yml
+    file.
+    """
+    render = ProcessedEnvironment.from_file(resolve_source_file(args))
+    print(render.rendered_yaml)
+    if (
+        args.print_full
+        and render.conda_yaml_dict
+        and "environment" in render.conda_yaml_dict
+    ):
+        print(
+            render_for_conda_env(
+                {"environment": render.conda_yaml_dict["environment"]}, header=""
+            )
+        )
+    return 0
+
+
+def create_update_env(
+    env_manager: Literal["conda", "mamba"], args: argparse.Namespace
+) -> int:
+    filename = resolve_source_file(args)
+    processed = ProcessedEnvironment.from_file(filename)
+    if processed.is_devenv_file:
+        # Write the processed contents into the equivalent environment.yml file.
         output_filename = __write_conda_environment_file(
-            args, filename, rendered_contents
+            args, filename, processed.rendered_yaml
         )
     else:
-        conda_yaml_dict = None
-        environment = {}
-        # Just call conda-env directly in plain environment.yml files
+        # Just call conda-env directly in plain environment.yml files.
         output_filename = filename
-        if args.print:
-            with open(filename) as f:
-                print(f.read())
-            return 0
-
-    env_name = get_env_name(args, output_filename, conda_yaml_dict)
-    env_directory = get_env_directory(env_manager, env_name)
-
-    if not args.no_prune:
-        # Truncate the history file
-        truncate_history_file(env_directory)
 
     # Call conda-env update
-    retcode = __call_conda_env_update(args, output_filename, env_manager)
-    if retcode:
-        return retcode
+    if return_code := __call_conda_env_update(args, output_filename, env_manager):
+        return return_code
 
-    if is_devenv_input_file:
+    if processed.is_devenv_file:
+        env_name = get_env_name(args, processed.conda_yaml_dict)
+        env_directory = get_env_directory(env_manager, env_name)
+
         write_activate_deactivate_scripts(
             args,
             env_manager=env_manager,
-            conda_yaml_dict=conda_yaml_dict or {},
-            environment=environment,
+            conda_yaml_dict=processed.conda_yaml_dict,
             env_directory=env_directory,
         )
+    return 0
+
+
+def _get_lock_paths(
+    source: Path, env_name: str, conda_platform: CondaPlatform
+) -> tuple[Path, Path]:
+    base_lock_file = (
+        source.parent / f".{env_name}.{conda_platform.value}.lock_environment.yml"
+    )
+    target_lock_file = (
+        source.parent / f".{env_name}.{conda_platform.value}.conda-lock.yml"
+    )
+    return base_lock_file, target_lock_file
+
+
+def create_update_lock_file(
+    env_manager: Literal["conda", "mamba"], args: argparse.Namespace
+) -> int:
+    def get_required_key(name: str) -> Sequence[str]:
+        try:
+            return processed_env.conda_yaml_dict[name]
+        except KeyError:
+            raise UsageError(
+                f"Locking requires key '{name}' defined in the starting devenv.yml file"
+            )
+
+    filename = resolve_source_file(args)
+    processed_env = ProcessedEnvironment.from_file(filename)
+    if not processed_env.is_devenv_file:
+        raise UsageError("Locking requires a .devenv.yml file")
+    platforms = get_required_key("platforms")
+    _ = get_required_key("channels")
+
+    env_name = _get_target_env_name(args, processed_env.conda_yaml_dict)
+    for platform in platforms:
+        conda_platform = CondaPlatform(platform)
+        plat_render = ProcessedEnvironment.from_file(
+            filename, conda_platform=conda_platform
+        )
+        base_lock_file, target_lock_file = _get_lock_paths(
+            filename, env_name, conda_platform
+        )
+        header = f"# Generated by conda-devenv locking support for env {env_name} platform {platform}\n"
+        base_lock_file.write_text(header + plat_render.rendered_yaml)
+
+        if not args.quiet:
+            verb = "Creating" if not base_lock_file.is_file() else "Updating"
+            print(
+                f"{Fore.BLUE}{verb} lock files for "
+                f"{Fore.MAGENTA}{env_name}{Fore.BLUE} platform "
+                f"{Fore.GREEN}{platform}{Fore.RESET}"
+            )
+
+        update_args = []
+        if args.update_locks:
+            for name in args.update_locks:
+                update_args += ["--update", name]
+
+        cmdline_args = [
+            "lock",
+            "--file",
+            str(base_lock_file),
+            "--platform",
+            platform,
+            "--lockfile",
+            str(target_lock_file),
+            *update_args,
+        ]
+        if not args.quiet:
+            full_cmdline = [str(env_manager), *cmdline_args]
+            print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+
+        if return_code := _call_conda(env_manager, cmdline_args):
+            return return_code
+
+    return 0
+
+
+def create_update_env_using_lock_file(
+    env_manager: Literal["conda", "mamba"], args: argparse.Namespace
+) -> int:
+    filename = resolve_source_file(args)
+    processed_env = ProcessedEnvironment.from_file(filename)
+
+    conda_platform = CondaPlatform.current()
+    _, target_lock_file = _get_lock_paths(
+        filename,
+        get_env_name_from_yaml_data(processed_env.conda_yaml_dict),
+        conda_platform,
+    )
+    if not target_lock_file.is_file():
+        raise LockFileNotFoundError(target_lock_file)
+
+    env_name = _get_target_env_name(args, processed_env.conda_yaml_dict)
+    cmdline_args = ["lock", "install", "--name", env_name, str(target_lock_file)]
+    env_directory = get_env_directory(env_manager, env_name)
+    if not args.quiet:
+        verb = (
+            "Updating"
+            if env_directory is not None and env_directory.is_dir()
+            else "Creating"
+        )
+        print(
+            f"{Fore.BLUE}{verb} env "
+            f"{Fore.MAGENTA}{env_name}{Fore.BLUE} platform "
+            f"{Fore.GREEN}{conda_platform.value}{Fore.BLUE} using lockfile{Fore.RESET}"
+        )
+
+        full_cmdline = [str(env_manager), *cmdline_args]
+        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+
+    if return_code := _call_conda(env_manager, cmdline_args):
+        return return_code
+
+    write_activate_deactivate_scripts(
+        args,
+        env_manager=env_manager,
+        conda_yaml_dict=processed_env.conda_yaml_dict or {},
+        env_directory=env_directory,
+    )
     return 0
 
 

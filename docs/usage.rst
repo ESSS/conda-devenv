@@ -226,6 +226,140 @@ Here's how ``conda-devenv`` works behind the scenes:
    and ``$PREFIX/etc/conda/deactivate.d`` respectively which will set/unset the environment variables.
 
 
+Locking
+=======
+
+.. versionadded:: 3.0
+
+Lock files can be used to generate fully reproducible environments.
+
+Locking support was designed to be non-intrusive and used seamlessly with the rest of ``conda-devenv`` features,
+being built on the top of the excellent `conda-lock`_ tool.
+
+`conda-lock`_ must be installed to use the locking features.
+
+File changes
+------------
+
+Locking supports all the features normal ``.devenv.yml`` files support, except it requires two new keys:
+
+* ``channels``: a list of valid channels for packages. These override the global configuration. If you are using
+  private channels whose URL include authentication information, make sure to use them as environment variables
+  (see `Authenticated channels <https://conda.github.io/conda-lock/authenticated_channels>`__).
+* ``platforms``: a list of platforms to generate lock files for.
+  Because of Jinja2, different platforms might have different lock files, and this list will control
+  which lock files will be generated.
+
+  The supported platforms are:
+
+  * ``win-32``
+  * ``win-64``
+  * ``linux-32``
+  * ``linux-64``
+  * ``osx-32``
+  * ``osx-64``
+
+Example of a file that can be used with locking.
+
+.. code-block:: yaml
+
+    name: core
+    channels:
+      - https://host.tld/t/$QUETZ_API_KEY/channel_name
+      - conda-forge
+    platforms:
+      - win-64
+      - linux-64
+    dependencies:
+      - numpy
+      - pandas
+      - pytest
+      - pywin32  # [win]
+      - flock  # [unix]
+      - invoke
+    environment:
+      PYTHONPATH:
+        - {{ root }}/source/python
+
+
+Generating
+----------
+
+To start using locks:
+
+.. code-block:: console
+
+    $ conda devenv --lock
+
+This will generate one lock file for each platform defined in ``platforms``:
+
+::
+
+    .core.linux-64.conda-lock.yml
+    .core.win-64.conda-lock.yml
+
+
+The ``core`` part of the name comes from the ``name`` definition. These files should be
+committed to version control.
+
+This command will also generate other ``*.lock_environment.yml`` in the same directory,
+however those are not supposed to be committed to version control
+and should be ignored.
+
+Using
+-----
+
+With lock files in the current directory, the usual ``conda-devenv`` command will automatically use them:
+
+.. code-block:: console
+
+    $ conda devenv
+
+No other changes are required.
+
+You can control if ``devenv`` should use lock files using the ``--use-locks {auto,yes,no}`` command-line option.
+
+Updating
+--------
+
+If you add or remove dependencies, or change version requirements, you can update the locks with:
+
+.. code-block:: console
+
+    $ conda devenv --lock
+
+This will attempt to keep the existing pins as much as possible.
+
+To update to the latest version of one or more libraries, for all platforms:
+
+.. code-block:: console
+
+    $ conda devenv --update-locks pytest --update-locks boltons
+
+If you want to update all libraries to the latest version, pass an ``""`` (empty) value:
+
+.. code-block:: console
+
+    $ conda devenv --update-locks ""
+
+
+.. note::
+
+    Currently the following selectors likely will not work properly when
+    used to generate lock files for multiple platforms:
+
+    * ``aarch64``
+    * ``arm64``
+    * ``x86``
+    * ``x86_64``
+
+    The reason for that is that this information is not encoded in the
+    conda platform convention (``win-64``, ``linux-64``, etc).
+
+    There is no known workaround for this at the moment.
+
+.. _conda-lock: https://github.com/conda/conda-lock
+
 Command-line reference
 ======================
 
@@ -237,18 +371,20 @@ Default options
 Options
 -------
 
+.. To generate the output below, set COLUMNS=80 before calling `conda devenv --help`.
 
 .. code-block:: console
 
     $ conda devenv --help
-
-    usage: conda-devenv [-h] [--file [FILE]] [--name [NAME]] [--print]
-                        [--print-full] [--no-prune] [--output-file [OUTPUT_FILE]]
-                        [--quiet] [--env-var ENV_VAR] [--verbose] [--version]
+    usage: devenv [-h] [--file [FILE]] [--name [NAME]] [--print] [--print-full]
+                  [--no-prune] [--output-file [OUTPUT_FILE]] [--quiet]
+                  [--env-var ENV_VAR] [--verbose] [--version]
+                  [--env-manager ENV_MANAGER] [--lock] [--use-locks {auto,yes,no}]
+                  [--update-locks PACKAGE]
 
     Work with multiple conda-environment-like yaml files in dev mode.
 
-    optional arguments:
+    options:
       -h, --help            show this help message and exit
       --file [FILE], -f [FILE]
                             The environment.devenv.yml file to process. The
@@ -274,35 +410,19 @@ Options
                             the value of 'CONDA_DEVENV_ENV_MANAGER' environment
                             variable if set.
 
+    Locking:
+      Options related to creating and using lockfiles. Requires conda-lock
+      installed.
 
-``--file``
-~~~~~~~~~~
-
-The input file to be processed
-
-``--print``
-~~~~~~~~~~~
-
-Prints the contents of the generated file and exits.
-
-``--no-prune``
-~~~~~~~~~~~~~~
-
-Don't pass the ``--prune`` flag when calling ``conda env update``
-
-``--output-file``
-~~~~~~~~~~~~~~~~~
-
-Specifies the ``conda-env`` file which will be created.
-
-``--env-var``
-~~~~~~~~~~~~~
-
-Define or override environment variables in the form ``VAR_NAME`` or ``VAR_NAME=VALUE``.
-Can be used multiple times for different variables.
-
-``--env-manager``
-~~~~~~~~~~~~~~~~~
-
-Uses the given environment manager to update the conda environment.
-The command line flag overrides the ``CONDA_DEVENV_ENV_MANAGER`` environment variable.
+      --lock                Create one or more lock files for the
+                            environment.devenv.yml file, or other file given by '
+                            --file'.
+      --use-locks {auto,yes,no}
+                            How to use lock files: 'auto' will use them if
+                            available, 'yes' will try to use and fail if not
+                            available, 'no' skip lockfiles always.
+      --update-locks PACKAGE
+                            Update the given package in all lock files, while
+                            still obeying the pins in the devenv.yml file. Can be
+                            passed multiple times. Pass '' (empty) to update all
+                            packages.
