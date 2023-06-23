@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+UNRELEASED
+----------
+
+* Improved message with ``--use-locks=yes`` and no lock files are found.
+
 3.0.0 (2023-06-19)
 ------------------
 
