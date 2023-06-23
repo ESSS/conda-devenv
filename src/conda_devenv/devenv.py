@@ -813,7 +813,7 @@ def main_with_args_namespace(args: argparse.Namespace) -> int | str | None:
                 raise UsageError(
                     f"lock file {e.lock_file} not found and --use-locks=yes, aborting."
                 )
-            return create_update_env(env_manager, args)
+        return create_update_env(env_manager, args)
 
     else:
         return create_update_env(env_manager, args)
