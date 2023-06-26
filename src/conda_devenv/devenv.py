@@ -519,7 +519,7 @@ def __call_conda_env_update(
 
     if not args.quiet:
         full_cmdline = [str(env_manager)] + cmdline_args
-        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}", flush=True)
 
     return _call_conda(env_manager, cmdline_args)
 
@@ -918,7 +918,8 @@ def create_update_lock_file(
             print(
                 f"{Fore.BLUE}{verb} lock files for "
                 f"{Fore.MAGENTA}{env_name}{Fore.BLUE} platform "
-                f"{Fore.GREEN}{platform}{Fore.RESET}"
+                f"{Fore.GREEN}{platform}{Fore.RESET}",
+                flush=True,
             )
 
         update_args = []
@@ -938,7 +939,7 @@ def create_update_lock_file(
         ]
         if not args.quiet:
             full_cmdline = [str(env_manager), *cmdline_args]
-            print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+            print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}", flush=True)
 
         if return_code := _call_conda(env_manager, cmdline_args):
             return return_code
@@ -973,11 +974,12 @@ def create_update_env_using_lock_file(
         print(
             f"{Fore.BLUE}{verb} env "
             f"{Fore.MAGENTA}{env_name}{Fore.BLUE} platform "
-            f"{Fore.GREEN}{conda_platform.value}{Fore.BLUE} using lockfile{Fore.RESET}"
+            f"{Fore.GREEN}{conda_platform.value}{Fore.BLUE} using lockfile{Fore.RESET}",
+            flush=True,
         )
 
         full_cmdline = [str(env_manager), *cmdline_args]
-        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}")
+        print(f"{Fore.CYAN}{' '.join(full_cmdline)}{Fore.RESET}", flush=True)
 
     if return_code := _call_conda(env_manager, cmdline_args):
         return return_code
