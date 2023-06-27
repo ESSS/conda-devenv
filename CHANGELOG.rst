@@ -6,6 +6,7 @@ UNRELEASED
 ----------
 
 * Improved message with ``--use-locks=yes`` and no lock files are found.
+* Force flush calls when reporting progress updates, which improves seeing these updates on CI.
 
 3.0.0 (2023-06-19)
 ------------------
