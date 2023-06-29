@@ -222,8 +222,8 @@ Constraints
 In dependent repositories, it is common that a core/base repository only works with some specific versions of a
 library, for example:
 
-* A repository of common utilities contains tasks that only work with ``vtk >9`` or ``alive-progress < 2``.
-* Some framework code requires a specific version of another library, for example ``Qt =5.12`` or ``pytest >7``.
+* A repository of common utilities contains tasks that only work with ``vtk >9`` or ``alive-progress <2``.
+* Some framework code requires a specific version of another library, for example ``qt =5.12`` or ``pytest >7``.
 
 The problem here is that those repositories do not really depend on those packages, because they
 are actually *optional* -- for example, one can use the common repository but not depend on ``vtk``.
