@@ -276,6 +276,18 @@ Consider another downstream ``devenv.yml`` file:
 In this case, ``pytest`` is directly declared, so the constraint will be respected and
 ``['boltons', 'attrs', 'pyqt', 'pytest >7']`` will be installed.
 
+.. note::
+
+    A known limitation is that the constraints will only be respected if a package is explicitly declared,
+    so it will not work for *transitive dependencies*.
+
+    For example, a constraint of ``pytest >7`` will only be respected if somebody includes ``pytest``
+    as a direct dependency. If ``pytest`` is only included indirectly, for example via ``pytest-xdist``,
+    then the constraint will not be honored.
+
+    Support for this is currently out of scope for ``conda-devenv``, as it would need to solve
+    the environment in order to realize all the actual packages that will be installed.
+
 Locking
 =======
 
