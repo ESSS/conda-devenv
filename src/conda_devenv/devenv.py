@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import collections
 import json
 import os
 import re
@@ -312,7 +313,7 @@ def merge(
                 if isinstance(value, dict):
                     final_dict[key] = merge([final_dict[key], value])
                 elif isinstance(value, list):
-                    # The can be dicts inside lists `'dependencies': [{'pip': ['foo', 'bar']}]`.
+                    # There can be dicts inside lists `'dependencies': [{'pip': ['foo', 'bar']}]`.
                     target_strings, target_dicts = separate_strings_from_dicts(
                         final_dict[key]
                     )
@@ -335,26 +336,36 @@ def merge(
                     raise ValueError(message)
             elif value is not None:
                 final_dict[key] = value
-    merge_dependencies_version_specifications(final_dict, key_to_merge="dependencies")
+
     return final_dict
+
+
+def process_constraints(yaml_dict: YAMLData) -> None:
+    """
+    Adds new package specifications to 'dependencies' if they appear in the 'constraints' section.
+    """
+    if not yaml_dict.get("constraints") or not yaml_dict.get("dependencies"):
+        return
+
+    dependency_names = {
+        PackageSpecifier.parse(dep).name for dep in yaml_dict["dependencies"]
+    }
+
+    added_dependencies = [
+        constraint
+        for constraint in yaml_dict["constraints"]
+        if PackageSpecifier.parse(constraint).name in dependency_names
+    ]
+
+    yaml_dict["dependencies"] += added_dependencies
 
 
 def merge_dependencies_version_specifications(
     yaml_dict: YAMLData, key_to_merge: str, pip: bool = False
 ) -> None:
-    import collections
-    import re
-
     value_to_merge = yaml_dict.get(key_to_merge, None)
     if value_to_merge is None:
         return
-
-    package_pattern = (
-        r"^(?P<channel>[a-z0-9_\-/.]+::)?"
-        # package regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
-        r"(?P<package>[a-z0-9_\-.]+)"
-        r"\s*(?P<version>.*)$"
-    )
 
     new_dependencies: dict[str, collections.OrderedDict] = {}
     new_dict_dependencies = []
@@ -375,28 +386,20 @@ def merge_dependencies_version_specifications(
                 package_name = dep
                 package_version = ""
             else:
-                m = re.match(package_pattern, dep, flags=re.IGNORECASE)
-                if m is None:
-                    raise RuntimeError(
-                        'The package version specification "{}" do not follow the'
-                        " expected format.".format(dep)
-                    )
+                package = PackageSpecifier.parse(dep)
                 # Consider the channel name as part of the package name.
                 # If multiple channels are specified, the package will be repeated.
-                package_name = m.group("package")
-                if m.group("channel"):
-                    package_name = m.group("channel") + package_name
-
-                package_version = m.group("version")
+                package_name = package.channel + package.name
+                package_version = package.version
 
             # OrderedDict is used as an ordered set, the value is ignored.
             version_matchers = new_dependencies.setdefault(
                 package_name, collections.OrderedDict()
             )
             if len(package_version) > 0:
-                version_matchers[package_version] = True
+                version_matchers[package_version] = None
         else:
-            raise RuntimeError(f"Only strings and dicts are supported, got: {dep!r}")
+            raise UsageError(f"Only strings and dicts are supported, got: {dep!r}")
 
     result = set()
     for dep_name, dep_version_matchers in new_dependencies.items():
@@ -407,6 +410,48 @@ def merge_dependencies_version_specifications(
 
     new_dict_dependencies = sorted(new_dict_dependencies, key=lambda x: list(x.keys()))
     yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
+
+
+@dataclass(frozen=True)
+class PackageSpecifier:
+    """
+    A package specifiers as can be declared in a "dependencies" section, for example:
+
+        dependencies:
+        - conda-forge::pytest >=7, !=7.1.1
+
+    This would produce PackageSpecifier("conda-forge", "pytest", ">=7, !=7.1.1".
+
+    Note that channel and version might be "".
+    """
+
+    channel: str
+    name: str
+    version: str
+
+    _PACKAGE_PATTERN = re.compile(
+        # Channel is optional.
+        r"^(?P<channel>[a-z0-9_\-/.]+::)?"
+        # Package regex based on https://conda.io/docs/building/pkg-name-conv.html#package-naming-conventions
+        r"(?P<package>[a-z0-9_\-.]+)"
+        # Version.
+        r"\s*(?P<version>.*)$",
+        flags=re.IGNORECASE,
+    )
+
+    @classmethod
+    def parse(cls, specifier: str) -> Self:
+        m = re.match(cls._PACKAGE_PATTERN, specifier)
+        if m is None:
+            raise UsageError(
+                f'The package version specification "{specifier}" do not follow the'
+                " expected format."
+            )
+        return cls(
+            channel=m.group("channel") or "",
+            name=m.group("package"),
+            version=m.group("version") or "",
+        )
 
 
 def load_yaml_dict(
@@ -426,6 +471,9 @@ def load_yaml_dict(
 
     root_yaml = yaml.safe_load(rendered_contents)
 
+    # Drop constraints from the root yaml file.
+    root_yaml.pop("constraints", None)
+
     all_yaml_dicts = handle_includes(filename, root_yaml)
 
     for filename, yaml_dict in all_yaml_dicts.items():
@@ -442,6 +490,11 @@ def load_yaml_dict(
             )
 
     merged_dict = merge(all_yaml_dicts.values())
+
+    process_constraints(merged_dict)
+    merged_dict.pop("constraints", None)
+
+    merge_dependencies_version_specifications(merged_dict, key_to_merge="dependencies")
 
     # Force these keys to always be set by the starting/root devenv file, when defined.
     force_root_keys = ("name", "channels", "platforms")

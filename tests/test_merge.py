@@ -5,6 +5,7 @@ import pytest
 from conda_devenv.devenv import merge
 from conda_devenv.devenv import merge_dependencies_version_specifications
 from conda_devenv.devenv import separate_strings_from_dicts
+from conda_devenv.devenv import UsageError
 
 
 def test_merge_plain() -> None:
@@ -76,6 +77,7 @@ def test_merge_dependencies_with_pip() -> None:
     }
 
     merged_dict = merge([a, b])
+    merge_dependencies_version_specifications(merged_dict, key_to_merge="dependencies")
 
     assert merged_dict == {
         "dependencies": [
@@ -171,9 +173,7 @@ def test_merge_dependencies_version_specifications_errors() -> None:
             "==1",
         ],
     }
-    with pytest.raises(
-        RuntimeError, match='.*"==1" do not follow the expected format.*'
-    ):
+    with pytest.raises(UsageError, match='.*"==1" do not follow the expected format.*'):
         merge_dependencies_version_specifications(
             merged_dict, key_to_merge="dependencies"
         )
@@ -183,7 +183,7 @@ def test_merge_dependencies_version_specifications_errors() -> None:
             1,
         ],
     }
-    with pytest.raises(RuntimeError, match=".*Only strings and dicts are supported.*"):
+    with pytest.raises(UsageError, match=".*Only strings and dicts are supported.*"):
         merge_dependencies_version_specifications(
             merged_dict2, key_to_merge="dependencies"
         )

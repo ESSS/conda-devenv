@@ -5,6 +5,7 @@ CHANGELOG
 UNRELEASED
 ----------
 
+* Added support for version constraints in ``devenv.yml`` files. Consult the `docs <https://conda-devenv.readthedocs.io/en/latest/usage.html#constraints>`__.
 * Improved message with ``--use-locks=yes`` and no lock files are found.
 * Force flush calls when reporting progress updates, which improves seeing these updates on CI.
 

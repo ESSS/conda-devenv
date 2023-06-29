@@ -1,9 +1,12 @@
 import textwrap
+from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
 
 from conda_devenv.devenv import load_yaml_dict
+from conda_devenv.devenv import process_constraints
 
 
 def test_load_yaml_dict(datadir) -> None:
@@ -180,3 +183,127 @@ def test_downstream_overrides_platforms(tmp_path) -> None:
         "platforms": ["win-64", "osx-64"],
         "environment": {},
     }
+
+
+class TestConstraints:
+    def test_no_constraints(self) -> None:
+        data = {"dependencies": ["attrs >19", "boltons"]}
+        process_constraints(data)
+        assert data == {"dependencies": ["attrs >19", "boltons"]}
+
+        data = {
+            "dependencies": ["attrs >19", "boltons"],
+            "constraints": [],
+        }
+        process_constraints(data)
+        assert data == {
+            "dependencies": ["attrs >19", "boltons"],
+            "constraints": [],
+        }
+
+        data2 = {
+            "dependencies": ["attrs >19", "boltons"],
+            "constraints": None,
+        }
+        process_constraints(data2)
+        assert data2 == {
+            "dependencies": ["attrs >19", "boltons"],
+            "constraints": None,
+        }
+
+        data3: dict[str, Any] = {
+            "dependencies": [],
+            "constraints": None,
+        }
+        process_constraints(data3)
+        assert data3 == {
+            "dependencies": [],
+            "constraints": None,
+        }
+
+    def test_constraints_not_used(self) -> None:
+        """
+        We have a constraints section, but the constrained packages
+        are not directly declared as dependency.
+        """
+        data = {
+            "dependencies": ["attrs >19", "boltons"],
+            "constraints": ["pytest"],
+        }
+        process_constraints(data)
+        assert data["dependencies"] == ["attrs >19", "boltons"]
+
+    def test_constraints_respected(self) -> None:
+        """
+        Constraints are declared as dependency if they are explicitly declared.
+        """
+        data = {
+            "dependencies": ["attrs >19", "boltons", "pytest>=6"],
+            "constraints": ["pytest >7", "attrs >=20", "requests <2"],
+        }
+        process_constraints(data)
+        assert data["dependencies"] == [
+            "attrs >19",
+            "boltons",
+            "pytest>=6",
+            "pytest >7",
+            "attrs >=20",
+        ]
+
+    def test_integration(self, tmp_path: Path) -> None:
+        utils_fn = tmp_path / "common-utils.devenv.yml"
+        utils_fn.write_text(
+            textwrap.dedent(
+                """
+                name: common-utils
+                dependencies:
+                - attrs >19
+                constraints:
+                - pytest >7
+                - ftputil >3
+                """
+            )
+        )
+
+        core_fn = tmp_path / "common-core.devenv.yml"
+        core_fn.write_text(
+            textwrap.dedent(
+                """
+                name: common-core
+                includes:
+                - {{ root }}/common-utils.devenv.yml
+                dependencies:
+                - boltons
+                constraints:
+                - requests >2
+                - diff-cover >4
+                """
+            )
+        )
+
+        app_fn = tmp_path / "app.devenv.yml"
+        app_fn.write_text(
+            textwrap.dedent(
+                """
+                name: app
+                includes:
+                - {{ root }}/common-core.devenv.yml
+                dependencies:
+                - pyqt
+                - requests
+                - pytest >=6.2
+                """
+            )
+        )
+
+        assert load_yaml_dict(app_fn) == {
+            "name": "app",
+            "dependencies": [
+                "attrs >19",
+                "boltons",
+                "pyqt",
+                "pytest >=6.2,>7",
+                "requests >2",
+            ],
+            "environment": {},
+        }
