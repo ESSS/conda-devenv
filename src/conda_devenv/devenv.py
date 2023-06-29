@@ -340,7 +340,7 @@ def merge(
     return final_dict
 
 
-def process_constraints(yaml_dict: YAMLData) -> None:
+def process_constraints_into_dependencies(yaml_dict: YAMLData) -> None:
     """
     Adds new package specifications to 'dependencies' if they appear in the 'constraints' section.
     """
@@ -471,9 +471,6 @@ def load_yaml_dict(
 
     root_yaml = yaml.safe_load(rendered_contents)
 
-    # Drop constraints from the root yaml file.
-    root_yaml.pop("constraints", None)
-
     all_yaml_dicts = handle_includes(filename, root_yaml)
 
     for filename, yaml_dict in all_yaml_dicts.items():
@@ -491,7 +488,7 @@ def load_yaml_dict(
 
     merged_dict = merge(all_yaml_dicts.values())
 
-    process_constraints(merged_dict)
+    process_constraints_into_dependencies(merged_dict)
     merged_dict.pop("constraints", None)
 
     merge_dependencies_version_specifications(merged_dict, key_to_merge="dependencies")

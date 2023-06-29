@@ -6,7 +6,7 @@ import pytest
 import yaml
 
 from conda_devenv.devenv import load_yaml_dict
-from conda_devenv.devenv import process_constraints
+from conda_devenv.devenv import process_constraints_into_dependencies
 
 
 def test_load_yaml_dict(datadir) -> None:
@@ -188,14 +188,14 @@ def test_downstream_overrides_platforms(tmp_path) -> None:
 class TestConstraints:
     def test_no_constraints(self) -> None:
         data = {"dependencies": ["attrs >19", "boltons"]}
-        process_constraints(data)
+        process_constraints_into_dependencies(data)
         assert data == {"dependencies": ["attrs >19", "boltons"]}
 
         data = {
             "dependencies": ["attrs >19", "boltons"],
             "constraints": [],
         }
-        process_constraints(data)
+        process_constraints_into_dependencies(data)
         assert data == {
             "dependencies": ["attrs >19", "boltons"],
             "constraints": [],
@@ -205,7 +205,7 @@ class TestConstraints:
             "dependencies": ["attrs >19", "boltons"],
             "constraints": None,
         }
-        process_constraints(data2)
+        process_constraints_into_dependencies(data2)
         assert data2 == {
             "dependencies": ["attrs >19", "boltons"],
             "constraints": None,
@@ -215,7 +215,7 @@ class TestConstraints:
             "dependencies": [],
             "constraints": None,
         }
-        process_constraints(data3)
+        process_constraints_into_dependencies(data3)
         assert data3 == {
             "dependencies": [],
             "constraints": None,
@@ -230,7 +230,7 @@ class TestConstraints:
             "dependencies": ["attrs >19", "boltons"],
             "constraints": ["pytest"],
         }
-        process_constraints(data)
+        process_constraints_into_dependencies(data)
         assert data["dependencies"] == ["attrs >19", "boltons"]
 
     def test_constraints_respected(self) -> None:
@@ -241,7 +241,7 @@ class TestConstraints:
             "dependencies": ["attrs >19", "boltons", "pytest>=6"],
             "constraints": ["pytest >7", "attrs >=20", "requests <2"],
         }
-        process_constraints(data)
+        process_constraints_into_dependencies(data)
         assert data["dependencies"] == [
             "attrs >19",
             "boltons",
