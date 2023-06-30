@@ -214,17 +214,79 @@ However, the same environment variable defined as a single string (like ``DB_LOC
 unless it is not allowed to 'pass through' using the ``# [not is_included]`` selector above as an example.
 In other words, an 'overwrite' situation is not allowed between files.
 
-How it works
-============
+Constraints
+===========
 
-Here's how ``conda-devenv`` works behind the scenes:
+.. versionadded:: 3.1
 
-1. Generate an ``environment.yml`` file in the same directory as the ``environment.devenv.yml`` file. The generated
-   ``environment.yml`` should **not** be added to VCS.
-2. Call ``conda env update --prune --file environment.yml``.
-3. Generate ``devenv-activate{.sh,.bat}`` and ``devenv-deactivate{.sh,.bat}`` scripts in ``$PREFIX/etc/conda/activate.d``
-   and ``$PREFIX/etc/conda/deactivate.d`` respectively which will set/unset the environment variables.
+In dependent repositories, it is common that a core/base repository only works with some specific versions of a
+library, for example:
 
+* A repository of common utilities contains tasks that only work with ``vtk >9`` or ``alive-progress <2``.
+* Some framework code requires a specific version of another library, for example ``qt =5.12`` or ``pytest >7``.
+
+The problem here is that those repositories do not really depend on those packages, because they
+are actually *optional* -- for example, one can use the common repository but not depend on ``vtk``.
+For this reason the common repository cannot declare the dependency directly, otherwise all
+downstream ``devenv.yml`` files will inherit that dependency.
+
+`Conda <https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#run-constrained>`__
+and `pip <https://pip.pypa.io/en/stable/user_guide/#constraints-files>`__ have the concept of *constraints*,
+which are package version restrictions that do not cause a package to be included in the environment directly,
+but if they are included in the environment by other means, then their version specifiers must be respected.
+
+Constraints are optional and can be declared in the ``constraints`` key:
+
+.. code-block:: yaml
+
+    name: common-utils
+    dependencies:
+    - boltons
+    - attrs
+    constraints:
+    - pytest >7
+
+Running ``conda devenv`` in this file will install ``['boltons', 'attrs']``, but not ``pytest``.
+
+Consider this downstream ``devenv.yml`` file:
+
+.. code-block:: yaml
+
+    name: app
+    includes:
+    - {{ root }}/../common-utils/environment.devenv.yml
+    dependencies:
+    - pyqt
+
+This file includes ``common-utils/environment.devenv.yml``, and even thought ``common-utils/environment.devenv.yml``
+has a ``pytest >7`` constraint, because ``app/environment.devenv.yml`` does not declare ``pytest`` as a
+direct dependency, running ``conda devenv`` will install only ``['boltons', 'attrs', 'pyqt']``.
+
+Consider another downstream ``devenv.yml`` file:
+
+.. code-block:: yaml
+    name: app2
+    includes:
+    - {{ root }}/../common-utils/environment.devenv.yml
+    dependencies:
+    - pyqt
+    - pytest
+```
+
+In this case, ``pytest`` is directly declared, so the constraint will be respected and
+``['boltons', 'attrs', 'pyqt', 'pytest >7']`` will be installed.
+
+.. note::
+
+    A known limitation is that the constraints will only be respected if a package is explicitly declared,
+    so it will not work for *transitive dependencies*.
+
+    For example, a constraint of ``pytest >7`` will only be respected if somebody includes ``pytest``
+    as a direct dependency. If ``pytest`` is only included indirectly, for example via ``pytest-xdist``,
+    then the constraint will not be honored.
+
+    Support for this is currently out of scope for ``conda-devenv``, as it would need to solve
+    the environment in order to realize all the actual packages that will be installed.
 
 Locking
 =======
@@ -426,3 +488,16 @@ Options
                             still obeying the pins in the devenv.yml file. Can be
                             passed multiple times. Pass '' (empty) to update all
                             packages.
+
+
+
+How it works
+============
+
+Here's how ``conda-devenv`` works behind the scenes:
+
+1. Generate an ``environment.yml`` file in the same directory as the ``environment.devenv.yml`` file. The generated
+   ``environment.yml`` should **not** be added to VCS.
+2. Call ``conda env update --prune --file environment.yml``.
+3. Generate ``devenv-activate{.sh,.bat}`` and ``devenv-deactivate{.sh,.bat}`` scripts in ``$PREFIX/etc/conda/activate.d``
+   and ``$PREFIX/etc/conda/deactivate.d`` respectively which will set/unset the environment variables.
