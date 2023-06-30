@@ -2,8 +2,8 @@
 CHANGELOG
 =========
 
-UNRELEASED
-----------
+3.1.0 (2023-06-30)
+------------------
 
 * Added support for version constraints in ``devenv.yml`` files. Consult the `docs <https://conda-devenv.readthedocs.io/en/latest/usage.html#constraints>`__.
 * Improved message with ``--use-locks=yes`` and no lock files are found.
