@@ -265,13 +265,13 @@ direct dependency, running ``conda devenv`` will install only ``['boltons', 'att
 Consider another downstream ``devenv.yml`` file:
 
 .. code-block:: yaml
+
     name: app2
     includes:
     - {{ root }}/../common-utils/environment.devenv.yml
     dependencies:
     - pyqt
     - pytest
-```
 
 In this case, ``pytest`` is directly declared, so the constraint will be respected and
 ``['boltons', 'attrs', 'pyqt', 'pytest >7']`` will be installed.
