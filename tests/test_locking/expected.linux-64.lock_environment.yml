@@ -5,6 +5,7 @@ channels:
 dependencies:
 - flock
 - pytest
+- shmem
 environment: {}
 name: foo-py310
 platforms:

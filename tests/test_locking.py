@@ -17,16 +17,31 @@ def test_create_and_update_lock_files(
     tmp_path: Path, mocker, monkeypatch, file_regression
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    env_file = tmp_path / "environment.devenv.yml"
-    env_file.write_text(
+
+    base_env_file = tmp_path / "base.devenv.yml"
+    base_env_file.write_text(
         dedent(
             """
-            name: foo-py310
             channels:
             - conda-forge
             platforms:
             - win-64
             - linux-64
+            dependencies:
+            - pytest
+            - wincom  # [win]
+            - shmem  # [unix]
+            """
+        )
+    )
+
+    env_file = tmp_path / "environment.devenv.yml"
+    env_file.write_text(
+        dedent(
+            """
+            name: foo-py310
+            includes:
+            - {{ root }}/base.devenv.yml
             dependencies:
             - pytest
             - pywin32  # [win]

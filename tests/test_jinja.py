@@ -18,6 +18,7 @@ def test_jinja_root() -> None:
         "{{root}}",
         filename=Path("path/to/file"),
         is_included=False,
+        conda_platform=CondaPlatform.current(),
     ) == os.path.abspath("path/to")
 
 
@@ -33,19 +34,34 @@ def test_jinja_os(monkeypatch) -> None:
     ).strip()
 
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
         == "variable is not set"
     )
 
     monkeypatch.setenv("ENV_VARIABLE", "1")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
         == "variable is set"
     )
 
     monkeypatch.setenv("ENV_VARIABLE", "2")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
         == "variable is not set"
     )
 
@@ -65,25 +81,47 @@ def test_jinja_sys(monkeypatch) -> None:
 
     monkeypatch.setattr(sys, "platform", "linux")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "linux!"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "linux!"
     )
 
     monkeypatch.setattr(sys, "platform", "windows")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
         == "windows!"
     )
 
     monkeypatch.setattr(sys, "platform", "darwin")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "others!"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "others!"
     )
 
 
 def test_jinja_platform(monkeypatch) -> None:
     template = "{{ platform.python_revision() }}"
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
         == platform.python_revision()
     )
 
@@ -92,21 +130,47 @@ def test_jinja_aarch64(monkeypatch) -> None:
     template = "{{ aarch64 }}"
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -115,26 +179,58 @@ def test_jinja_arm64(monkeypatch) -> None:
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(sys, "platform", "darwin")
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(sys, "platform", "win32")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -143,20 +239,46 @@ def test_jinja_x86(monkeypatch) -> None:
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -165,37 +287,83 @@ def test_jinja_x86_64(monkeypatch) -> None:
 
     monkeypatch.setattr(platform, "machine", lambda: "aarch64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "arm64")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
 
 def test_jinja_linux(monkeypatch) -> None:
     template = "{{ linux }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(sys, "platform", "win")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(sys, "platform", "darwin")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -205,11 +373,25 @@ def test_jinja_linux32(monkeypatch) -> None:
     monkeypatch.setattr(sys, "platform", "linux")
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -220,11 +402,25 @@ def test_jinja_linux64(monkeypatch) -> None:
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
 
 def test_jinja_osx(monkeypatch) -> None:
@@ -232,31 +428,73 @@ def test_jinja_osx(monkeypatch) -> None:
 
     monkeypatch.setattr(sys, "platform", "linux")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(sys, "platform", "win")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
 
 def test_jinja_unix(monkeypatch) -> None:
     template = "{{ unix }}"
 
     monkeypatch.setattr(sys, "platform", "linux")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(sys, "platform", "win")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(sys, "platform", "darwin")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
 
 def test_jinja_win(monkeypatch) -> None:
@@ -264,15 +502,35 @@ def test_jinja_win(monkeypatch) -> None:
 
     monkeypatch.setattr(sys, "platform", "linux")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(sys, "platform", "win")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(sys, "platform", "darwin")
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -282,11 +540,25 @@ def test_jinja_win32(monkeypatch) -> None:
     monkeypatch.setattr(sys, "platform", "win")
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
 
@@ -297,11 +569,25 @@ def test_jinja_win64(monkeypatch) -> None:
 
     monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
     assert (
-        render_jinja(template, filename=Path("foo.yml"), is_included=False) == "False"
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "False"
     )
 
     monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "True"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "True"
+    )
 
 
 def test_preprocess_selector_in_line() -> None:
@@ -386,10 +672,10 @@ def test_render_jinja_with_preprocessing_selectors(monkeypatch, mode: str) -> No
         """
     ).strip()
 
-    def render_as_platform(platform: str, conda_platform: CondaPlatform | None) -> str:
+    def render_as_platform(platform: str, conda_platform: CondaPlatform) -> str:
         if mode == "patch-sys":
             monkeypatch.setattr(sys, "platform", platform)
-            conda_platform = None
+            conda_platform = CondaPlatform.current()
         else:
             assert mode == "use-conda-platform"
         return render_jinja(
@@ -409,19 +695,42 @@ def test_jinja_get_env(monkeypatch) -> None:
     template_with_default = "{{ get_env('PY', default='3.6') }}"
 
     monkeypatch.setenv("PY", "3.6")
-    assert render_jinja(template, filename=Path("foo.yml"), is_included=False) == "3.6"
+    assert (
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
+        == "3.6"
+    )
 
     monkeypatch.setenv("PY", "3.7")
     with pytest.raises(ValueError):
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
 
     monkeypatch.delenv("PY")
     with pytest.raises(ValueError):
-        render_jinja(template, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
 
     monkeypatch.delenv("PY", raising=False)
     assert (
-        render_jinja(template_with_default, filename=Path("foo.yml"), is_included=False)
+        render_jinja(
+            template_with_default,
+            filename=Path("foo.yml"),
+            is_included=False,
+            conda_platform=CondaPlatform.current(),
+        )
         == "3.6"
     )
 
@@ -437,4 +746,5 @@ def test_jinja_invalid_template() -> None:
             ),
             filename=Path("foo.yml"),
             is_included=False,
+            conda_platform=CondaPlatform.current(),
         )

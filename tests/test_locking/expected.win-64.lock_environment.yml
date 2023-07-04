@@ -5,6 +5,7 @@ channels:
 dependencies:
 - pytest
 - pywin32
+- wincom
 environment: {}
 name: foo-py310
 platforms:

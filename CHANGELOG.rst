@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+3.1.1 (2023-07-04)
+------------------
+
+* Fixed bug where the platform selectors of included ``devenv.yml`` files were not being honored when rendering lock files.
+
 3.1.0 (2023-06-30)
 ------------------
 
