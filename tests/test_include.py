@@ -1,6 +1,7 @@
 import pytest
 import yaml
 
+from conda_devenv.devenv import CondaPlatform
 from conda_devenv.devenv import handle_includes
 from conda_devenv.devenv import render_jinja
 
@@ -8,9 +9,16 @@ from conda_devenv.devenv import render_jinja
 def obtain_yaml_dicts(root_yaml_filename):
     with open(root_yaml_filename) as f:
         contents = f.read()
-    contents = render_jinja(contents, filename=root_yaml_filename, is_included=False)
+    contents = render_jinja(
+        contents,
+        filename=root_yaml_filename,
+        is_included=False,
+        conda_platform=CondaPlatform.current(),
+    )
     root_yaml = yaml.safe_load(contents)
-    dicts = handle_includes(root_yaml_filename, root_yaml).values()
+    dicts = handle_includes(
+        root_yaml_filename, root_yaml, conda_platform=CondaPlatform.current()
+    ).values()
     dicts = list(dicts)
 
     # The list order does not matter, so we can"t use indices to fetch each item

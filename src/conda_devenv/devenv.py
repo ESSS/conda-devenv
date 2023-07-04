@@ -191,14 +191,11 @@ def render_jinja(
     filename: Path,
     *,
     is_included: bool,
-    conda_platform: CondaPlatform | None = None,
+    conda_platform: CondaPlatform,
 ) -> str:
     import jinja2
     import sys
     import platform
-
-    if conda_platform is None:
-        conda_platform = CondaPlatform.current()
 
     jinja_dict = {
         "aarch64": "aarch64" == platform.machine(),
@@ -219,7 +216,9 @@ def render_jinja(
     return jinja2.Template(contents).render(**jinja_dict)
 
 
-def handle_includes(root_filename: Path, root_yaml: YAMLData) -> dict[Path, YAMLData]:
+def handle_includes(
+    root_filename: Path, root_yaml: YAMLData, conda_platform: CondaPlatform
+) -> dict[Path, YAMLData]:
     # This is a depth-first search
     import yaml
     import collections
@@ -256,6 +255,7 @@ def handle_includes(root_filename: Path, root_yaml: YAMLData) -> dict[Path, YAML
                 included_filename.read_text(encoding="UTF-8"),
                 included_filename,
                 is_included=True,
+                conda_platform=conda_platform,
             )
             included_yaml_dict = yaml.safe_load(jinja_contents)
             if included_yaml_dict is None:
@@ -463,6 +463,10 @@ def load_yaml_dict(
     """
     with open(filename) as f:
         contents = f.read()
+
+    if conda_platform is None:
+        conda_platform = CondaPlatform.current()
+
     rendered_contents = render_jinja(
         contents, filename, is_included=False, conda_platform=conda_platform
     )
@@ -471,7 +475,7 @@ def load_yaml_dict(
 
     root_yaml = yaml.safe_load(rendered_contents)
 
-    all_yaml_dicts = handle_includes(filename, root_yaml)
+    all_yaml_dicts = handle_includes(filename, root_yaml, conda_platform=conda_platform)
 
     for filename, yaml_dict in all_yaml_dicts.items():
         environment_key_value = yaml_dict.get("environment", {})
