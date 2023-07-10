@@ -772,9 +772,12 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     group.add_argument(
         "--use-locks",
         choices=["auto", "yes", "no"],
-        default="auto",
-        help="How to use lock files: 'auto' will use them if available, 'yes' "
-        "will try to use and fail if not available, 'no' skip lockfiles always.",
+        default=os.environ.get("CONDA_DEVENV_USE_LOCKS", "auto"),
+        help=(
+            "How to use lock files: 'auto' will use them if available, 'yes' "
+            "will try to use and fail if not available, 'no' skip lock files always. "
+            "Can also be configured via CONDA_DEVENV_USE_LOCKS environment variable."
+        ),
     )
     group.add_argument(
         "--update-locks",

@@ -381,6 +381,12 @@ No other changes are required.
 
 You can control if ``devenv`` should use lock files using the ``--use-locks {auto,yes,no}`` command-line option.
 
+.. versionadded:: 3.2.0
+
+The default value for ``--use-locks`` can be set via ``CONDA_DEVENV_USE_LOCKS``, which is useful on CI
+to change the behavior when no explicit option is present in the command line.
+
+
 Updating
 --------
 
@@ -482,7 +488,9 @@ Options
       --use-locks {auto,yes,no}
                             How to use lock files: 'auto' will use them if
                             available, 'yes' will try to use and fail if not
-                            available, 'no' skip lockfiles always.
+                            available, 'no' skip lock files always. Can also be
+                            configured via CONDA_DEVENV_USE_LOCKS environment
+                            variable.
       --update-locks PACKAGE
                             Update the given package in all lock files, while
                             still obeying the pins in the devenv.yml file. Can be
