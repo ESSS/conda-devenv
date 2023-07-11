@@ -2,6 +2,12 @@
 CHANGELOG
 =========
 
+3.2.0 (2023-07-11)
+------------------
+
+* The ``CONDA_DEVENV_USE_LOCKS`` can be used to change the default value of ``--use-locks``. Useful to set on CI to ensure
+  lock files are being used.
+
 3.1.1 (2023-07-04)
 ------------------
 

@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 from textwrap import dedent
+from typing import Literal
 
 import pytest
 
@@ -219,7 +220,7 @@ def test_auto_use_lock_files(
         )
     )
 
-    # Create the env directory because we need it to exist to create the activate/deactive scripts.
+    # Create the env directory because we need it to exist to create the activate/deactivate scripts.
     env_dir = tmp_path / "envs"
     env_dir.joinpath(f"{env_name}/conda-meta").mkdir(parents=True)
     env_dirs = [env_dir]
@@ -242,7 +243,7 @@ def test_auto_use_lock_files(
         ),
     ]
 
-    # Use locks again but create an environment different than the one defined
+    # Use locks again but create an environment different from the one defined
     # in environment.devenv.yml.
     subprocess_call_mock.reset_mock()
     env_dir2 = tmp_path / "envs"
@@ -269,9 +270,20 @@ def test_auto_use_lock_files(
     ]
 
 
+@pytest.mark.parametrize("mode", ["cmd-line", "env-var"])
 def test_use_locks_is_yes_but_no_lock_file(
-    tmp_path: Path, monkeypatch, patch_conda_calls: None, capsys
+    tmp_path: Path,
+    monkeypatch,
+    patch_conda_calls: None,
+    capsys,
+    mode: Literal["cmd-line", "env-var"],
 ) -> None:
+    if mode == "cmd-line":
+        cmdline = ["--use-locks=yes"]
+    else:
+        assert mode == "env-var"
+        monkeypatch.setenv("CONDA_DEVENV_USE_LOCKS", "yes")
+        cmdline = []
     monkeypatch.chdir(tmp_path)
     env_file = tmp_path / "environment.devenv.yml"
     env_file.write_text(
@@ -289,7 +301,7 @@ def test_use_locks_is_yes_but_no_lock_file(
         )
     )
 
-    assert devenv.main(["--use-locks=yes"]) == 2
+    assert devenv.main(cmdline) == 2
     out, err = capsys.readouterr()
     platform = CondaPlatform.current().value
     assert (
