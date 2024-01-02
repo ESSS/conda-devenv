@@ -1,0 +1,8 @@
+name: d
+dependencies:
+  - a_dependency
+  - pip:
+    - d_dependency
+environment:
+  PATH:
+    - a_path

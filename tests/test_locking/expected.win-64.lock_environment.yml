@@ -6,6 +6,8 @@ dependencies:
 - pytest
 - pywin32
 - wincom
+- pip:
+  - lupa
 environment: {}
 name: foo-py310
 platforms:

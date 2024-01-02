@@ -32,6 +32,8 @@ def test_create_and_update_lock_files(
             - pytest
             - wincom  # [win]
             - shmem  # [unix]
+            - pip:
+              - lupa
             """
         )
     )

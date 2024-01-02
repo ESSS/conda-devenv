@@ -278,6 +278,10 @@ In this case, ``pytest`` is directly declared, so the constraint will be respect
 
 .. note::
 
+    Currently dependencies via ``pip`` are ignored for constraints purposes.
+
+.. note::
+
     A known limitation is that the constraints will only be respected if a package is explicitly declared,
     so it will not work for *transitive dependencies*.
 

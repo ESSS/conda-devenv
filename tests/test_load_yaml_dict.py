@@ -16,6 +16,12 @@ def test_load_yaml_dict(datadir) -> None:
     assert set(environment["PATH"]) == {"b_path", "a_path"}
 
 
+def test_load_yaml_dict_with_pip(datadir) -> None:
+    conda_yaml_dict = load_yaml_dict(datadir / "d.yml")
+    dependencies = conda_yaml_dict["dependencies"]
+    assert dependencies == ["a_dependency", {"pip": ["d_dependency"]}]
+
+
 def test_load_yaml_dict_with_wrong_definition_at_environment_key(datadir) -> None:
     filename = datadir / "a_wrong_definition_at_environment.yml"
     with pytest.raises(ValueError) as e:
@@ -246,6 +252,29 @@ class TestConstraints:
             "attrs >19",
             "boltons",
             "pytest>=6",
+            "pytest >7",
+            "attrs >=20",
+        ]
+
+    def test_constraints_respected_with_pip(self) -> None:
+        """
+        Constraints are declared as dependency if they are explicitly declared.
+        """
+        data = {
+            "dependencies": [
+                "attrs >19",
+                "boltons",
+                "pytest>=6",
+                {"pip": ["lupa >= 1.14"]},
+            ],
+            "constraints": ["pytest >7", "attrs >=20", "requests <2"],
+        }
+        process_constraints_into_dependencies(data)
+        assert data["dependencies"] == [
+            "attrs >19",
+            "boltons",
+            "pytest>=6",
+            {"pip": ["lupa >= 1.14"]},
             "pytest >7",
             "attrs >=20",
         ]

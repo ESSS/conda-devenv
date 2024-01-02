@@ -348,7 +348,9 @@ def process_constraints_into_dependencies(yaml_dict: YAMLData) -> None:
         return
 
     dependency_names = {
-        PackageSpecifier.parse(dep).name for dep in yaml_dict["dependencies"]
+        PackageSpecifier.parse(dep).name
+        for dep in yaml_dict["dependencies"]
+        if isinstance(dep, str)
     }
 
     added_dependencies = [
