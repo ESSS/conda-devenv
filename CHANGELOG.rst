@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+3.2.1 (2024-01-03)
+------------------
+
+* Fixed handling of `constraints` when processing lock files and `dependencies` include a `pip` section.
+
 3.2.0 (2023-07-11)
 ------------------
 

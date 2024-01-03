@@ -6,6 +6,8 @@ dependencies:
 - flock
 - pytest
 - shmem
+- pip:
+  - lupa
 environment: {}
 name: foo-py310
 platforms:
