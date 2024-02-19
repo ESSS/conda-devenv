@@ -403,15 +403,15 @@ def merge_dependencies_version_specifications(
         else:
             raise UsageError(f"Only strings and dicts are supported, got: {dep!r}")
 
-    result = set()
+    # keep the order of dependencies
+    result = collections.OrderedDict()
     for dep_name, dep_version_matchers in new_dependencies.items():
         if len(dep_version_matchers) > 0:
-            result.add(dep_name + " " + ",".join(dep_version_matchers))
+            result[dep_name + " " + ",".join(dep_version_matchers)] = None
         else:
-            result.add(dep_name)
+            result[dep_name] = None
 
-    new_dict_dependencies = sorted(new_dict_dependencies, key=lambda x: list(x.keys()))
-    yaml_dict[key_to_merge] = sorted(result) + new_dict_dependencies
+    yaml_dict[key_to_merge] = list(result.keys()) + new_dict_dependencies
 
 
 @dataclass(frozen=True)
