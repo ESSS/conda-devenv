@@ -404,7 +404,7 @@ def merge_dependencies_version_specifications(
             raise UsageError(f"Only strings and dicts are supported, got: {dep!r}")
 
     # keep the order of dependencies
-    result = collections.OrderedDict()
+    result: dict[str, Any] = collections.OrderedDict()
     for dep_name, dep_version_matchers in new_dependencies.items():
         if len(dep_version_matchers) > 0:
             result[dep_name + " " + ",".join(dep_version_matchers)] = None
