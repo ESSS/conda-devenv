@@ -1,0 +1,16 @@
+name: test-env
+
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - pytorch
+  - numpy
+  - scikit-image
+  - pip:
+    - "-e c-package"
+    - "-e b-package"
+    - "-e D-package"

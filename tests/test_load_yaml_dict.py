@@ -191,6 +191,17 @@ def test_downstream_overrides_platforms(tmp_path) -> None:
     }
 
 
+def test_load_yaml_dict_dependency_order(datadir) -> None:
+    """
+    Make sure the order of channels and pip dependencies is preserved
+    """
+    conda_yaml_dict = load_yaml_dict(datadir / "deps_order.yml")
+    channels = conda_yaml_dict["channels"]
+    assert channels == ["pytorch", "nvidia", "conda-forge", "bioconda"]
+    pip_dependencies = conda_yaml_dict["dependencies"][3]
+    assert pip_dependencies["pip"] == ["-e c-package", "-e b-package", "-e D-package"]
+
+
 class TestConstraints:
     def test_no_constraints(self) -> None:
         data = {"dependencies": ["attrs >19", "boltons"]}
