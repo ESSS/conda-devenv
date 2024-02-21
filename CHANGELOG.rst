@@ -2,6 +2,14 @@
 CHANGELOG
 =========
 
+UNRELEASED
+----------
+
+* Dependency order is no longer sorted automatically, instead the order is preserved as they are defined in the ``*.devenv.yml`` files.
+  Usually this would not matter, but it is important for ``pip`` dependencies which declare development installations, as it is important
+  that those happen in the specified order.
+
+
 3.2.1 (2024-01-03)
 ------------------
 
