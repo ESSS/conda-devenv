@@ -19,18 +19,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tox_env: ["py310", "py311"]
+        python: ["3.10", "3.11", "3.12"]
         os: [ubuntu-latest, windows-latest]
-        include:
-          - tox_env: "py310"
-            python: "3.10"
-          - tox_env: "py311"
-            python: "3.11"
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
     - name: Install tox
@@ -39,4 +34,4 @@ jobs:
         pip install tox
     - name: Test
       run: |
-        tox -e ${{ matrix.tox_env }}
+        tox -e py
