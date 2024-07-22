@@ -499,10 +499,13 @@ def load_yaml_dict(
 
     merge_dependencies_version_specifications(merged_dict, key_to_merge="dependencies")
 
-    # Force these keys to always be set by the starting/root devenv file, when defined.
-    force_root_keys = ("name", "channels", "platforms")
-    forced_keys = {k: root_yaml[k] for k in force_root_keys if k in root_yaml}
-    merged_dict.update(forced_keys)
+    # Force these keys to always be set by the most downstream devenv file.
+    # all_yaml_dicts is ordered from downstream to upstream.
+    for forced_key in ("name", "channels", "platforms"):
+        for yaml_dict in all_yaml_dicts.values():
+            if forced_key in yaml_dict:
+                merged_dict[forced_key] = yaml_dict[forced_key]
+                break
 
     if "environment" not in merged_dict:
         merged_dict["environment"] = {}
