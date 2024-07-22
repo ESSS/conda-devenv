@@ -2,6 +2,12 @@
 CHANGELOG
 =========
 
+3.4.0 (UNRELEASED)
+------------------
+
+* Previously the ``name``, ``channels``, and ``platforms`` keys would only be overwritten by the root ``devenv.yml`` file (the one use to invoke ``conda devenv`` with).
+  Now any downstream ``devenv.yml`` file will override these keys, with the most downstream ``devenv.yml`` file "winning", which was always the intended behavior.
+
 3.3.0 (2024-02-21)
 ------------------
 

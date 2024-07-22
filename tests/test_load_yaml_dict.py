@@ -136,6 +136,8 @@ def test_downstream_overrides_channels(tmp_path) -> None:
         )
     )
 
+    # This is the most downstream file which defines 'channels', so it overwrites any
+    # upstream definition.
     b_fn = tmp_path / "b.devenv.yml"
     b_fn.write_text(
         textwrap.dedent(
@@ -150,9 +152,110 @@ def test_downstream_overrides_channels(tmp_path) -> None:
         )
     )
 
-    assert load_yaml_dict(b_fn) == {
-        "name": "b",
+    c_fn = tmp_path / "c.devenv.yml"
+    c_fn.write_text(
+        textwrap.dedent(
+            """
+            name: c
+            includes:
+              - {{ root }}/b.devenv.yml
+            """
+        )
+    )
+
+    assert load_yaml_dict(c_fn) == {
+        "name": "c",
         "channels": ["b1_channel", "b2_channel"],
+        "environment": {},
+    }
+
+
+def test_no_downstream_overrides_channels(tmp_path) -> None:
+    # The 'channels' key is defined only by one upstream file.
+    a_fn = tmp_path / "a.devenv.yml"
+    a_fn.write_text(
+        textwrap.dedent(
+            """
+            name: a
+            channels:
+            - z_channel
+            - a_channel
+            """
+        )
+    )
+
+    b_fn = tmp_path / "b.devenv.yml"
+    b_fn.write_text(
+        textwrap.dedent(
+            """
+            name: b
+            includes:
+              - {{ root }}/a.devenv.yml
+            """
+        )
+    )
+
+    c_fn = tmp_path / "c.devenv.yml"
+    c_fn.write_text(
+        textwrap.dedent(
+            """
+            name: c
+            includes:
+              - {{ root }}/b.devenv.yml
+            """
+        )
+    )
+
+    assert load_yaml_dict(c_fn) == {
+        "name": "c",
+        "channels": ["z_channel", "a_channel"],
+        "environment": {},
+    }
+
+
+def test_root_overrides_channels(tmp_path) -> None:
+    a_fn = tmp_path / "a.devenv.yml"
+    a_fn.write_text(
+        textwrap.dedent(
+            """
+            name: a
+            channels:
+            - z_channel
+            - a_channel
+            """
+        )
+    )
+
+    b_fn = tmp_path / "b.devenv.yml"
+    b_fn.write_text(
+        textwrap.dedent(
+            """
+            name: b
+            includes:
+              - {{ root }}/a.devenv.yml
+            """
+        )
+    )
+
+    # This is the root file, so it overwrites the 'channels' completely.
+    c_fn = tmp_path / "c.devenv.yml"
+    c_fn.write_text(
+        textwrap.dedent(
+            """
+            name: c
+            includes:
+              - {{ root }}/b.devenv.yml
+            channels:
+            - a_channel
+            - z_channel
+            - b_channel
+            """
+        )
+    )
+
+    assert load_yaml_dict(c_fn) == {
+        "name": "c",
+        "channels": ["a_channel", "z_channel", "b_channel"],
         "environment": {},
     }
 
@@ -170,6 +273,8 @@ def test_downstream_overrides_platforms(tmp_path) -> None:
         )
     )
 
+    # This is the most downstream file which defines 'platforms', so it overwrites any
+    # upstream definition.
     b_fn = tmp_path / "b.devenv.yml"
     b_fn.write_text(
         textwrap.dedent(
@@ -184,8 +289,108 @@ def test_downstream_overrides_platforms(tmp_path) -> None:
         )
     )
 
-    assert load_yaml_dict(b_fn) == {
-        "name": "b",
+    c_fn = tmp_path / "c.devenv.yml"
+    c_fn.write_text(
+        textwrap.dedent(
+            """
+            name: c
+            includes:
+              - {{ root }}/b.devenv.yml
+            """
+        )
+    )
+
+    assert load_yaml_dict(c_fn) == {
+        "name": "c",
+        "platforms": ["win-64", "osx-64"],
+        "environment": {},
+    }
+
+
+def test_no_downstream_overrides_platforms(tmp_path) -> None:
+    # The 'platforms' key is defined only by one upstream file.
+    a_fn = tmp_path / "a.devenv.yml"
+    a_fn.write_text(
+        textwrap.dedent(
+            """
+            name: a
+            platforms:
+            - win-64
+            - linux-64
+            """
+        )
+    )
+
+    b_fn = tmp_path / "b.devenv.yml"
+    b_fn.write_text(
+        textwrap.dedent(
+            """
+            name: b
+            includes:
+              - {{ root }}/a.devenv.yml
+            """
+        )
+    )
+
+    c_fn = tmp_path / "c.devenv.yml"
+    c_fn.write_text(
+        textwrap.dedent(
+            """
+            name: c
+            includes:
+              - {{ root }}/b.devenv.yml
+            """
+        )
+    )
+
+    assert load_yaml_dict(c_fn) == {
+        "name": "c",
+        "platforms": ["win-64", "linux-64"],
+        "environment": {},
+    }
+
+
+def test_root_overrides_platforms(tmp_path) -> None:
+    a_fn = tmp_path / "a.devenv.yml"
+    a_fn.write_text(
+        textwrap.dedent(
+            """
+            name: a
+            platforms:
+            - win-64
+            - linux-64
+            """
+        )
+    )
+
+    b_fn = tmp_path / "b.devenv.yml"
+    b_fn.write_text(
+        textwrap.dedent(
+            """
+            name: b
+            includes:
+              - {{ root }}/a.devenv.yml
+            """
+        )
+    )
+
+    # This is the root file, so it overwrites the 'platforms' completely.
+    c_fn = tmp_path / "c.devenv.yml"
+    c_fn.write_text(
+        textwrap.dedent(
+            """
+            name: c
+            includes:
+              - {{ root }}/b.devenv.yml
+            platforms:
+            - win-64
+            - osx-64
+            """
+        )
+    )
+
+    assert load_yaml_dict(c_fn) == {
+        "name": "c",
         "platforms": ["win-64", "osx-64"],
         "environment": {},
     }
