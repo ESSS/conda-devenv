@@ -667,7 +667,9 @@ def _get_envs_dirs_from_conda(env_manager: Literal["conda", "mamba"]) -> Sequenc
         shell=sys.platform.startswith("win"),
     )
     info = json.loads(output)
-    return [Path(x) for x in info["envs_dirs"]]
+    envs_dirs = info.get("envs_dirs") or info.get("envs directories") or []
+
+    return [Path(x) for x in envs_dirs]
 
 
 def get_env_directory(
