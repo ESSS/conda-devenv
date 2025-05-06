@@ -2,6 +2,11 @@
 CHANGELOG
 =========
 
+UNRELEASED
+----------
+
+* Correctly handle parsing `envs directories` in new ``mamba`` versions, where that value was renamed from ``envs_dirs``.
+
 3.4.0 (2024-07-22)
 ------------------
 
