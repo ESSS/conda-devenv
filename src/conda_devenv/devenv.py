@@ -64,6 +64,7 @@ class CondaPlatform(Enum):
     Linux64 = "linux-64"
     Osx32 = "osx-32"
     Osx64 = "osx-64"
+    OsxArm64 = "osx-arm64"
 
     @classmethod
     def current(cls) -> Self:
@@ -80,6 +81,11 @@ class CondaPlatform(Enum):
             name = ""
 
         bits = "32" if platform.architecture()[0] == "32bit" else "64"
+        bits = (
+            "arm64"
+            if platform.machine().lower() in ("arm64", "aarch64") and name == "osx"
+            else bits
+        )
         return cls(f"{name}-{bits}")
 
     @cached_property
@@ -88,7 +94,7 @@ class CondaPlatform(Enum):
 
     @cached_property
     def bits(self) -> int:
-        return int(self.value.split("-")[1])
+        return int(self.value.split("-")[1]) if "arm" not in self.value else 64
 
     @cached_property
     def selectors(self) -> Mapping[str, bool]:
