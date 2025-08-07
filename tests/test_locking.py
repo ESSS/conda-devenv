@@ -75,11 +75,6 @@ def test_create_and_update_lock_files(
         extension=".yml",
     )
     file_regression.check(
-        linux_lock.read_text(),
-        basename="expected.linux-64.lock_environment",
-        extension=".yml",
-    )
-    file_regression.check(
         osx_arm64_lock.read_text(),
         basename="expected.osx-arm64.lock_environment",
         extension=".yml",

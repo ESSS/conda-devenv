@@ -94,7 +94,8 @@ class CondaPlatform(Enum):
 
     @cached_property
     def bits(self) -> int:
-        return int(self.value.split("-")[1]) if "arm" not in self.value else 64
+        ARM64_BITS = 64
+        return int(self.value.split("-")[1]) if "arm" not in self.value else ARM64_BITS
 
     @cached_property
     def selectors(self) -> Mapping[str, bool]:
