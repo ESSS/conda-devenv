@@ -1,5 +1,5 @@
 default_language_version:
-    python: python3.10
+    python: python
 repos:
   - repo: https://github.com/PyCQA/autoflake
     rev: v2.3.1
