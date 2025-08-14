@@ -150,6 +150,7 @@ def check_jinja_render(template: str, valid_platforms: set[CondaPlatform]) -> No
             == "False"
         ), f"Platform {invalid_platform} is expected to render to False"
 
+
 def test_jinja_aarch64() -> None:
     template = "{{ aarch64 }}"
     valid_platforms = {CondaPlatform.LinuxAArch64}
@@ -176,7 +177,11 @@ def test_jinja_x86_64() -> None:
 
 def test_jinja_linux() -> None:
     template = "{{ linux }}"
-    valid_platforms = {CondaPlatform.Linux32, CondaPlatform.Linux64, CondaPlatform.LinuxAArch64}
+    valid_platforms = {
+        CondaPlatform.Linux32,
+        CondaPlatform.Linux64,
+        CondaPlatform.LinuxAArch64,
+    }
     check_jinja_render(template, valid_platforms)
 
 
@@ -201,8 +206,12 @@ def test_jinja_osx() -> None:
 def test_jinja_unix() -> None:
     template = "{{ unix }}"
     valid_platforms = {
-        CondaPlatform.Linux32, CondaPlatform.Linux64, CondaPlatform.LinuxAArch64,
-        CondaPlatform.Osx32, CondaPlatform.Osx64, CondaPlatform.OsxArm64,
+        CondaPlatform.Linux32,
+        CondaPlatform.Linux64,
+        CondaPlatform.LinuxAArch64,
+        CondaPlatform.Osx32,
+        CondaPlatform.Osx64,
+        CondaPlatform.OsxArm64,
     }
     check_jinja_render(template, valid_platforms)
 

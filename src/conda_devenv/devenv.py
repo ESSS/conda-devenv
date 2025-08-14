@@ -218,8 +218,12 @@ def render_jinja(
     import platform
 
     jinja_dict = {
-        "aarch64": conda_platform.name == "linux" and conda_platform.arch == "arm" and conda_platform.bits == 64,
-        "arm64": conda_platform.name != "linux" and conda_platform.arch == "arm" and conda_platform.bits == 64,
+        "aarch64": conda_platform.name == "linux"
+        and conda_platform.arch == "arm"
+        and conda_platform.bits == 64,
+        "arm64": conda_platform.name != "linux"
+        and conda_platform.arch == "arm"
+        and conda_platform.bits == 64,
         "get_env": _get_env,
         "is_included": is_included,
         "min_conda_devenv_version": _min_conda_devenv_version,
