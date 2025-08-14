@@ -13,3 +13,4 @@ name: foo-py310
 platforms:
 - win-64
 - linux-64
+- osx-arm64
