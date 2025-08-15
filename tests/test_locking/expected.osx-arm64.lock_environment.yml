@@ -6,6 +6,8 @@ dependencies:
 - flock
 - pytest
 - shmem
+- xz
+- zlib
 - pip:
   - lupa
 environment: {}
@@ -14,3 +16,4 @@ platforms:
 - win-64
 - linux-64
 - osx-arm64
+- osx-64

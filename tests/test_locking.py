@@ -29,10 +29,13 @@ def test_create_and_update_lock_files(
             - win-64
             - linux-64
             - osx-arm64
+            - osx-64
             dependencies:
             - pytest
             - wincom  # [win]
             - shmem  # [unix]
+            - zlib  # [osx-arm64]
+            - xz  # [osx-64]
             - pip:
               - lupa
             """
@@ -64,6 +67,7 @@ def test_create_and_update_lock_files(
     win_lock = tmp_path / ".foo-py310.win-64.lock_environment.yml"
     linux_lock = tmp_path / ".foo-py310.linux-64.lock_environment.yml"
     osx_arm64_lock = tmp_path / ".foo-py310.osx-arm64.lock_environment.yml"
+    osx_lock = tmp_path / ".foo-py310.osx-64.lock_environment.yml"
     file_regression.check(
         win_lock.read_text(),
         basename="expected.win-64.lock_environment",
@@ -77,6 +81,11 @@ def test_create_and_update_lock_files(
     file_regression.check(
         osx_arm64_lock.read_text(),
         basename="expected.osx-arm64.lock_environment",
+        extension=".yml",
+    )
+    file_regression.check(
+        osx_lock.read_text(),
+        basename="expected.osx-64.lock_environment",
         extension=".yml",
     )
 
@@ -111,6 +120,16 @@ def test_create_and_update_lock_files(
         "--lockfile",
         ".foo-py310.osx-arm64.conda-lock.yml",
     ]
+    expected_cmdline_osx = [
+        "conda",
+        "lock",
+        "--file",
+        ".foo-py310.osx-64.lock_environment.yml",
+        "--platform",
+        "osx-64",
+        "--lockfile",
+        ".foo-py310.osx-64.conda-lock.yml",
+    ]
     assert subprocess_call_mock.call_args_list == [
         mocker.call(
             expected_cmdline_win,
@@ -122,6 +141,10 @@ def test_create_and_update_lock_files(
         ),
         mocker.call(
             expected_cmdline_osx_arm64,
+            shell=shell,
+        ),
+        mocker.call(
+            expected_cmdline_osx,
             shell=shell,
         ),
     ]
@@ -153,6 +176,16 @@ def test_create_and_update_lock_files(
         mocker.call(
             [
                 *expected_cmdline_osx_arm64,
+                "--update",
+                "pytest",
+                "--update",
+                "pywin32",
+            ],
+            shell=shell,
+        ),
+        mocker.call(
+            [
+                *expected_cmdline_osx,
                 "--update",
                 "pytest",
                 "--update",
