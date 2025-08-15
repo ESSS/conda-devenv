@@ -6,6 +6,7 @@ dependencies:
 - pytest
 - pywin32
 - wincom
+- xz
 - pip:
   - lupa
 environment: {}
@@ -13,3 +14,5 @@ name: foo-py310
 platforms:
 - win-64
 - linux-64
+- osx-arm64
+- osx-64
