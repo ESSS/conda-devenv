@@ -126,468 +126,112 @@ def test_jinja_platform(monkeypatch) -> None:
     )
 
 
-def test_jinja_aarch64(monkeypatch) -> None:
+def check_jinja_render(template: str, valid_platforms: set[CondaPlatform]) -> None:
+    for valid_platform in valid_platforms:
+        assert (
+            render_jinja(
+                template,
+                filename=Path("foo.yml"),
+                is_included=False,
+                conda_platform=valid_platform,
+            )
+            == "True"
+        ), f"Platform {valid_platform} is expected to render to True"
+
+    invalid_platforms = set(CondaPlatform).difference(valid_platforms)
+    for invalid_platform in invalid_platforms:
+        assert (
+            render_jinja(
+                template,
+                filename=Path("foo.yml"),
+                is_included=False,
+                conda_platform=invalid_platform,
+            )
+            == "False"
+        ), f"Platform {invalid_platform} is expected to render to False"
+
+
+def test_jinja_aarch64() -> None:
     template = "{{ aarch64 }}"
-
-    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {CondaPlatform.LinuxAArch64}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_arm64(monkeypatch) -> None:
+def test_jinja_arm64() -> None:
     template = "{{ arm64 }}"
-
-    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(sys, "platform", "darwin")
-    monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(sys, "platform", "win32")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {CondaPlatform.WinArm64, CondaPlatform.OsxArm64}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_x86(monkeypatch) -> None:
+def test_jinja_x86() -> None:
     template = "{{ x86 }}"
-
-    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {CondaPlatform.Linux32, CondaPlatform.Win32, CondaPlatform.Osx32}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_x86_64(monkeypatch) -> None:
+def test_jinja_x86_64() -> None:
     template = "{{ x86_64 }}"
-
-    monkeypatch.setattr(platform, "machine", lambda: "aarch64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "arm64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "machine", lambda: "x86_64")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
+    valid_platforms = {CondaPlatform.Linux64, CondaPlatform.Win64, CondaPlatform.Osx64}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_linux(monkeypatch) -> None:
+def test_jinja_linux() -> None:
     template = "{{ linux }}"
-
-    monkeypatch.setattr(sys, "platform", "linux")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(sys, "platform", "win")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(sys, "platform", "darwin")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {
+        CondaPlatform.Linux32,
+        CondaPlatform.Linux64,
+        CondaPlatform.LinuxAArch64,
+    }
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_linux32(monkeypatch) -> None:
+def test_jinja_linux32() -> None:
     template = "{{ linux32 }}"
-
-    monkeypatch.setattr(sys, "platform", "linux")
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {CondaPlatform.Linux32}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_linux64(monkeypatch) -> None:
+def test_jinja_linux64() -> None:
     template = "{{ linux64 }}"
-
-    monkeypatch.setattr(sys, "platform", "linux")
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
+    valid_platforms = {CondaPlatform.Linux64, CondaPlatform.LinuxAArch64}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_osx(monkeypatch) -> None:
+def test_jinja_osx() -> None:
     template = "{{ osx }}"
-
-    monkeypatch.setattr(sys, "platform", "linux")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(sys, "platform", "win")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(sys, "platform", "darwin")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
+    valid_platforms = {CondaPlatform.Osx32, CondaPlatform.Osx64, CondaPlatform.OsxArm64}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_unix(monkeypatch) -> None:
+def test_jinja_unix() -> None:
     template = "{{ unix }}"
-
-    monkeypatch.setattr(sys, "platform", "linux")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(sys, "platform", "win")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(sys, "platform", "darwin")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
+    valid_platforms = {
+        CondaPlatform.Linux32,
+        CondaPlatform.Linux64,
+        CondaPlatform.LinuxAArch64,
+        CondaPlatform.Osx32,
+        CondaPlatform.Osx64,
+        CondaPlatform.OsxArm64,
+    }
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_win(monkeypatch) -> None:
+def test_jinja_win() -> None:
     template = "{{ win }}"
-
-    monkeypatch.setattr(sys, "platform", "linux")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(sys, "platform", "win")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(sys, "platform", "darwin")
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {CondaPlatform.Win32, CondaPlatform.Win64, CondaPlatform.WinArm64}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_win32(monkeypatch) -> None:
+def test_jinja_win32() -> None:
     template = "{{ win32 }}"
-
-    monkeypatch.setattr(sys, "platform", "win")
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
+    valid_platforms = {CondaPlatform.Win32}
+    check_jinja_render(template, valid_platforms)
 
 
-def test_jinja_win64(monkeypatch) -> None:
+def test_jinja_win64() -> None:
     template = "{{ win64 }}"
-
-    monkeypatch.setattr(sys, "platform", "win")
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("32bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "False"
-    )
-
-    monkeypatch.setattr(platform, "architecture", lambda: ("64bit", ""))
-    assert (
-        render_jinja(
-            template,
-            filename=Path("foo.yml"),
-            is_included=False,
-            conda_platform=CondaPlatform.current(),
-        )
-        == "True"
-    )
+    valid_platforms = {CondaPlatform.Win64, CondaPlatform.WinArm64}
+    check_jinja_render(template, valid_platforms)
 
 
 def test_preprocess_selector_in_line() -> None:
