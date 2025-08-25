@@ -82,16 +82,12 @@ class CondaPlatform(Enum):
         else:
             name = ""
 
-        if platform.machine() == "arm64":
+        if platform.machine().lower() == "arm64":
             arch = "arm64"
-        elif platform.machine() == "aarch64":
+        elif platform.machine().lower() == "aarch64":
             arch = "aarch64"
-        elif platform.machine() == "x86":
-            arch = "32"
-        elif platform.machine() == "x86_64":
-            arch = "64"
         else:
-            arch = ""
+            arch = "32" if platform.architecture()[0] == "32bit" else "64"
 
         return cls(f"{name}-{arch}")
 
@@ -105,10 +101,11 @@ class CondaPlatform(Enum):
 
     @cached_property
     def arch(self) -> str:
-        if self.value.split("-")[1][:-2] == "":
-            return "x86"
-        else:
-            return "arm"
+        match self:
+            case self.WinArm64 | self.LinuxAArch64 | self.OsxArm64:
+                return "arm"
+            case _:
+                return "x86"
 
     @cached_property
     def selectors(self) -> Mapping[str, bool]:
