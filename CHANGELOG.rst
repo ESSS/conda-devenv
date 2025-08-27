@@ -6,6 +6,7 @@ UNRELEASED
 ----------
 
 * Correctly handle parsing `envs directories` in new ``mamba`` versions, where that value was renamed from ``envs_dirs``.
+* Added the ability to generate ``aarch64`` and ``arm64`` locks.
 
 3.4.0 (2024-07-22)
 ------------------

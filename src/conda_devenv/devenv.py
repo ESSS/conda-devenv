@@ -60,10 +60,13 @@ class CondaPlatform(Enum):
 
     Win32 = "win-32"
     Win64 = "win-64"
+    WinArm64 = "win-arm64"
     Linux32 = "linux-32"
     Linux64 = "linux-64"
+    LinuxAArch64 = "linux-aarch64"
     Osx32 = "osx-32"
     Osx64 = "osx-64"
+    OsxArm64 = "osx-arm64"
 
     @classmethod
     def current(cls) -> Self:
@@ -79,8 +82,14 @@ class CondaPlatform(Enum):
         else:
             name = ""
 
-        bits = "32" if platform.architecture()[0] == "32bit" else "64"
-        return cls(f"{name}-{bits}")
+        if platform.machine().lower() == "arm64":
+            arch = "arm64"
+        elif platform.machine().lower() == "aarch64":
+            arch = "aarch64"
+        else:
+            arch = "32" if platform.architecture()[0] == "32bit" else "64"
+
+        return cls(f"{name}-{arch}")
 
     @cached_property
     def name(self) -> str:
@@ -88,7 +97,15 @@ class CondaPlatform(Enum):
 
     @cached_property
     def bits(self) -> int:
-        return int(self.value.split("-")[1])
+        return int(self.value[-2:])
+
+    @cached_property
+    def arch(self) -> str:
+        match self:
+            case self.WinArm64 | self.LinuxAArch64 | self.OsxArm64:
+                return "arm"
+            case _:
+                return "x86"
 
     @cached_property
     def selectors(self) -> Mapping[str, bool]:
@@ -198,8 +215,12 @@ def render_jinja(
     import platform
 
     jinja_dict = {
-        "aarch64": "aarch64" == platform.machine(),
-        "arm64": conda_platform.name == "osx" and "arm64" == platform.machine(),
+        "aarch64": conda_platform.name == "linux"
+        and conda_platform.arch == "arm"
+        and conda_platform.bits == 64,
+        "arm64": conda_platform.name != "linux"
+        and conda_platform.arch == "arm"
+        and conda_platform.bits == 64,
         "get_env": _get_env,
         "is_included": is_included,
         "min_conda_devenv_version": _min_conda_devenv_version,
@@ -207,8 +228,8 @@ def render_jinja(
         "platform": platform,
         "root": os.path.dirname(os.path.abspath(filename)),
         "sys": sys,
-        "x86": "x86" == platform.machine(),
-        "x86_64": "x86_64" == platform.machine(),
+        "x86": conda_platform.arch == "x86" and conda_platform.bits == 32,
+        "x86_64": conda_platform.arch == "x86" and conda_platform.bits == 64,
         **conda_platform.selectors,
     }
 
