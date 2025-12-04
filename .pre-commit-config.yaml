@@ -26,7 +26,7 @@ repos:
         args: [--safe, --quiet]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+    rev: v1.19.0
     hooks:
       - id: mypy
         additional_dependencies: [types-PyYAML]
@@ -34,7 +34,7 @@ repos:
     hooks:
       - id: rst
         name: rst
-        entry: rst-lint --encoding utf-8
+        entry: rst-lint
         files: ^(README.rst|HOWTORELEASE.rst)$
         language: python
         additional_dependencies: [pygments, restructuredtext_lint]
