@@ -105,7 +105,7 @@ def test_separate_strings_from_dicts() -> None:
 
     with pytest.raises(RuntimeError, match="Only strings and dicts are supported"):
         # Ignore type check error as we are actually checking the runtime type-check.
-        separate_strings_from_dicts([1])  # type:ignore[list-item]
+        separate_strings_from_dicts([1])  # type: ignore[list-item]
 
 
 def test_merge_empty_dependencies() -> None:

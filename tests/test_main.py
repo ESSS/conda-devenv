@@ -43,15 +43,11 @@ def test_handle_input_file(
     cast(MagicMock, devenv._call_conda).side_effect = call_conda_mock
 
     filename = tmp_path / input_name
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         name: a
         dependencies:
           - a_dependency
-    """
-        )
-    )
+    """))
     devenv_cmdline_args = ["--file", str(filename), "--quiet"]
     expected_conda_cmdline_args = [
         "env",
@@ -81,16 +77,12 @@ def test_print(tmp_path: Path, input_name, capsys) -> None:
     Test --print option for different types of inputs.
     """
     filename = tmp_path / input_name
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         name: a
         dependencies:
           - a_dependency
           - channel::another_dependency ==3.14
-    """
-        )
-    )
+    """))
     assert devenv.main(["--file", str(filename), "--quiet", "--print"]) == 0
     out, err = capsys.readouterr()
     assert "dependencies:" in out
@@ -105,18 +97,14 @@ def test_print_full(tmp_path: Path, capsys) -> None:
     Test --print option for different types of inputs.
     """
     filename = tmp_path / "environment.devenv.yml"
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         name: a
         dependencies:
           - a_dependency
           - channel::another_dependency ==3.14
         environment:
           PYTHONPATH: {{ root }}/source
-    """
-        )
-    )
+    """))
     assert devenv.main(["--file", str(filename), "--quiet", "--print-full"]) == 0
     out, err = capsys.readouterr()
     assert err == ""
@@ -135,14 +123,10 @@ def test_min_version_failure(tmp_path: Path, capsys, mocker) -> None:
     import conda_devenv
 
     filename = tmp_path / "environment.devenv.yml"
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         {{ min_conda_devenv_version("999.9") }}
         name: a
-    """
-        )
-    )
+    """))
     mocker.patch("shutil.which", return_value="/path/to/conda")
     assert devenv.main(["--file", str(filename)]) == 2
     out, err = capsys.readouterr()
@@ -173,16 +157,10 @@ def test_min_version_ok(tmp_path: Path, capsys, mocker) -> None:
 
     mocker.patch("shutil.which", return_value="/path/to/conda")
     filename = tmp_path / "environment.devenv.yml"
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         {{{{ min_conda_devenv_version("{}") }}}}
         name: a
-    """.format(
-                conda_devenv.__version__
-            )
-        )
-    )
+    """.format(conda_devenv.__version__)))
     assert devenv.main(["--file", str(filename), "--print-full"]) == 0
 
 
@@ -332,15 +310,11 @@ def test_env_var_cmdline_args(tmp_path: Path) -> None:
     import os
 
     filename = tmp_path / "environment.devenv.yml"
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         name: a
         dependencies:
           - python ={{ os.environ["PY"] }}
-    """
-        )
-    )
+    """))
     assert (
         devenv.main(
             ["--file", str(filename), "--quiet", "-e", "DEV", "--env-var", "PY=3.6"]
@@ -357,14 +331,10 @@ def test_get_env(tmp_path: Path, monkeypatch) -> None:
     Test get_env jinja function with required env var passed via command line.
     """
     filename = tmp_path / "environment.devenv.yml"
-    filename.write_text(
-        textwrap.dedent(
-            """\
+    filename.write_text(textwrap.dedent("""\
         name: a
         dependencies:
           - python ={{ get_env("PY", valid=["3.6"]) }}
-    """
-        )
-    )
+    """))
     monkeypatch.delenv("PY", raising=False)
     assert devenv.main(["--file", str(filename), "--quiet", "-e", "PY=3.6"]) == 0
