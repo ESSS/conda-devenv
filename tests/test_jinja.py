@@ -23,15 +23,13 @@ def test_jinja_root() -> None:
 
 
 def test_jinja_os(monkeypatch) -> None:
-    template = textwrap.dedent(
-        """\
+    template = textwrap.dedent("""\
         {% if os.environ['ENV_VARIABLE'] == '1' -%}
         variable is set
         {%- else -%}
         variable is not set
         {%- endif %}
-    """
-    ).strip()
+    """).strip()
 
     assert (
         render_jinja(
@@ -67,8 +65,7 @@ def test_jinja_os(monkeypatch) -> None:
 
 
 def test_jinja_sys(monkeypatch) -> None:
-    template = textwrap.dedent(
-        """\
+    template = textwrap.dedent("""\
         {% if sys.platform.startswith('linux') -%}
         linux!
         {%- elif sys.platform.startswith('win') -%}
@@ -76,8 +73,7 @@ def test_jinja_sys(monkeypatch) -> None:
         {%- else -%}
         others!
         {%- endif %}
-    """
-    ).strip()
+    """).strip()
 
     monkeypatch.setattr(sys, "platform", "linux")
     assert (
@@ -261,60 +257,50 @@ def test_preprocess_selector_in_line() -> None:
 
 
 def test_preprocess_selectors() -> None:
-    template = textwrap.dedent(
-        """\
+    template = textwrap.dedent("""\
         name: lib
         dependencies:
           - cmake
           - ccache    # [unix]
           - clcache   # [win] Windows has clcache instead of ccache
-    """
-    ).strip()
+    """).strip()
 
-    expected = textwrap.dedent(
-        """\
+    expected = textwrap.dedent("""\
         name: lib
         dependencies:
           - cmake
         {% if unix %}  - ccache    # [unix]{% endif %}
         {% if win %}  - clcache   # [win] Windows has clcache instead of ccache{% endif %}
-    """
-    ).strip()
+    """).strip()
 
     assert preprocess_selectors(template) == expected
 
 
 @pytest.mark.parametrize("mode", ["patch-sys", "use-conda-platform"])
 def test_render_jinja_with_preprocessing_selectors(monkeypatch, mode: str) -> None:
-    template = textwrap.dedent(
-        """\
+    template = textwrap.dedent("""\
         {% set name = 'mylib' %}
         name: {{ name }}
         dependencies:
           - cmake
           - ccache    # [unix]
           - clcache   # [win] Windows has clcache instead of ccache
-        """
-    ).strip()
+        """).strip()
 
-    expected_unix = textwrap.dedent(
-        """\
+    expected_unix = textwrap.dedent("""\
         name: mylib
         dependencies:
           - cmake
           - ccache    # [unix]
-        """
-    ).strip()
+        """).strip()
 
-    expected_win = textwrap.dedent(
-        """\
+    expected_win = textwrap.dedent("""\
         name: mylib
         dependencies:
           - cmake
 
           - clcache   # [win] Windows has clcache instead of ccache
-        """
-    ).strip()
+        """).strip()
 
     def render_as_platform(platform: str, conda_platform: CondaPlatform) -> str:
         if mode == "patch-sys":
@@ -382,12 +368,10 @@ def test_jinja_get_env(monkeypatch) -> None:
 def test_jinja_invalid_template() -> None:
     with pytest.raises(jinja2.exceptions.TemplateSyntaxError):
         render_jinja(
-            textwrap.dedent(
-                """\
+            textwrap.dedent("""\
                 {%- if os.environ['ENV_VARIABLE'] == '1' %}
                 {% %}
-            """
-            ),
+            """),
             filename=Path("foo.yml"),
             is_included=False,
             conda_platform=CondaPlatform.current(),

@@ -20,9 +20,7 @@ def test_create_and_update_lock_files(
     monkeypatch.chdir(tmp_path)
 
     base_env_file = tmp_path / "base.devenv.yml"
-    base_env_file.write_text(
-        dedent(
-            """
+    base_env_file.write_text(dedent("""
             channels:
             - conda-forge
             platforms:
@@ -36,14 +34,10 @@ def test_create_and_update_lock_files(
             - openmpi  # [osx]
             - pip:
               - lupa
-            """
-        )
-    )
+            """))
 
     env_file = tmp_path / "environment.devenv.yml"
-    env_file.write_text(
-        dedent(
-            """
+    env_file.write_text(dedent("""
             name: foo-py310
             includes:
             - {{ root }}/base.devenv.yml
@@ -52,9 +46,7 @@ def test_create_and_update_lock_files(
             - pywin32  # [win]
             - flock  # [unix]
             - mpi4py  # [arm64]
-            """
-        )
-    )
+            """))
 
     # With --lock conda-devenv creates the .lock_environment.yml files and calls conda-lock
     # to solve them and generate the .conda-lock.yml files.
@@ -169,16 +161,12 @@ def test_locking_requires_channels_key(
     tmp_path: Path, patch_conda_calls: None, capsys
 ) -> None:
     env_file = tmp_path / "environment.devenv.yml"
-    env_file.write_text(
-        dedent(
-            """
+    env_file.write_text(dedent("""
             name: foo-py310
             platforms:
             - win-64
             - linux-64
-            """
-        )
-    )
+            """))
 
     assert devenv.main(["--lock", "-f", str(env_file)]) == 2
     out, err = capsys.readouterr()
@@ -193,15 +181,11 @@ def test_locking_requires_platforms_key(
     tmp_path: Path, patch_conda_calls: None, capsys
 ) -> None:
     env_file = tmp_path / "environment.devenv.yml"
-    env_file.write_text(
-        dedent(
-            """
+    env_file.write_text(dedent("""
             name: foo-py310
             channels:
             - conda-forge
-            """
-        )
-    )
+            """))
 
     assert devenv.main(["--lock", "-f", str(env_file)]) == 2
     out, err = capsys.readouterr()
@@ -216,17 +200,13 @@ def test_locking_requires_devenv_files(
     tmp_path: Path, patch_conda_calls: None, capsys
 ) -> None:
     env_file = tmp_path / "environment.yml"
-    env_file.write_text(
-        dedent(
-            """
+    env_file.write_text(dedent("""
             name: foo-py310
             channels:
             - conda-forge
             platforms:
             - win-64
-            """
-        )
-    )
+            """))
 
     assert devenv.main(["--lock", "-f", str(env_file)]) == 2
     out, err = capsys.readouterr()
@@ -240,9 +220,7 @@ def test_auto_use_lock_files(
     monkeypatch.chdir(tmp_path)
     env_file = tmp_path / "environment.devenv.yml"
     env_name = "foo"
-    env_file.write_text(
-        dedent(
-            f"""
+    env_file.write_text(dedent(f"""
             name: {env_name}
             channels:
             - conda-forge
@@ -251,9 +229,7 @@ def test_auto_use_lock_files(
             - linux-64
             dependencies:
             - pytest
-            """
-        )
-    )
+            """))
 
     # Create the env directory because we need it to exist to create the activate/deactivate scripts.
     env_dir = tmp_path / "envs"
@@ -321,9 +297,7 @@ def test_use_locks_is_yes_but_no_lock_file(
         cmdline = []
     monkeypatch.chdir(tmp_path)
     env_file = tmp_path / "environment.devenv.yml"
-    env_file.write_text(
-        dedent(
-            f"""
+    env_file.write_text(dedent(f"""
                 name: foo
                 channels:
                 - conda-forge
@@ -332,9 +306,7 @@ def test_use_locks_is_yes_but_no_lock_file(
                 - linux-64
                 dependencies:
                 - pytest
-                """
-        )
-    )
+                """))
 
     assert devenv.main(cmdline) == 2
     out, err = capsys.readouterr()
