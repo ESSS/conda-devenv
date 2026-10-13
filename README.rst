@@ -2,23 +2,6 @@
 conda-devenv
 ============
 
-.. image:: https://github.com/ESSS/conda-devenv/workflows/main/badge.svg
-    :target: https://github.com/ESSS/conda-devenv/actions
-
-.. image:: https://readthedocs.org/projects/conda-devenv/badge/?version=latest
-    :target: https://conda-devenv.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
-
-.. image:: https://img.shields.io/conda/vn/conda-forge/conda-devenv.svg
-    :target: https://anaconda.org/conda-forge/conda-devenv
-
-.. image:: https://anaconda.org/conda-forge/conda-devenv/badges/downloads.svg
-    :target: https://anaconda.org/conda-forge/conda-devenv
-
-.. image:: https://anaconda.org/conda-forge/conda-devenv/badges/installer/conda.svg
-    :target: https://anaconda.org/conda-forge/conda-devenv
-
-
 ``conda-devenv`` is ``conda`` extension to work with multiple projects in development mode.
 
 It works by processing ``environment.devenv.yml`` files, similar to how ``conda env``
